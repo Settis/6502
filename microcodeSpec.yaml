@@ -1,0 +1,60 @@
+address:
+- type: counter
+  size: 4
+- type: instruction
+  size: 8
+outBits:
+- AddrOut
+- MicRst
+- CntLIn
+- CntHIn
+- AddrLIn
+- AddrHIn
+- InstIn
+- AIn
+- AOut
+- CntEn
+- SPIn
+- Write
+- XIn
+- XOut
+- YIn
+- YOut  
+- SPOut
+- AddrToCnt
+- DIn
+- V1
+- V2
+- V3
+- V4
+- V5
+defaultStartSteps:
+- InstIn | CntEn | DIn
+defaultEndSteps:
+- MicRst
+commands:
+- name: "LDA #$44"
+  value: 0xA9
+  steps:
+  - AIn | CntEn | DIn
+- name: "TAX"
+  value: 0xAA
+  steps:
+  - AOut | XIn
+- name: "STA $4400"
+  value: 0x8D
+  steps:
+  - AddrLIn | CntEn | DIn
+  - AddrHIn | CntEn | DIn
+  - AddrOut | AOut | Write
+- name: "Reset"
+  value: 0xFF
+  type: full
+  steps:
+  - InstIn | DIn
+  - CntLIn | CntEn | CntHIn
+  - CntLIn | CntEn
+  - CntLIn | CntEn
+  - CntLIn | CntEn | AddrHIn | DIn
+  - AddrLIn | DIn
+  - AddrToCnt | CntLIn | CntHIn
