@@ -30,19 +30,19 @@ outBits:
     type: enum
     offset: 7
     values:
-      - Alu1
+      - Alu0
       - AluA
       - AluX
       - AluY
       - AluSp
-      - AluAddrH
       - AluAddrL
-      - AluM2
+      - AluAddrH
+      - AluB
   - name: OpSelect
     type: enum
     offset: 10
     values:
-      - Sum
+      - Add
       - Sub
       - Or
       - And
@@ -51,7 +51,7 @@ outBits:
       - LSR
       - RTL
       - RTR
-      - Pass
+      - AddAddrLAndY
   - name: AluOutSelect
     type: enum
     offset: 14
@@ -89,15 +89,21 @@ outBits:
       - ClearDec
       - SetDec
   - name: UseCF
+    type: enum
     offset: 23
+    values:
+      - CF0
+      - CF1
+      - LCF
+      - CF
   - name: CFEn
-    offset: 24
-  - name: ZFEn
     offset: 25
-  - name: VFEn
+  - name: ZFEn
     offset: 26
-  - name: NFEn
+  - name: VFEn
     offset: 27
+  - name: NFEn
+    offset: 28
 defaultStartSteps:
   - InstIn | CntEn
 defaultEndSteps:
@@ -105,31 +111,105 @@ defaultEndSteps:
 prefixSteps:
   - name: ZP
     steps:
-      - Alu1 | Sub | AluToAddrH
-      - AluM2 | Pass | AluToAddrL | CntEn
+      - AluToAddrH
+      - AluM | AluToAddrL | CntEn
   - name: ZPX
-    steps: []
+    steps:
+      - AluToAddrH
+      - AluM | AluX | Add | AluToAddrL | CntEn
   - name: Abs
     steps:
-      - AluM2 | Pass | AluToAddrL | CntEn
-      - AluM2 | Pass | AluToAddrH | CntEn
+      - AluM | AluToAddrL | CntEn
+      - AluM | AluToAddrH | CntEn
   - name: AbsX
-    steps: []
+    steps:
+      - AluM | AluX | Add | AluToAddrL | CntEn
+      - AluM | LCF | Add | AluToAddrH | CntEn
   - name: AbsY
-    steps: []
+    steps:
+      - AluM | AluY | Add | AluToAddrL | CntEn
+      - AluM | LCF | Add | AluToAddrH | CntEn
   - name: IndX
-    steps: []
+    steps:
+      - AluToAddrH
+      - AluM | AluX | Add | AluToAddrL | CntEn
+      - AddrOut | AluM | AluToB
+      - AluAddrL | CF1 | Add | AluToAddrL
+      - AddrOut | AluM | AluToAddrH
+      - AluB | AluToAddrL
   - name: IndY
-    steps: []
+    steps:
+      - AluToAddrH
+      - AluM | AluToAddrL | CntEn
+      - AddrOut | AluM | AluToB
+      - AluAddrL | CF1 | Add | AluToAddrL
+      - AddrOut | AluM | AluToAddrH
+      - AluB | AluToAddrL
+      - AddAddrLAndY | AluToAddrL
+      - AluAddrH | LCF | Add | AluToAddrH
 commands:
+  - name: "BPL+ rewrite"
+    value: 0x10
+    condition:
+      - NF_0
+    steps:
+      - AluA | AluToX
   - name: "LDA #$44"
     value: 0xA9
     steps:
-      - AluM2 | Pass | AluToA | NFEn | ZFEn | CntEn
+      - AluM | AluToA | NFEn | ZFEn | CntEn
+  - name: "LDA $44"
+    value: 0xA5
+    prefix: ZP
+    steps:
+      - AddrOut | AluM | AluToA | NFEn | ZFEn
+  - name: "LDA $44,X"
+    value: 0xB5
+    prefix: ZPX
+    steps:
+      - AddrOut | AluM | AluToA | NFEn | ZFEn
+  - name: "LDA $4400"
+    value: 0xAD
+    prefix: Abs
+    steps:
+      - AddrOut | AluM | AluToA | NFEn | ZFEn
+  - name: "LDA $4400,X"
+    value: 0xBD
+    prefix: AbsX
+    steps:
+      - AddrOut | AluM | AluToA | NFEn | ZFEn
+  - name: "LDA $4400,Y"
+    value: 0xB9
+    prefix: AbsY
+    steps:
+      - AddrOut | AluM | AluToA | NFEn | ZFEn
+  - name: "LDA ($44,X)"
+    value: 0xA1
+    prefix: IndX
+    steps:
+      - AddrOut | AluM | AluToA | NFEn | ZFEn
+  - name: "LDA ($44),Y"
+    value: 0xB1
+    prefix: IndY
+    steps:
+      - AddrOut | AluM | AluToA | NFEn | ZFEn
+  - name: "LDX #$44"
+    value: 0xA2
+    steps:
+      - AluM | AluToX | NFEn | ZFEn | CntEn
+  - name: "LDY #$44"
+    value: 0xA0
+    steps:
+      - AluM | AluToY | NFEn | ZFEn | CntEn
   - name: "TAX"
     value: 0xAA
     steps:
-      - AluA | Pass | AluToX
+      - AluA | AluToX
+  - name: "STA $44"
+    value: 0x85
+    prefix: ZP
+    steps:
+      - AddrOut | DataOutA
   - name: "STA $4400"
     value: 0x8D
     prefix: Abs
@@ -143,6 +223,6 @@ commands:
       - CntLIn | CntEn | CntHIn
       - CntLIn | CntEn
       - CntLIn | CntEn
-      - CntLIn | CntEn | AluM2 | Pass | AluToAddrH
-      - AluM2 | Pass | AluToAddrL
+      - CntLIn | CntEn | AluM | AluToAddrH
+      - AluM | AluToAddrL
       - CntLIn | CntHIn

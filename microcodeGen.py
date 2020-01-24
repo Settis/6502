@@ -53,11 +53,30 @@ prefix_steps = {}
 for prefix_step in config['prefixSteps']:
     prefix_steps[prefix_step['name']] = convert_steps(prefix_step['steps'])
 
+
+def get_condition_addr(conditions_set):
+    address = [0]
+    for condition in conditions:
+        name = condition['name']
+        offset = condition['offset']
+        if name in conditions_set.keys():
+            value = conditions_set[name] << offset
+            address = list(map(lambda i: i+value, address))
+        else:
+            value = 1 << offset
+            address.extend(list(map(lambda i: i+value, address)))
+    return address
+
+
 table = {}
 for command in config['commands']:
     instruction = command['value']
     command_type = command.get('type', 'default')
     prefix = command.get('prefix', None)
+    condition = {}
+    for flag_description in command.get('condition', []):
+        flag, value = flag_description.split('_')
+        condition[flag] = int(value)
     steps = []
     if command_type == 'default':
         steps.extend(default_start_steps)
@@ -65,9 +84,12 @@ for command in config['commands']:
         steps.extend(prefix_steps[prefix])
     steps.extend(convert_steps(command['steps']))
     steps.extend(default_end_steps)
+
+    condition_addr = get_condition_addr(condition)
     counter = 0
     for step in steps:
-        table[(instruction << instruction_offset) + (counter << counter_offset)] = step
+        for addr in condition_addr:
+            table[(instruction << instruction_offset) + (counter << counter_offset) + addr] = step
         counter += 1
 
 with open('microcode.rom', 'w') as rom:
