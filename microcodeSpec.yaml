@@ -3,69 +3,146 @@ address:
     size: 4
   - type: instruction
     size: 8
+  - type: condition
+    name: CF
+  - type: condition
+    name: ZF
+  - type: condition
+    name: VF
+  - type: condition
+    name: NF
 outBits:
-  - AddrOut
-  - MicRst
-  - CntLIn
-  - CntHIn
-  - AddrLIn
-  - AddrHIn
-  - InstIn
-  - AIn
-  - AOut
-  - CntEn
-  - SPIn
-  - Write
-  - XIn
-  - XOut
-  - YIn
-  - YOut
-  - SPOut
-  - AddrToCnt
-  - DIn
-  - SpecDEn
-  - ZeroBit
-  - V3
-  - V4
-  - V5
+  - name: AddrOut
+    offset: 0
+  - name: MicRst
+    offset: 1
+  - name: CntLIn
+    offset: 2
+  - name: CntHIn
+    offset: 3
+  - name: CntEn
+    offset: 4
+  - name: InstIn
+    offset: 5
+  - name: AluM
+    offset: 6
+  - name: SecondSelect
+    type: enum
+    offset: 7
+    values:
+      - Alu1
+      - AluA
+      - AluX
+      - AluY
+      - AluSp
+      - AluAddrH
+      - AluAddrL
+      - AluM2
+  - name: OpSelect
+    type: enum
+    offset: 10
+    values:
+      - Sum
+      - Sub
+      - Or
+      - And
+      - Xor
+      - ASL
+      - LSR
+      - RTL
+      - RTR
+      - Pass
+  - name: AluOutSelect
+    type: enum
+    offset: 14
+    values:
+      - AluToB
+      - AluToA
+      - AluToX
+      - AluToY
+      - AluToSP
+      - AluToAddrH
+      - AluToAddrL
+      - AluToF
+  - name: DataOutSelect
+    type: enum
+    offset: 17
+    values:
+      - DataOutNull
+      - DataOutA
+      - DataOutB
+      - DataOutPcH
+      - DataOutPcL
+      - DataOutX
+      - DataOutY
+      - DataOutF
+  - name: FlagInst
+    type: enum
+    offset: 20
+    values:
+      - FlagNone
+      - ClearCarry
+      - SetCarry
+      - ClearInt
+      - SetInt
+      - ClearOverfl
+      - ClearDec
+      - SetDec
+  - name: UseCF
+    offset: 23
+  - name: CFEn
+    offset: 24
+  - name: ZFEn
+    offset: 25
+  - name: VFEn
+    offset: 26
+  - name: NFEn
+    offset: 27
 defaultStartSteps:
-  - InstIn | CntEn | DIn
+  - InstIn | CntEn
 defaultEndSteps:
   - MicRst
 prefixSteps:
   - name: ZP
     steps:
-      - SpecDEn | AddrHIn
-      - CntEn | DIn | AddrLIn
+      - Alu1 | Sub | AluToAddrH
+      - AluM2 | Pass | AluToAddrL | CntEn
   - name: ZPX
+    steps: []
   - name: Abs
+    steps:
+      - AluM2 | Pass | AluToAddrL | CntEn
+      - AluM2 | Pass | AluToAddrH | CntEn
   - name: AbsX
+    steps: []
   - name: AbsY
+    steps: []
   - name: IndX
+    steps: []
   - name: IndY
+    steps: []
 commands:
   - name: "LDA #$44"
     value: 0xA9
     steps:
-      - AIn | CntEn | DIn
+      - AluM2 | Pass | AluToA | NFEn | ZFEn | CntEn
   - name: "TAX"
     value: 0xAA
     steps:
-      - AOut | XIn
+      - AluA | Pass | AluToX
   - name: "STA $4400"
     value: 0x8D
+    prefix: Abs
     steps:
-      - AddrLIn | CntEn | DIn
-      - AddrHIn | CntEn | DIn
-      - AddrOut | AOut | Write
+      - AddrOut | DataOutA
   - name: "Reset"
     value: 0xFF
     type: full
     steps:
-      - InstIn | DIn
+      - InstIn
       - CntLIn | CntEn | CntHIn
       - CntLIn | CntEn
       - CntLIn | CntEn
-      - CntLIn | CntEn | AddrHIn | DIn
-      - AddrLIn | DIn
-      - AddrToCnt | CntLIn | CntHIn
+      - CntLIn | CntEn | AluM2 | Pass | AluToAddrH
+      - AluM2 | Pass | AluToAddrL
+      - CntLIn | CntHIn

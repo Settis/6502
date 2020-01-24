@@ -8,6 +8,7 @@ with open('microcodeSpec.yaml', 'r') as microspec:
 
 counter_offset = 0
 instruction_offset = 0
+conditions = []
 
 offset_pointer = 0
 for addr in config['address']:
@@ -15,13 +16,24 @@ for addr in config['address']:
         counter_offset = offset_pointer
     if addr['type'] == 'instruction':
         instruction_offset = offset_pointer
-    offset_pointer += addr['size']
+    if addr['type'] == 'condition':
+        conditions.append({
+            'name': addr['name'],
+            'offset': offset_pointer
+        })
+    offset_pointer += addr.get('size', 1)
 
 wordMap = {}
-outBitVal = 1
-for name in config['outBits']:
-    wordMap[name] = outBitVal
-    outBitVal = outBitVal << 1
+for out_bit in config['outBits']:
+    bit_type = out_bit.get('type', 'default')
+    if bit_type == 'default':
+        wordMap[out_bit['name']] = 1 << out_bit['offset']
+    if bit_type == 'enum':
+        offset = out_bit['offset']
+        i = 0
+        for value in out_bit['values']:
+            wordMap[value] = i << offset
+            i += 1
 
 
 def convert_step(step):
@@ -31,15 +43,27 @@ def convert_step(step):
     return result
 
 
-default_start_steps = list(map(convert_step, config['defaultStartSteps']))
-default_end_steps = list(map(convert_step, config['defaultEndSteps']))
+def convert_steps(steps):
+    return list(map(convert_step, steps))
+
+
+default_start_steps = convert_steps(config['defaultStartSteps'])
+default_end_steps = convert_steps(config['defaultEndSteps'])
+prefix_steps = {}
+for prefix_step in config['prefixSteps']:
+    prefix_steps[prefix_step['name']] = convert_steps(prefix_step['steps'])
 
 table = {}
 for command in config['commands']:
     instruction = command['value']
     command_type = command.get('type', 'default')
-    steps = default_start_steps[:] if command_type == 'default' else []
-    steps.extend(list(map(convert_step, command['steps'])))
+    prefix = command.get('prefix', None)
+    steps = []
+    if command_type == 'default':
+        steps.extend(default_start_steps)
+    if prefix:
+        steps.extend(prefix_steps[prefix])
+    steps.extend(convert_steps(command['steps']))
     steps.extend(default_end_steps)
     counter = 0
     for step in steps:
