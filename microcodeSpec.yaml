@@ -12,10 +12,14 @@ address:
   - type: condition
     name: NF
 outBits:
-  - name: AddrOut
+  - name: AddrSelecter
+    type: enum
     offset: 0
-  - name: MicRst
-    offset: 1
+    values:
+      - PC
+      - Addr
+      - ZP
+      - SP
   - name: CntLIn
     offset: 2
   - name: CntHIn
@@ -106,6 +110,8 @@ outBits:
     offset: 28
   - name: AddrShift
     offset: 29
+  - name: MicRst
+    offset: 30
 defaultStartSteps:
   - InstIn | CntEn
 defaultEndSteps:
@@ -119,6 +125,10 @@ prefixSteps:
     steps:
       - AluToAddrH
       - AluM | AluX | Add | AluToAddrL | CntEn
+  - name: ZPY
+    steps:
+      - AluToAddrH
+      - AluM | AluY | Add | AluToAddrL | CntEn
   - name: Abs
     steps:
       - AluM | AluToAddrL | CntEn
@@ -135,24 +145,24 @@ prefixSteps:
     steps:
       - AluToAddrH
       - AluM | AluX | Add | AluToAddrL | CntEn
-      - AddrOut | AluM | AluToB
+      - Addr | AluM | AluToB
       - AluAddrL | CF1 | Add | AluToAddrL
-      - AddrOut | AluM | AluToAddrH
+      - Addr | AluM | AluToAddrH
       - AluB | AluToAddrL
   - name: IndY
     steps:
       - AluToAddrH
       - AluM | AluToAddrL | CntEn
-      - AddrOut | AluM | AluToB
+      - Addr | AluM | AluToB
       - AluAddrL | CF1 | Add | AluToAddrL
-      - AddrOut | AluM | AluToAddrH
+      - Addr | AluM | AluToAddrH
       - AluB | AluToAddrL
       - AddAddrLAndY | AluToAddrL
       - AluAddrH | LCF | Add | AluToAddrH
   - name: BrPos
     steps:
       - AluM | AluToB | CntEn
-      - AddrShift
+      - AddrShift | CntLIn | CntHIn
   - name: BrNeg
     steps:
       - CntEn
@@ -165,37 +175,37 @@ commands:
     value: 0x65
     prefix: ZP
     steps:
-      - AddrOut | AluM | AluA | Add | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
+      - Addr | AluM | AluA | Add | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
   - name: "ADC $44,X"
     value: 0x75
     prefix: ZPX
     steps:
-      - AddrOut | AluM | AluA | Add | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
+      - Addr | AluM | AluA | Add | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
   - name: "ADC $4400"
     value: 0x6d
     prefix: Abs
     steps:
-      - AddrOut | AluM | AluA | Add | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
+      - Addr | AluM | AluA | Add | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
   - name: "ADC $4400,X"
     value: 0x7d
     prefix: AbsX
     steps:
-      - AddrOut | AluM | AluA | Add | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
+      - Addr | AluM | AluA | Add | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
   - name: "ADC $4400,Y"
     value: 0x79
     prefix: AbsY
     steps:
-      - AddrOut | AluM | AluA | Add | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
+      - Addr | AluM | AluA | Add | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
   - name: "ADC ($44,X)"
     value: 0x61
     prefix: IndX
     steps:
-      - AddrOut | AluM | AluA | Add | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
+      - Addr | AluM | AluA | Add | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
   - name: "ADC ($44),Y"
     value: 0x71
     prefix: IndY
     steps:
-      - AddrOut | AluM | AluA | Add | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
+      - Addr | AluM | AluA | Add | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
   - name: "AND #$44"
     value: 0x29
     steps:
@@ -204,37 +214,37 @@ commands:
     value: 0x25
     prefix: ZP
     steps:
-      - AddrOut | AluM | And | AluToA | NFEn | ZFEn
+      - Addr | AluM | And | AluToA | NFEn | ZFEn
   - name: "AND $44,X"
     value: 0x35
     prefix: ZPX
     steps:
-      - AddrOut | AluM | And | AluToA | NFEn | ZFEn
+      - Addr | AluM | And | AluToA | NFEn | ZFEn
   - name: "AND $4400"
     value: 0x2d
     prefix: Abs
     steps:
-      - AddrOut | AluM | And | AluToA | NFEn | ZFEn
+      - Addr | AluM | And | AluToA | NFEn | ZFEn
   - name: "AND $4400,X"
     value: 0x3d
     prefix: AbsX
     steps:
-      - AddrOut | AluM | And | AluToA | NFEn | ZFEn
+      - Addr | AluM | And | AluToA | NFEn | ZFEn
   - name: "AND $4400,Y"
     value: 0x39
     prefix: AbsY
     steps:
-      - AddrOut | AluM | And | AluToA | NFEn | ZFEn
+      - Addr | AluM | And | AluToA | NFEn | ZFEn
   - name: "AND ($44,X)"
     value: 0x21
     prefix: IndX
     steps:
-      - AddrOut | AluM | And | AluToA | NFEn | ZFEn
+      - Addr | AluM | And | AluToA | NFEn | ZFEn
   - name: "AND ($44),Y"
     value: 0x31
     prefix: IndY
     steps:
-      - AddrOut | AluM | And | AluToA | NFEn | ZFEn
+      - Addr | AluM | And | AluToA | NFEn | ZFEn
   - name: "ASL A"
     value: 0x0a
     steps:
@@ -243,36 +253,36 @@ commands:
     value: 0x06
     prefix: ZP
     steps:
-      - AddrOut | AluM | ASL | AluToB | NFEn | ZFEn | CFEn
-      - AddrOut | DataOutB
+      - Addr | AluM | ASL | AluToB | NFEn | ZFEn | CFEn
+      - Addr | DataOutB
   - name: "ASL $44,X"
     value: 0x16
     prefix: ZPX
     steps:
-      - AddrOut | AluM | ASL | AluToB | NFEn | ZFEn | CFEn
-      - AddrOut | DataOutB
+      - Addr | AluM | ASL | AluToB | NFEn | ZFEn | CFEn
+      - Addr | DataOutB
   - name: "ASL $4400"
     value: 0x0e
     prefix: Abs
     steps:
-      - AddrOut | AluM | ASL | AluToB | NFEn | ZFEn | CFEn
-      - AddrOut | DataOutB
+      - Addr | AluM | ASL | AluToB | NFEn | ZFEn | CFEn
+      - Addr | DataOutB
   - name: "ASL $4400,X"
     value: 0x1e
     prefix: AbsX
     steps:
-      - AddrOut | AluM | ASL | AluToB | NFEn | ZFEn | CFEn
-      - AddrOut | DataOutB
+      - Addr | AluM | ASL | AluToB | NFEn | ZFEn | CFEn
+      - Addr | DataOutB
   - name: "BIT $44" # Sets only Z bit
     value: 0x24
     prefix: ZP
     steps:
-      - AddrOut | AluM | AluA | And | ZFEn
+      - Addr | AluM | AluA | And | ZFEn
   - name: "BIT $4400" # Sets only Z bit
     value: 0x2c
     prefix: Abs
     steps:
-      - AddrOut | AluM | AluA | And | ZFEn
+      - Addr | AluM | AluA | And | ZFEn
   - name: "BPL+"
     value: 0x10
     condition:
@@ -378,37 +388,37 @@ commands:
     value: 0xc5
     prefix: ZP
     steps:
-      - AddrOut | AluM | AluA | Sub | NFEn | ZFEn | CFEn
+      - Addr | AluM | AluA | Sub | NFEn | ZFEn | CFEn
   - name: "CMP $44,X"
     value: 0xd5
     prefix: ZPX
     steps:
-      - AddrOut | AluM | AluA | Sub | NFEn | ZFEn | CFEn
+      - Addr | AluM | AluA | Sub | NFEn | ZFEn | CFEn
   - name: "CMP $4400"
     value: 0xcd
     prefix: Abs
     steps:
-      - AddrOut | AluM | AluA | Sub | NFEn | ZFEn | CFEn
+      - Addr | AluM | AluA | Sub | NFEn | ZFEn | CFEn
   - name: "CMP $4400,X"
     value: 0xdd
     prefix: AbsX
     steps:
-      - AddrOut | AluM | AluA | Sub | NFEn | ZFEn | CFEn
+      - Addr | AluM | AluA | Sub | NFEn | ZFEn | CFEn
   - name: "CMP $4400,Y"
     value: 0xd9
     prefix: AbsY
     steps:
-      - AddrOut | AluM | AluA | Sub | NFEn | ZFEn | CFEn
+      - Addr | AluM | AluA | Sub | NFEn | ZFEn | CFEn
   - name: "CMP ($44,X)"
     value: 0xc1
     prefix: IndX
     steps:
-      - AddrOut | AluM | AluA | Sub | NFEn | ZFEn | CFEn
+      - Addr | AluM | AluA | Sub | NFEn | ZFEn | CFEn
   - name: "CMP ($44),Y"
     value: 0xd1
     prefix: IndY
     steps:
-      - AddrOut | AluM | AluA | Sub | NFEn | ZFEn | CFEn
+      - Addr | AluM | AluA | Sub | NFEn | ZFEn | CFEn
   - name: "CPX #$44"
     value: 0xe0
     steps:
@@ -417,12 +427,12 @@ commands:
     value: 0xe4
     prefix: ZP
     steps:
-      - AddrOut | AluM | AluX | Sub | NFEn | ZFEn | CFEn
+      - Addr | AluM | AluX | Sub | NFEn | ZFEn | CFEn
   - name: "CPX $4400"
     value: 0xec
     prefix: Abs
     steps:
-      - AddrOut | AluM | AluX | Sub | NFEn | ZFEn | CFEn
+      - Addr | AluM | AluX | Sub | NFEn | ZFEn | CFEn
   - name: "CPY #$44"
     value: 0xc0
     steps:
@@ -431,36 +441,36 @@ commands:
     value: 0xc4
     prefix: ZP
     steps:
-      - AddrOut | AluM | AluY | Sub | NFEn | ZFEn | CFEn
+      - Addr | AluM | AluY | Sub | NFEn | ZFEn | CFEn
   - name: "CPY $4400"
     value: 0xcc
     prefix: Abs
     steps:
-      - AddrOut | AluM | AluY | Sub | NFEn | ZFEn | CFEn
+      - Addr | AluM | AluY | Sub | NFEn | ZFEn | CFEn
   - name: "DEC $44"
     value: 0xc6
     prefix: ZP
     steps:
-      - AddrOut | AluM | Sub | CF1 | AluToB | NFEn | ZFEn
-      - AddrOut | DataOutB
+      - Addr | AluM | Sub | CF1 | AluToB | NFEn | ZFEn
+      - Addr | DataOutB
   - name: "DEC $44,X"
     value: 0xd6
     prefix: ZPX
     steps:
-      - AddrOut | AluM | Sub | CF1 | AluToB | NFEn | ZFEn
-      - AddrOut | DataOutB
+      - Addr | AluM | Sub | CF1 | AluToB | NFEn | ZFEn
+      - Addr | DataOutB
   - name: "DEC $4400"
     value: 0xce
     prefix: Abs
     steps:
-      - AddrOut | AluM | Sub | CF1 | AluToB | NFEn | ZFEn
-      - AddrOut | DataOutB
+      - Addr | AluM | Sub | CF1 | AluToB | NFEn | ZFEn
+      - Addr | DataOutB
   - name: "DEC $4400,X"
     value: 0xde
     prefix: AbsX
     steps:
-      - AddrOut | AluM | Sub | CF1 | AluToB | NFEn | ZFEn
-      - AddrOut | DataOutB
+      - Addr | AluM | Sub | CF1 | AluToB | NFEn | ZFEn
+      - Addr | DataOutB
   - name: "EOR #$44"
     value: 0x49
     steps:
@@ -469,37 +479,37 @@ commands:
     value: 0x45
     prefix: ZP
     steps:
-      - AddrOut | AluM | AluA | Xor | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluA | Xor | AluToA | NFEn | ZFEn
   - name: "EOR $44,X"
     value: 0x55
     prefix: ZPX
     steps:
-      - AddrOut | AluM | AluA | Xor | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluA | Xor | AluToA | NFEn | ZFEn
   - name: "EOR $4400"
     value: 0x4d
     prefix: Abs
     steps:
-      - AddrOut | AluM | AluA | Xor | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluA | Xor | AluToA | NFEn | ZFEn
   - name: "EOR $4400,X"
     value: 0x5d
     prefix: AbsX
     steps:
-      - AddrOut | AluM | AluA | Xor | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluA | Xor | AluToA | NFEn | ZFEn
   - name: "EOR $4400,Y"
     value: 0x59
     prefix: AbsY
     steps:
-      - AddrOut | AluM | AluA | Xor | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluA | Xor | AluToA | NFEn | ZFEn
   - name: "EOR ($44,X)"
     value: 0x41
     prefix: IndX
     steps:
-      - AddrOut | AluM | AluA | Xor | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluA | Xor | AluToA | NFEn | ZFEn
   - name: "EOR ($44),Y"
     value: 0x51
     prefix: IndY
     steps:
-      - AddrOut | AluM | AluA | Xor | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluA | Xor | AluToA | NFEn | ZFEn
   - name: "CLC"
     value: 0x18
     steps:
@@ -532,26 +542,51 @@ commands:
     value: 0xe6
     prefix: ZP
     steps:
-      - AddrOut | AluM | Add | CF1 | AluToB | NFEn | ZFEn
-      - AddrOut | DataOutB
+      - Addr | AluM | Add | CF1 | AluToB | NFEn | ZFEn
+      - Addr | DataOutB
   - name: "INC $44,X"
     value: 0xf6
     prefix: ZPX
     steps:
-      - AddrOut | AluM | Add | CF1 | AluToB | NFEn | ZFEn
-      - AddrOut | DataOutB
+      - Addr | AluM | Add | CF1 | AluToB | NFEn | ZFEn
+      - Addr | DataOutB
   - name: "INC $4400"
     value: 0xee
     prefix: Abs
     steps:
-      - AddrOut | AluM | Add | CF1 | AluToB | NFEn | ZFEn
-      - AddrOut | DataOutB
+      - Addr | AluM | Add | CF1 | AluToB | NFEn | ZFEn
+      - Addr | DataOutB
   - name: "INC $4400,X"
     value: 0xfe
     prefix: AbsX
     steps:
-      - AddrOut | AluM | Add | CF1 | AluToB | NFEn | ZFEn
-      - AddrOut | DataOutB
+      - Addr | AluM | Add | CF1 | AluToB | NFEn | ZFEn
+      - Addr | DataOutB
+  - name: "JMP $5597"
+    value: 0x4c
+    prefix: Abs
+    steps:
+      - CntLIn | CntHIn
+  - name: "JMP ($5597)"
+    value: 0x6c
+    prefix: Abs
+    steps:
+      - Addr | AluM | AluToB
+      - AluAddrL | CF1 | Add | AluToAddrL
+      - AluAddrH | LCF | Add | AluToAddrH
+      - Addr | AluM | AluToAddrH
+      - AluB | AluToAddrL
+      - CntLIn | CntHIn
+  - name: "JSR"
+    value: 0x20
+    steps:
+      - AluM | AluToAddrL | CntEn
+      - AluM | AluToAddrH
+      - SP | DataOutPcH
+      - AluSp | Sub | CF1 | AluToSp
+      - SP | DataOutPcL
+      - AluSp | Sub | CF1 | AluToSp
+      - CntLIn | CntHIn
   - name: "LDA #$44"
     value: 0xA9
     steps:
@@ -560,59 +595,388 @@ commands:
     value: 0xA5
     prefix: ZP
     steps:
-      - AddrOut | AluM | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluToA | NFEn | ZFEn
   - name: "LDA $44,X"
     value: 0xB5
     prefix: ZPX
     steps:
-      - AddrOut | AluM | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluToA | NFEn | ZFEn
   - name: "LDA $4400"
     value: 0xAD
     prefix: Abs
     steps:
-      - AddrOut | AluM | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluToA | NFEn | ZFEn
   - name: "LDA $4400,X"
     value: 0xBD
     prefix: AbsX
     steps:
-      - AddrOut | AluM | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluToA | NFEn | ZFEn
   - name: "LDA $4400,Y"
     value: 0xB9
     prefix: AbsY
     steps:
-      - AddrOut | AluM | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluToA | NFEn | ZFEn
   - name: "LDA ($44,X)"
     value: 0xA1
     prefix: IndX
     steps:
-      - AddrOut | AluM | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluToA | NFEn | ZFEn
   - name: "LDA ($44),Y"
     value: 0xB1
     prefix: IndY
     steps:
-      - AddrOut | AluM | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluToA | NFEn | ZFEn
   - name: "LDX #$44"
     value: 0xA2
     steps:
       - AluM | AluToX | NFEn | ZFEn | CntEn
+  - name: "LDX $44"
+    value: 0xA6
+    prefix: ZP
+    steps:
+      - Addr | AluM | AluToX | NFEn | ZFEn
+  - name: "LDX $44,Y"
+    value: 0xb6
+    prefix: ZPY
+    steps:
+      - Addr | AluM | AluToX | NFEn | ZFEn
+  - name: "LDX $4400"
+    value: 0xAe
+    prefix: Abs
+    steps:
+      - Addr | AluM | AluToX | NFEn | ZFEn
+  - name: "LDX $4400,Y"
+    value: 0xbe
+    prefix: AbsY
+    steps:
+      - Addr | AluM | AluToX | NFEn | ZFEn
   - name: "LDY #$44"
     value: 0xA0
     steps:
       - AluM | AluToY | NFEn | ZFEn | CntEn
+  - name: "LDY $44"
+    value: 0xA4
+    prefix: ZP
+    steps:
+      - AluM | AluToY | NFEn | ZFEn
+  - name: "LDY $44,X"
+    value: 0xb4
+    prefix: ZPX
+    steps:
+      - AluM | AluToY | NFEn | ZFEn
+  - name: "LDY $4400"
+    value: 0xAc
+    prefix: Abs
+    steps:
+      - AluM | AluToY | NFEn | ZFEn
+  - name: "LDY $4400,X"
+    value: 0xbc
+    prefix: AbsX
+    steps:
+      - AluM | AluToY | NFEn | ZFEn
+  - name: "LSR A"
+    value: 0x4a
+    steps:
+      - LSR | AluToA | NFEn | ZFEn | CFEn
+  - name: "LSR $44"
+    value: 0x46
+    prefix: ZP
+    steps:
+      - Addr | AluM | LSR | AluToB | NFEn | ZFEn | CFEn
+      - Addr | DataOutB
+  - name: "LSR $44,X"
+    value: 0x56
+    prefix: ZPX
+    steps:
+      - Addr | AluM | LSR | AluToB | NFEn | ZFEn | CFEn
+      - Addr | DataOutB
+  - name: "LSR $4400"
+    value: 0x4e
+    prefix: Abs
+    steps:
+      - Addr | AluM | LSR | AluToB | NFEn | ZFEn | CFEn
+      - Addr | DataOutB
+  - name: "LSR $4400,X"
+    value: 0x5e
+    prefix: AbsX
+    steps:
+      - Addr | AluM | LSR | AluToB | NFEn | ZFEn | CFEn
+      - Addr | DataOutB
+  - name: "NOP"
+    value: 0xea
+    steps:
+      - AluM
+  - name: "ORA #$44"
+    value: 0x09
+    steps:
+      - AluM | AluA | Or | AluToA | NFEn | ZFEn | CntEn
+  - name: "ORA $44"
+    value: 0x05
+    prefix: ZP
+    steps:
+      - Addr | AluM | AluA | Or | AluToA | NFEn | ZFEn
+  - name: "ORA $44,X"
+    value: 0x15
+    prefix: ZPX
+    steps:
+      - Addr | AluM | AluA | Or | AluToA | NFEn | ZFEn
+  - name: "ORA $4400"
+    value: 0x0d
+    prefix: Abs
+    steps:
+      - Addr | AluM | AluA | Or | AluToA | NFEn | ZFEn
+  - name: "ORA $4400,X"
+    value: 0x1d
+    prefix: AbsX
+    steps:
+      - Addr | AluM | AluA | Or | AluToA | NFEn | ZFEn
+  - name: "ORA $4400,Y"
+    value: 0x19
+    prefix: AbsY
+    steps:
+      - Addr | AluM | AluA | Or | AluToA | NFEn | ZFEn
+  - name: "ORA ($44,X)"
+    value: 0x01
+    prefix: IndX
+    steps:
+      - Addr | AluM | AluA | Or | AluToA | NFEn | ZFEn
+  - name: "ORA ($44),Y"
+    value: 0x11
+    prefix: IndY
+    steps:
+      - Addr | AluM | AluA | Or | AluToA | NFEn | ZFEn
   - name: "TAX"
     value: 0xAA
     steps:
-      - AluA | AluToX
+      - AluA | AluToX | NFEn | ZFEn
+  - name: "TXA"
+    value: 0x8a
+    steps:
+      - AluX | AluToA | NFEn | ZFEn
+  - name: "DEX"
+    value: 0xca
+    steps:
+      - AluX | Sub | CF1 | AluToX | NFEn | ZFEn
+  - name: "INX"
+    value: 0xe8
+    steps:
+      - AluX | Add | CF1 | AluToX | NFEn | ZFEn
+  - name: "TAY"
+    value: 0xa8
+    steps:
+      - AluA | AluToY | NFEn | ZFEn
+  - name: "TYA"
+    value: 0x98
+    steps:
+      - AluY | AluToA | NFEn | ZFEn
+  - name: "DEY"
+    value: 0x88
+    steps:
+      - AluY | Sub | CF1 | AluToY | NFEn | ZFEn
+  - name: "INY"
+    value: 0xc8
+    steps:
+      - AluY | Add | CF1 | AluToY | NFEn | ZFEn
+  - name: "ROL A"
+    value: 0x2a
+    steps:
+      - RTL | CF | AluToA | NFEn | ZFEn | CFEn
+  - name: "ROL $44"
+    value: 0x26
+    prefix: ZP
+    steps:
+      - Addr | AluM | RTL | CF | AluToB | NFEn | ZFEn | CFEn
+      - Addr | DataOutB
+  - name: "ROL $44,X"
+    value: 0x36
+    prefix: ZPX
+    steps:
+      - Addr | AluM | RTL | CF | AluToB | NFEn | ZFEn | CFEn
+      - Addr | DataOutB
+  - name: "ROL $4400"
+    value: 0x2e
+    prefix: Abs
+    steps:
+      - Addr | AluM | RTL | CF | AluToB | NFEn | ZFEn | CFEn
+      - Addr | DataOutB
+  - name: "ROL $4400,X"
+    value: 0x3e
+    prefix: AbsX
+    steps:
+      - Addr | AluM | RTL | CF | AluToB | NFEn | ZFEn | CFEn
+      - Addr | DataOutB
+  - name: "ROR A"
+    value: 0x6a
+    steps:
+      - RTR | CF | AluToA | NFEn | ZFEn | CFEn
+  - name: "ROR $44"
+    value: 0x66
+    prefix: ZP
+    steps:
+      - Addr | AluM | RTR | CF | AluToB | NFEn | ZFEn | CFEn
+      - Addr | DataOutB
+  - name: "ROR $44,X"
+    value: 0x76
+    prefix: ZPX
+    steps:
+      - Addr | AluM | RTR | CF | AluToB | NFEn | ZFEn | CFEn
+      - Addr | DataOutB
+  - name: "ROR $4400"
+    value: 0x6e
+    prefix: Abs
+    steps:
+      - Addr | AluM | RTR | CF | AluToB | NFEn | ZFEn | CFEn
+      - Addr | DataOutB
+  - name: "ROR $4400,X"
+    value: 0x7e
+    prefix: AbsX
+    steps:
+      - Addr | AluM | RTR | CF | AluToB | NFEn | ZFEn | CFEn
+      - Addr | DataOutB
+  # RTI is not implemented
+  - name: "RTS"
+    value: 0x60
+    steps:
+      - AluSp | Add | CF1 | AluToSp
+      - SP | AluM | AluToAddrL
+      - AluSp | Add | CF1 | AluToSp
+      - SP | AluM | AluToAddrH
+      - CntLIn | CntHIn
+      - CntEn
+  - name: "SBC #$44"
+    value: 0xe9
+    steps:
+      - AluM | AluA | Sub | CF | AluToA | NFEn | VFEn | ZFEn | CFEn | CntEn
+  - name: "SBC $44"
+    value: 0xe5
+    prefix: ZP
+    steps:
+      - Addr | AluM | AluA | Sub | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
+  - name: "SBC $44,X"
+    value: 0xf5
+    prefix: ZPX
+    steps:
+      - Addr | AluM | AluA | Sub | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
+  - name: "SBC $4400"
+    value: 0xed
+    prefix: Abs
+    steps:
+      - Addr | AluM | AluA | Sub | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
+  - name: "SBC $4400,X"
+    value: 0xfd
+    prefix: AbsX
+    steps:
+      - Addr | AluM | AluA | Sub | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
+  - name: "SBC $4400,Y"
+    value: 0xf9
+    prefix: AbsY
+    steps:
+      - Addr | AluM | AluA | Sub | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
+  - name: "SBC ($44,X)"
+    value: 0xe1
+    prefix: IndX
+    steps:
+      - Addr | AluM | AluA | Sub | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
+  - name: "SBC ($44),Y"
+    value: 0xf1
+    prefix: IndY
+    steps:
+      - Addr | AluM | AluA | Sub | CF | AluToA | NFEn | VFEn | ZFEn | CFEn
   - name: "STA $44"
     value: 0x85
     prefix: ZP
     steps:
-      - AddrOut | DataOutA
+      - Addr | DataOutA
+  - name: "STA $44,X"
+    value: 0x95
+    prefix: ZPX
+    steps:
+      - Addr | DataOutA
   - name: "STA $4400"
     value: 0x8D
     prefix: Abs
     steps:
-      - AddrOut | DataOutA
+      - Addr | DataOutA
+  - name: "STA $4400,X"
+    value: 0x9d
+    prefix: AbsX
+    steps:
+      - Addr | DataOutA
+  - name: "STA $4400,Y"
+    value: 0x99
+    prefix: AbsY
+    steps:
+      - Addr | DataOutA
+  - name: "STA ($44,X)"
+    value: 0x81
+    prefix: IndX
+    steps:
+      - Addr | DataOutA
+  - name: "STA ($44),Y"
+    value: 0x91
+    prefix: IndY
+    steps:
+      - Addr | DataOutA
+  - name: "TXS"
+    value: 0x9a
+    steps:
+      - SP | DataOutX
+      - AluSp | Sub | CF1 | AluToSp
+  - name: "TSX"
+    value: 0xba
+    steps:
+      - AluSp | Add | CF1 | AluToSp
+      - SP | AluM | AluToX
+  - name: "PHA"
+    value: 0x48
+    steps:
+      - SP | DataOutA
+      - AluSp | Sub | CF1 | AluToSp
+  - name: "PLA"
+    value: 0x68
+    steps:
+      - AluSp | Add | CF1 | AluToSp
+      - SP | AluM | AluToA
+  - name: "PHP"
+    value: 0x08
+    steps:
+      - SP | DataOutF
+      - AluSp | Sub | CF1 | AluToSp
+  - name: "PLP"
+    value: 0x28
+    steps:
+      - AluSp | Add | CF1 | AluToSp
+      - SP | AluM | AluToF
+  - name: "STX $44"
+    value: 0x86
+    prefix: ZP
+    steps:
+      - Addr | DataOutX
+  - name: "STX $44,Y"
+    value: 0x96
+    prefix: ZPY
+    steps:
+      - Addr | DataOutX
+  - name: "STX $4400"
+    value: 0x8e
+    prefix: Abs
+    steps:
+      - Addr | DataOutX
+  - name: "STY $44"
+    value: 0x84
+    prefix: ZP
+    steps:
+      - Addr | DataOutY
+  - name: "STY $44,X"
+    value: 0x94
+    prefix: ZPX
+    steps:
+      - Addr | DataOutY
+  - name: "STY $4400"
+    value: 0x8c
+    prefix: Abs
+    steps:
+      - Addr | DataOutY
   - name: "Reset"
     value: 0xFF
     type: full
