@@ -162,7 +162,7 @@ prefixSteps:
   - name: BrPos
     steps:
       - AluM | AluToB | CntEn
-      - AddrShift | CntLIn | CntHIn
+      - AluB | AddrShift | CntLIn | CntHIn
   - name: BrNeg
     steps:
       - CntEn
