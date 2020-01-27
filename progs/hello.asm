@@ -1,17 +1,22 @@
-	processor 6502
+hello_ask:
+	dc.b "Type your name: ",$00
+hello_1	dc.b "Hello ",$00
+hello_2 dc.b ", nice to meet you!",$00
 
-TTY	equ $7000
-
-	org $8000
-msg	dc.b "Hello Kozjavr!",$00
+say_hello:
+	ldx #<hello_ask
+	ldy #>hello_ask
+	jsr write
+	jsr read_line
+	ldx #<hello_1
+	ldy #>hello_2
+	jsr write
+	ldx #<read_line_addr
+	ldy #>read_line_addr
+	jsr write
+	ldx #<hello_2
+	ldy #>hello_2
+	jsr write
+	jsr read_key
+	rts
 	
-main	ldx #$0
-loop	lda msg,x
-	beq end
-	sta TTY
-	inx
-	jmp loop
-end	brk
-	
-	org $FFFC
-	dc.w main

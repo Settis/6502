@@ -358,13 +358,13 @@ commands:
   - name: "BNE+"
     value: 0xd0
     condition:
-      - ZF_1
+      - ZF_0
     prefix: BrPos
     steps: []
   - name: "BNE-"
     value: 0xd0
     condition:
-      - ZF_0
+      - ZF_1
     prefix: BrNeg
     steps: []
   - name: "BEQ+"
