@@ -451,25 +451,29 @@ commands:
     value: 0xc6
     prefix: ZP
     steps:
-      - Addr | AluM | Sub | CF1 | AluToB | NFEn | ZFEn
+      - Addr | AluM | AluToB
+      - AluB | Sub | CF1 | AluToB | NFEn | ZFEn
       - Addr | DataOutB
   - name: "DEC $44,X"
     value: 0xd6
     prefix: ZPX
     steps:
-      - Addr | AluM | Sub | CF1 | AluToB | NFEn | ZFEn
+      - Addr | AluM | AluToB
+      - AluB | Sub | CF1 | AluToB | NFEn | ZFEn
       - Addr | DataOutB
   - name: "DEC $4400"
     value: 0xce
     prefix: Abs
     steps:
-      - Addr | AluM | Sub | CF1 | AluToB | NFEn | ZFEn
+      - Addr | AluM | AluToB
+      - AluB | Sub | CF1 | AluToB | NFEn | ZFEn
       - Addr | DataOutB
   - name: "DEC $4400,X"
     value: 0xde
     prefix: AbsX
     steps:
-      - Addr | AluM | Sub | CF1 | AluToB | NFEn | ZFEn
+      - Addr | AluM | AluToB
+      - AluB | Sub | CF1 | AluToB | NFEn | ZFEn
       - Addr | DataOutB
   - name: "EOR #$44"
     value: 0x49
