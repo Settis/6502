@@ -7,4 +7,4 @@ rnd	equ $7002
 mainaddr equ $fffc
 
 	include "tty.asm"
-
+	include "video.asm"

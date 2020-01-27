@@ -209,42 +209,42 @@ commands:
   - name: "AND #$44"
     value: 0x29
     steps:
-      - AluM | And | AluToA | NFEn | ZFEn | CntEn
+      - AluM | AluA | And | AluToA | NFEn | ZFEn | CntEn
   - name: "AND $44"
     value: 0x25
     prefix: ZP
     steps:
-      - Addr | AluM | And | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluA | And | AluToA | NFEn | ZFEn
   - name: "AND $44,X"
     value: 0x35
     prefix: ZPX
     steps:
-      - Addr | AluM | And | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluA | And | AluToA | NFEn | ZFEn
   - name: "AND $4400"
     value: 0x2d
     prefix: Abs
     steps:
-      - Addr | AluM | And | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluA | And | AluToA | NFEn | ZFEn
   - name: "AND $4400,X"
     value: 0x3d
     prefix: AbsX
     steps:
-      - Addr | AluM | And | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluA | And | AluToA | NFEn | ZFEn
   - name: "AND $4400,Y"
     value: 0x39
     prefix: AbsY
     steps:
-      - Addr | AluM | And | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluA | And | AluToA | NFEn | ZFEn
   - name: "AND ($44,X)"
     value: 0x21
     prefix: IndX
     steps:
-      - Addr | AluM | And | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluA | And | AluToA | NFEn | ZFEn
   - name: "AND ($44),Y"
     value: 0x31
     prefix: IndY
     steps:
-      - Addr | AluM | And | AluToA | NFEn | ZFEn
+      - Addr | AluM | AluA | And | AluToA | NFEn | ZFEn
   - name: "ASL A"
     value: 0x0a
     steps:
