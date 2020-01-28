@@ -76,6 +76,7 @@ draw_image_page:
 	ldx page
 	lda page_size,x
 	sta current_page_size
+	beq end_draw_image_page
 	ldy #$0
 	ldx #$0
 draw_image_pixel:
@@ -86,7 +87,7 @@ draw_image_pixel:
 	iny
 	cpy current_page_size
 	bne draw_image_pixel
-	
+end_draw_image_page:	
 	inc page
 	clc
 	lda data_l
