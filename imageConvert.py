@@ -30,7 +30,7 @@ def count_pix(data):
     return cnt
 
 
-def write_to_code(name, data):
+def write_to_code(name, data, file):
     i = 0
     packs = []
     pixels = []
@@ -39,18 +39,30 @@ def write_to_code(name, data):
             packs.append(i)
             i = 0
         for y in range(32):
-            if data[x][y] != 0:
+            if data[y][x] != 0:
                 pixels.append(((x << 5) + (31-y)) & 0xff)
                 i += 1
-    packs.append(i-1)
-    print("%s_data:" % name)
+    packs.append(i)
+    file.write("%s_data:\n" % name)
     for pack in packs:
-        print("\tdc $%02x" % pack)
+        file.write("\tdc $%02x\n" % pack)
     for pixel in pixels:
-        print("\tdc $%02x" % pixel)
+        file.write("\tdc $%02x\n" % pixel)
 
 
-write_to_code("microchip", read_image(IMAGE_FOLDER+"microchip.png"))
+with open('progs/images.asm', 'w') as images_file:
+    file_list = os.listdir(IMAGE_FOLDER)
+    names = []
+    for png_file in file_list:
+        name = png_file.split('.')[0]
+        write_to_code(name, read_image(IMAGE_FOLDER+png_file), images_file)
+        names.append(name)
+
+    images_file.write("images_count equ $%02x\n" % len(names))
+    images_file.write("images:\n")
+    for name in names:
+        images_file.write("\tdc.w %s_data\n" % name)
+
 
 
 # for image_file in os.listdir(IMAGE_FOLDER):

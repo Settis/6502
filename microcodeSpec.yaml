@@ -662,22 +662,22 @@ commands:
     value: 0xA4
     prefix: ZP
     steps:
-      - AluM | AluToY | NFEn | ZFEn
+      - Addr | AluM | AluToY | NFEn | ZFEn
   - name: "LDY $44,X"
     value: 0xb4
     prefix: ZPX
     steps:
-      - AluM | AluToY | NFEn | ZFEn
+      - Addr | AluM | AluToY | NFEn | ZFEn
   - name: "LDY $4400"
     value: 0xAc
     prefix: Abs
     steps:
-      - AluM | AluToY | NFEn | ZFEn
+      - Addr | AluM | AluToY | NFEn | ZFEn
   - name: "LDY $4400,X"
     value: 0xbc
     prefix: AbsX
     steps:
-      - AluM | AluToY | NFEn | ZFEn
+      - Addr | AluM | AluToY | NFEn | ZFEn
   - name: "LSR A"
     value: 0x4a
     steps:

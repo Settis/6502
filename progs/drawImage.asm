@@ -1,4 +1,4 @@
-	include "microchipdata.asm"
+	include "images.asm"
 
 data_l	equ $20
 data_h 	equ $21
@@ -8,12 +8,44 @@ page_size equ $23
 pixel_l equ $27
 pixel_h equ $28
 current_page_size equ $29
+current_image equ $2a
+image_pointer equ $2b
+image_addr equ $2c
+image_addr_h equ $2d
+
+draw_gallery:
+	lda #$0
+	sta current_image
+	sta image_pointer
+	lda #<images
+	sta image_addr
+	lda #>images
+	sta image_addr_h
+prepare_image:
+	sta clrscr
+	ldy image_pointer
+	lda (image_addr),y
+	sta data_l
+	iny
+	lda (image_addr),y
+	sta data_h
+	iny
+	sty image_pointer
+	jsr draw_image
+	
+	jsr read_key
+	inc current_image
+	ldx current_image
+	cpx #images_count
+	beq end_gallery
+	cmp #"q"
+	beq end_gallery
+	jmp prepare_image
+	
+end_gallery:
+	rts
 
 draw_image:
-	lda #<microchip_data
-	sta data_l
-	lda #>microchip_data
-	sta data_h
 	ldy #$0
 	ldx #$0
 	stx page
@@ -68,5 +100,4 @@ draw_image_pixel:
 	cpx #$4
 	bne draw_image_page
 
-	jsr read_key
 	rts

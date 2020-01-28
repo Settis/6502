@@ -9,7 +9,7 @@ menu_header:
 	dc.b "Choose one of the option:",newline,$00
 menu_1	dc.b " 1 - Say Hello",newline,$00
 menu_2  dc.b " 2 - Draw X",newline,$00
-menu_3  dc.b " 3 - Draw image",newline,$00
+menu_3  dc.b " 3 - Draw gallery",newline,$00
 
 main	lda #clrtty
 	sta TTY
@@ -49,7 +49,7 @@ menu_draw:
 	jmp main
 
 menu_image:
-	jsr draw_image
+	jsr draw_gallery
 	jmp main
 
 	org mainaddr
