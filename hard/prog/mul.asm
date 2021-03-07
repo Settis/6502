@@ -3,14 +3,15 @@
 FIRST equ 7
 SECOND equ 7
 
+STP = $DB
+
 firstPos equ 1
 secondPos equ 2
 resultPos equ 3
 
-accPos equ 5
-decPos equ 6
-
     ORG $8000
+
+    CLI
 
     ; initial
     LDA #FIRST
@@ -26,9 +27,9 @@ loop: ; loop for adding
     ADC secondPos
     DEX
     bne loop
-    ;jmp loop
-end:
     STA resultPos
+
+;    DC STP
 
     org $FFFC
     DC.W $8000

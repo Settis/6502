@@ -1,2 +1,4 @@
 *.rom
 *.out
+*.sym
+*.list
