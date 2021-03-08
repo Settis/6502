@@ -9,7 +9,7 @@ firstPos equ 1
 secondPos equ 2
 resultPos equ 3
 
-    ORG $8000
+    ORG $C000
 
     CLI
 
@@ -32,4 +32,4 @@ loop: ; loop for adding
 ;    DC STP
 
     org $FFFC
-    DC.W $8000
+    DC.W $C000
