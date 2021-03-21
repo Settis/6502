@@ -1,10 +1,11 @@
     PROCESSOR 6502
 
-REG_B = $8000
-REG_A = $8001
-DDRB = $8002
-DDRA = $8003
-PCR = $800C
+REG_B = $8010
+REG_A = $8011
+DDRB = $8012
+DDRA = $8013
+PCR = $801C
+IER = $801E
 CA_CONTROL = %00001010
 
 EN = %00000001
@@ -113,6 +114,11 @@ hello_srt:
     DC "WDC 6502", 0
 
 start:
+    CLI
+
+    LDA #$82
+    STA IER
+
     LDA #$F1
     STA DDRA
 

@@ -1,0 +1,50 @@
+------- FILE test.asm LEVEL 1 PASS 1
+      1  0000					      PROCESSOR	6502
+------- FILE std/std.asm LEVEL 2 PASS 1
+      0  0000 ????				      INCLUDE	"std/std.asm"
+------- FILE std/viaMacro.asm LEVEL 3 PASS 1
+      0  0000 ????				      INCLUDE	"std/viaMacro.asm"
+      1  0000 ????						; Add VIA registers
+      2  0000 ????						; {1} = name
+      3  0000 ????						; {2} = address
+      4  0000 ????				      MAC	define_via
+      5  0000 ????			   VIA_{1}_RB =	{2}
+      6  0000 ????			   VIA_{1}_RA =	{2}+1
+      7  0000 ????			   VIA_{1}_DDRB =	{2}+2
+      8  0000 ????			   VIA_{1}_DDRA =	{2}+3
+      9  0000 ????			   VIA_{1}_T1C-L =	{2}+4
+     10  0000 ????			   VIA_{1}_T1C-H =	{2}+5
+     11  0000 ????			   VIA_{1}_T1L-L =	{2}+6
+     12  0000 ????			   VIA_{1}_T1L-H =	{2}+7
+     13  0000 ????			   VIA_{1}_T2C-L =	{2}+8
+     14  0000 ????			   VIA_{1}_T2C-H =	{2}+9
+     15  0000 ????			   VIA_{1}_SR =	{2}+$A
+     16  0000 ????			   VIA_{1}_ACR =	{2}+$B
+     17  0000 ????			   VIA_{1}_PCR =	{2}+$C
+     18  0000 ????			   VIA_{1}_IFR =	{2}+$D
+     19  0000 ????			   VIA_{1}_IER =	{2}+$E
+     20  0000 ????			   VIA_{1}_ORA =	{2}+$F
+     21  0000 ????				      ENDM
+------- FILE std/std.asm
+      2  0c00					      ORG	$0C00
+------- FILE test.asm
+      3  0c00
+      0  0c00					      DEFINE_VIA	FIRST, %1000000000010000
+      1  0c00		       80 10	   VIA_FIRST_RB =	%1000000000010000
+      2  0c00		       80 11	   VIA_FIRST_RA =	%1000000000010000+1
+      3  0c00		       80 12	   VIA_FIRST_DDRB =	%1000000000010000+2
+      4  0c00		       80 13	   VIA_FIRST_DDRA =	%1000000000010000+3
+      5  0c00		       80 14	   VIA_FIRST_T1C-L =	%1000000000010000+4
+      6  0c00		       80 15	   VIA_FIRST_T1C-H =	%1000000000010000+5
+      7  0c00		       80 16	   VIA_FIRST_T1L-L =	%1000000000010000+6
+      8  0c00		       80 17	   VIA_FIRST_T1L-H =	%1000000000010000+7
+      9  0c00		       80 18	   VIA_FIRST_T2C-L =	%1000000000010000+8
+     10  0c00		       80 19	   VIA_FIRST_T2C-H =	%1000000000010000+9
+     11  0c00		       80 1a	   VIA_FIRST_SR =	%1000000000010000+$A
+     12  0c00		       80 1b	   VIA_FIRST_ACR =	%1000000000010000+$B
+     13  0c00		       80 1c	   VIA_FIRST_PCR =	%1000000000010000+$C
+     14  0c00		       80 1d	   VIA_FIRST_IFR =	%1000000000010000+$D
+     15  0c00		       80 1e	   VIA_FIRST_IER =	%1000000000010000+$E
+     16  0c00		       80 1f	   VIA_FIRST_ORA =	%1000000000010000+$F
+      5  0c00
+      6  0c00		       8d 11 80 	      STA	VIA_FIRST_RA
