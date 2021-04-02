@@ -2,6 +2,33 @@
     INCDIR "std"
     INCLUDE "std.asm"
 
-    DEFINE_VIA FIRST, %1000000000010000
+start:
+    LDA #$0
+    STA VIA_FIRST_IFR
+    LDA #$0
+    STA VIA_FIRST_ACR
+    LDA #%11000000
+    STA VIA_FIRST_IER
+    CLI
+    LDA #$20
+    STA VIA_FIRST_T1C_L
+    LDA #$0
+    STA VIA_FIRST_T1C_H
 
-    STA VIA_FIRST_RA
+loop:
+    INC $2
+    JMP loop
+
+IRQ:
+    LDA #$3
+    STA $3
+    JMP end
+
+NMI:
+    LDA #$5
+    STA $3
+
+end:
+    LDX #0
+
+    RESET_VECTOR start, IRQ, NMI

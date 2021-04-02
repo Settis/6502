@@ -114,12 +114,12 @@ hello_srt:
     DC "WDC 6502", 0
 
 start:
-    CLI
+    ;CLI
 
     LDA #$82
     STA IER
 
-    LDA #$F1
+    LDA #$F3
     STA DDRA
 
     LDA #CA_CONTROL
