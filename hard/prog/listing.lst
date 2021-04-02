@@ -1,9 +1,10 @@
-------- FILE test.asm LEVEL 1 PASS 1
-      1  0000					      PROCESSOR	6502
-------- FILE std/std.asm LEVEL 2 PASS 1
-      0  0000 ????				      INCLUDE	"std/std.asm"
-------- FILE std/viaMacro.asm LEVEL 3 PASS 1
-      0  0000 ????				      INCLUDE	"std/viaMacro.asm"
+------- FILE memTest.asm LEVEL 1 PASS 1
+      1  0000					      INCDIR	"std"
+------- FILE std.asm LEVEL 2 PASS 1
+      0  0000 ????				      INCLUDE	"std.asm"
+      1  0000 ????				      PROCESSOR	6502
+------- FILE via_macro.asm LEVEL 3 PASS 1
+      0  0000 ????				      INCLUDE	"via_macro.asm"
       1  0000 ????						; Add VIA registers
       2  0000 ????						; {1} = name
       3  0000 ????						; {2} = address
@@ -12,12 +13,12 @@
       6  0000 ????			   VIA_{1}_RA =	{2}+1
       7  0000 ????			   VIA_{1}_DDRB =	{2}+2
       8  0000 ????			   VIA_{1}_DDRA =	{2}+3
-      9  0000 ????			   VIA_{1}_T1C-L =	{2}+4
-     10  0000 ????			   VIA_{1}_T1C-H =	{2}+5
-     11  0000 ????			   VIA_{1}_T1L-L =	{2}+6
-     12  0000 ????			   VIA_{1}_T1L-H =	{2}+7
-     13  0000 ????			   VIA_{1}_T2C-L =	{2}+8
-     14  0000 ????			   VIA_{1}_T2C-H =	{2}+9
+      9  0000 ????			   VIA_{1}_T1C_L =	{2}+4
+     10  0000 ????			   VIA_{1}_T1C_H =	{2}+5
+     11  0000 ????			   VIA_{1}_T1L_L =	{2}+6
+     12  0000 ????			   VIA_{1}_T1L_H =	{2}+7
+     13  0000 ????			   VIA_{1}_T2C_L =	{2}+8
+     14  0000 ????			   VIA_{1}_T2C_H =	{2}+9
      15  0000 ????			   VIA_{1}_SR =	{2}+$A
      16  0000 ????			   VIA_{1}_ACR =	{2}+$B
      17  0000 ????			   VIA_{1}_PCR =	{2}+$C
@@ -25,26 +26,66 @@
      19  0000 ????			   VIA_{1}_IER =	{2}+$E
      20  0000 ????			   VIA_{1}_ORA =	{2}+$F
      21  0000 ????				      ENDM
-------- FILE std/std.asm
-      2  0c00					      ORG	$0C00
-------- FILE test.asm
+------- FILE std.asm
+      3  0000 ????
+      0  0000 ????				      DEFINE_VIA	FIRST, %1000000000010000
+      1  0000 ????	       80 10	   VIA_FIRST_RB =	%1000000000010000
+      2  0000 ????	       80 11	   VIA_FIRST_RA =	%1000000000010000+1
+      3  0000 ????	       80 12	   VIA_FIRST_DDRB =	%1000000000010000+2
+      4  0000 ????	       80 13	   VIA_FIRST_DDRA =	%1000000000010000+3
+      5  0000 ????	       80 14	   VIA_FIRST_T1C_L =	%1000000000010000+4
+      6  0000 ????	       80 15	   VIA_FIRST_T1C_H =	%1000000000010000+5
+      7  0000 ????	       80 16	   VIA_FIRST_T1L_L =	%1000000000010000+6
+      8  0000 ????	       80 17	   VIA_FIRST_T1L_H =	%1000000000010000+7
+      9  0000 ????	       80 18	   VIA_FIRST_T2C_L =	%1000000000010000+8
+     10  0000 ????	       80 19	   VIA_FIRST_T2C_H =	%1000000000010000+9
+     11  0000 ????	       80 1a	   VIA_FIRST_SR =	%1000000000010000+$A
+     12  0000 ????	       80 1b	   VIA_FIRST_ACR =	%1000000000010000+$B
+     13  0000 ????	       80 1c	   VIA_FIRST_PCR =	%1000000000010000+$C
+     14  0000 ????	       80 1d	   VIA_FIRST_IFR =	%1000000000010000+$D
+     15  0000 ????	       80 1e	   VIA_FIRST_IER =	%1000000000010000+$E
+     16  0000 ????	       80 1f	   VIA_FIRST_ORA =	%1000000000010000+$F
+      5  0000 ????
+      6  0000 ????						; Writes two bytes into memory
+      7  0000 ????						; {1} - data
+      8  0000 ????						; {2} - addr
+      9  0000 ????				      MAC	write_word
+     10  0000 ????				      LDA	#<{1}
+     11  0000 ????				      STA	{2}
+     12  0000 ????				      LDA	#>{1}
+     13  0000 ????				      STA	{2}+1
+     14  0000 ????				      ENDM
+     15  0000 ????
+     16  0000 ????						; Setup reset vector
+     17  0000 ????						; {1} - reset
+     18  0000 ????						; {2} - IRQ
+     19  0000 ????						; {3} - NMI
+     20  0000 ????				      MAC	reset_vector
+     21  0000 ????				      ORG	$FFFA
+     22  0000 ????				      DC.W	{3}
+     23  0000 ????				      ORG	$FFFC
+     24  0000 ????				      DC.W	{1}
+     25  0000 ????				      ORG	$FFFE
+     26  0000 ????				      DC.W	{2}
+     27  0000 ????				      ENDM
+     28  0000 ????
+     29  0c00					      ORG	$0C00
+------- FILE memTest.asm
       3  0c00
-      0  0c00					      DEFINE_VIA	FIRST, %1000000000010000
-      1  0c00		       80 10	   VIA_FIRST_RB =	%1000000000010000
-      2  0c00		       80 11	   VIA_FIRST_RA =	%1000000000010000+1
-      3  0c00		       80 12	   VIA_FIRST_DDRB =	%1000000000010000+2
-      4  0c00		       80 13	   VIA_FIRST_DDRA =	%1000000000010000+3
-      5  0c00		       80 14	   VIA_FIRST_T1C-L =	%1000000000010000+4
-      6  0c00		       80 15	   VIA_FIRST_T1C-H =	%1000000000010000+5
-      7  0c00		       80 16	   VIA_FIRST_T1L-L =	%1000000000010000+6
-      8  0c00		       80 17	   VIA_FIRST_T1L-H =	%1000000000010000+7
-      9  0c00		       80 18	   VIA_FIRST_T2C-L =	%1000000000010000+8
-     10  0c00		       80 19	   VIA_FIRST_T2C-H =	%1000000000010000+9
-     11  0c00		       80 1a	   VIA_FIRST_SR =	%1000000000010000+$A
-     12  0c00		       80 1b	   VIA_FIRST_ACR =	%1000000000010000+$B
-     13  0c00		       80 1c	   VIA_FIRST_PCR =	%1000000000010000+$C
-     14  0c00		       80 1d	   VIA_FIRST_IFR =	%1000000000010000+$D
-     15  0c00		       80 1e	   VIA_FIRST_IER =	%1000000000010000+$E
-     16  0c00		       80 1f	   VIA_FIRST_ORA =	%1000000000010000+$F
-      5  0c00
-      6  0c00		       8d 11 80 	      STA	VIA_FIRST_RA
+      4  0c00		       00 00	   MEM	      =	$00
+      5  0c00		       45 f7	   DATA       =	$45F7
+      6  0c00
+      7  0c00				   start
+      0  0c00					      WRITE_WORD	DATA, MEM
+      1  0c00		       a9 f7		      LDA	#<DATA
+      2  0c02		       85 00		      STA	MEM
+      3  0c04		       a9 45		      LDA	#>DATA
+      4  0c06		       85 01		      STA	MEM+1
+      9  0c08
+      0  0c08					      RESET_VECTOR	start, start, start
+      1  fffa					      ORG	$FFFA
+      2  fffa		       00 0c		      DC.W	start
+      3  fffc					      ORG	$FFFC
+      4  fffc		       00 0c		      DC.W	start
+      5  fffe					      ORG	$FFFE
+      6  fffe		       00 0c		      DC.W	start
