@@ -10,7 +10,7 @@ start:
     LDA #%11000000
     STA VIA_FIRST_IER
     CLI
-    LDA #$20
+    LDA #$40
     STA VIA_FIRST_T1C_L
     LDA #$0
     STA VIA_FIRST_T1C_H
