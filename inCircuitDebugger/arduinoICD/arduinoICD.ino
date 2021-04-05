@@ -18,26 +18,26 @@
 
 class ShiftReg {
   public:
-    ShiftReg(int oePin, int s0Pin, int s1Pin, int clockPin, int qPin, int dsPin, int size);
+    ShiftReg(byte oePin, byte s0Pin, byte s1Pin, byte clockPin, byte qPin, byte dsPin, byte size);
     void write(int data);
     int read();
-    void outputEnable();
-    void outputDisable();
-    void tick();
-    void shiftEnable();
-    void hold();
-    void parallelLoad();
+    inline void outputDisable() __attribute__((always_inline));
   private:
-    int _oePin;
-    int _s0Pin;
-    int _s1Pin;
-    int _clockPin;
-    int _qPin;
-    int _dsPin;
-    int _size;
+    byte _oePin;
+    byte _s0Pin;
+    byte _s1Pin;
+    byte _clockPin;
+    byte _qPin;
+    byte _dsPin;
+    byte _size;
+    inline void outputEnable() __attribute__((always_inline));
+    inline void tick() __attribute__((always_inline));
+    inline void shiftEnable() __attribute__((always_inline));
+    inline void hold() __attribute__((always_inline));
+    inline void parallelLoad() __attribute__((always_inline));
 };
 
-ShiftReg::ShiftReg(int oePin, int s0Pin, int s1Pin, int clockPin, int qPin, int dsPin, int size) {
+ShiftReg::ShiftReg(byte oePin, byte s0Pin, byte s1Pin, byte clockPin, byte qPin, byte dsPin, byte size) {
   pinMode(oePin, OUTPUT);
   digitalWrite(oePin, HIGH);
   _oePin = oePin;
@@ -88,7 +88,7 @@ void ShiftReg::parallelLoad() {
 
 void ShiftReg::write(int data) {
   shiftEnable();
-  for (int i = 0; i < _size; i++) {
+  for (byte i = 0; i < _size; i++) {
     digitalWrite(_dsPin, data & 1);
     tick();
     data = data >> 1;
@@ -104,7 +104,7 @@ int ShiftReg::read() {
   shiftEnable();
   int pos = 1;
   int result = 0;
-  for (int i = 0; i < _size; i++) {
+  for (byte i = 0; i < _size; i++) {
     if (digitalRead(_qPin))
       result += pos;
     pos = pos << 1;
@@ -137,9 +137,12 @@ void setup() {
 #define VPA_COMMAND_FLAG 0x80
 #define VDA_COMMAND_FLAG 0x40
 
+#define VPA_COMMAND_FLAG_OFFSET 7
+#define VDA_COMMAND_FLAG_OFFSET 7
+
 void loop() {
   if (Serial.available()) {
-    int commandByte = Serial.read();
+    byte commandByte = Serial.read();
     switch(commandByte) {
       case TICK_COMMAND:
         tickCPUCommand();
@@ -154,31 +157,35 @@ void loop() {
   }
 }
 
+byte commandToWrite[4];
+
 void tickCPUCommand() {
-  int vpa;
-  int vda;
+  byte vpa;
+  byte vda;
   do {
     tickCPU();
     vpa = digitalRead(VPA_PIN);
     vda = digitalRead(VDA_PIN);
   } while (vpa + vda == 0);
   int addr = addrReg.read();
-  int rw = digitalRead(RW_PIN);
+  byte rw = digitalRead(RW_PIN);
   if (rw == 0) {
     int data = dataReg.read();
-    Serial.write(CPU_WRITE_COMMAND + vpa * VPA_COMMAND_FLAG + vda * VDA_COMMAND_FLAG);
-    Serial.write((addr >> 8) & 0xFF);
-    Serial.write(addr & 0xFF);
-    Serial.write(data);
+    commandToWrite[0] = CPU_WRITE_COMMAND + vpa * VPA_COMMAND_FLAG + vda * VDA_COMMAND_FLAG;
+    commandToWrite[1] = (addr >> 8) & 0xFF;
+    commandToWrite[2] = addr & 0xFF;
+    commandToWrite[3] = data;
+    Serial.write(commandToWrite, 4);
   } else {
-    Serial.write(CPU_READ_COMMAND + vpa * VPA_COMMAND_FLAG + vda * VDA_COMMAND_FLAG);
-    Serial.write((addr >> 8) & 0xFF);
-    Serial.write(addr & 0xFF);
+    commandToWrite[0] = CPU_READ_COMMAND + vpa * VPA_COMMAND_FLAG + vda * VDA_COMMAND_FLAG;
+    commandToWrite[1] = (addr >> 8) & 0xFF;
+    commandToWrite[2] = addr & 0xFF;
+    Serial.write(commandToWrite, 3);
   }
 }
 
 void handleDataWriteCommand() {
-  int data = -1;
+  byte data = -1;
   do {
     data = Serial.read();
   } while (data == -1);
