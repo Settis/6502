@@ -67,8 +67,11 @@ void ShiftReg::outputDisable() {
 }
 
 void ShiftReg::tick() {
-  digitalWrite(_clockPin, HIGH);
-  digitalWrite(_clockPin, LOW);
+  //digitalWrite(_clockPin, HIGH);
+
+  PORTB |= B00100000;
+  //digitalWrite(_clockPin, LOW); 
+  PORTB &= B11011111;
 }
 
 void ShiftReg::shiftEnable() {
