@@ -67,6 +67,10 @@ class Emulator:
 
     def handle_read(self, command):
         addr = self.read_serial_addr()
+        if addr & 0xC000 == 0x8000:
+            print(f"R {addr:04x} | VIA")
+            self.port.write(bytes([TICK_COMMAND]))
+            return
         data = self.memory.get(addr, 0)
         print(f"R {addr:04x} : {data:02x} | {command.suffix()}")
         if command.vpa & command.vda & (data == 0xff):
