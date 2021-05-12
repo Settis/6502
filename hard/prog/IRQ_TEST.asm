@@ -10,9 +10,9 @@ start:
     LDA #%11000000
     STA VIA_FIRST_IER
     CLI
-    LDA #$40
+    LDA #$00
     STA VIA_FIRST_T1C_L
-    LDA #$0
+    LDA #$0F
     STA VIA_FIRST_T1C_H
 
 loop:

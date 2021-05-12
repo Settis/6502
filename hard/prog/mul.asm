@@ -9,7 +9,7 @@ firstPos equ 1
 secondPos equ 2
 resultPos equ 3
 
-    ORG $C000
+    ORG $FF00
 
     CLI
 
@@ -32,4 +32,4 @@ loop: ; loop for adding
 ;    DC STP
 
     org $FFFC
-    DC.W $C000
+    DC.W $FF00

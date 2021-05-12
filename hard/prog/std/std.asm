@@ -26,4 +26,4 @@
     DC.W {2}
     ENDM
 
-    ORG $0C00
+    ORG $FF00
