@@ -136,6 +136,10 @@ void setup() {
 #define CPU_READ_COMMAND 3
 #define CPU_WRITE_COMMAND 4
 #define RESET_COMMAND 5
+#define RAM_READ_COMMAND 6
+#define RAM_WRITE_COMMAND 7
+#define BUS_DATA_COMMAND 8
+#define DONE_COMMAND 9
 
 #define VPA_COMMAND_FLAG 0x80
 #define VDA_COMMAND_FLAG 0x40
@@ -155,6 +159,12 @@ void loop() {
         break;
       case RESET_COMMAND:
         handleResetCommand();
+        break;
+      case RAM_READ_COMMAND:
+        handleRamReadCommand();
+        break;
+      case RAM_WRITE_COMMAND:
+        handleRamWriteCommand();
         break;
     }
   }
@@ -209,4 +219,36 @@ void tickCPU() {
   digitalWrite(CPU_CLOCK_PIN, LOW);
   dataReg.outputDisable();
   digitalWrite(CPU_CLOCK_PIN, HIGH);
+}
+
+void handleRamReadCommand() {
+  int addr = (Serial.read() << 8) + Serial.read();
+  digitalWrite(CPU_CLOCK_PIN, LOW);
+  pinMode(RW_PIN, OUTPUT);
+  digitalWrite(RW_PIN, HIGH);
+  addrReg.write(addr);
+  digitalWrite(CPU_CLOCK_PIN, HIGH);
+  int data = dataReg.read();
+  digitalWrite(CPU_CLOCK_PIN, LOW);
+  commandToWrite[0] = BUS_DATA_COMMAND;
+  commandToWrite[1] = data;
+  pinMode(RW_PIN, INPUT);
+  addrReg.outputDisable();
+  Serial.write(commandToWrite, 2);
+}
+
+void handleRamWriteCommand() {
+  int addr = (Serial.read() << 8) + Serial.read();
+  int data = Serial.read();
+  digitalWrite(CPU_CLOCK_PIN, LOW);
+  pinMode(RW_PIN, OUTPUT);
+  digitalWrite(RW_PIN, LOW);
+  addrReg.write(addr);
+  dataReg.write(data);
+  digitalWrite(CPU_CLOCK_PIN, HIGH);
+  digitalWrite(CPU_CLOCK_PIN, LOW);
+  commandToWrite[0] = DONE_COMMAND;
+  pinMode(RW_PIN, INPUT);
+  addrReg.outputDisable();
+  Serial.write(commandToWrite, 1);
 }
