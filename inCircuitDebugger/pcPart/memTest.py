@@ -15,6 +15,7 @@ RAM_READ_COMMAND = 6
 RAM_WRITE_COMMAND = 7
 BUS_DATA_COMMAND = 8
 DONE_COMMAND = 9
+ROM_WRITE_COMMAND = 10
 VPA_COMMAND_FLAG = 0x80
 VDA_COMMAND_FLAG = 0x40
 
@@ -42,25 +43,25 @@ class Emulator:
 
     def run(self):
         for i in range(0xFF):
-            self.port.write(bytes([RAM_READ_COMMAND, 0, i]))
+            self.port.write(bytes([RAM_READ_COMMAND, 0xC0, i]))
             command = self.read_serial_data()
             if command != BUS_DATA_COMMAND:
                 print(f"Bad comamnd: {command}")
             self.memory[i] = self.read_serial_data()
         self.print_zp()
-        for i in range(0xFF):
-            self.port.write(bytes([RAM_WRITE_COMMAND, 0, i, 0]))
-            command = self.read_serial_data()
-            if command != DONE_COMMAND:
-                print(f"Bad comamnd: {command}")
-
-        for i in range(0xFF):
-            self.port.write(bytes([RAM_READ_COMMAND, 0, i]))
-            command = self.read_serial_data()
-            if command != BUS_DATA_COMMAND:
-                print(f"Bad comamnd: {command}")
-            self.memory[i] = self.read_serial_data()
-        self.print_zp()
+        # for i in range(0xFF):
+        #     self.port.write(bytes([ROM_WRITE_COMMAND, 0xC0, i, 0]))
+        #     command = self.read_serial_data()
+        #     if command != DONE_COMMAND:
+        #         print(f"Bad comamnd: {command}")
+        #
+        # for i in range(0xFF):
+        #     self.port.write(bytes([RAM_READ_COMMAND, 0xC0, i]))
+        #     command = self.read_serial_data()
+        #     if command != BUS_DATA_COMMAND:
+        #         print(f"Bad comamnd: {command}")
+        #     self.memory[i] = self.read_serial_data()
+        # self.print_zp()
 
     def read_serial_addr(self):
         rawData = self.port.read(2)

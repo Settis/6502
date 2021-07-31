@@ -13,6 +13,7 @@
 #define RESET_PIN 19
 #define VPA_PIN 20
 #define VDA_PIN 21
+#define ROM_RW_PIN 14
 
 #define RESET_TICK_COUNT 6
 
@@ -127,6 +128,7 @@ void setup() {
   pinMode(RESET_PIN, INPUT);
   pinMode(VPA_PIN, INPUT);
   pinMode(VDA_PIN, INPUT);
+  pinMode(ROM_RW_PIN, INPUT);
   Serial.begin(9600);
 }
 
@@ -140,6 +142,7 @@ void setup() {
 #define RAM_WRITE_COMMAND 7
 #define BUS_DATA_COMMAND 8
 #define DONE_COMMAND 9
+#define ROM_WRITE_COMMAND 10
 
 #define VPA_COMMAND_FLAG 0x80
 #define VDA_COMMAND_FLAG 0x40
@@ -165,6 +168,9 @@ void loop() {
         break;
       case RAM_WRITE_COMMAND:
         handleRamWriteCommand();
+        break;
+      case ROM_WRITE_COMMAND:
+        handleRomWriteCommand();
         break;
     }
   }
@@ -249,6 +255,22 @@ void handleRamWriteCommand() {
   digitalWrite(CPU_CLOCK_PIN, LOW);
   commandToWrite[0] = DONE_COMMAND;
   pinMode(RW_PIN, INPUT);
+  addrReg.outputDisable();
+  Serial.write(commandToWrite, 1);
+}
+
+void handleRomWriteCommand() {
+  int addr = (Serial.read() << 8) + Serial.read();
+  int data = Serial.read();
+  digitalWrite(CPU_CLOCK_PIN, LOW);
+  pinMode(ROM_RW_PIN, OUTPUT);
+  digitalWrite(ROM_RW_PIN, LOW);
+  addrReg.write(addr);
+  dataReg.write(data);
+  digitalWrite(CPU_CLOCK_PIN, HIGH);
+  digitalWrite(CPU_CLOCK_PIN, LOW);
+  commandToWrite[0] = DONE_COMMAND;
+  pinMode(ROM_RW_PIN, INPUT);
   addrReg.outputDisable();
   Serial.write(commandToWrite, 1);
 }
