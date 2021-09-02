@@ -14,6 +14,7 @@
 #define VPA_PIN 20
 #define VDA_PIN 21
 #define ROM_RW_PIN 14
+#define CPU_BUS_ENABLE_PIN 15
 
 #define RESET_TICK_COUNT 6
 
@@ -129,6 +130,8 @@ void setup() {
   pinMode(VPA_PIN, INPUT);
   pinMode(VDA_PIN, INPUT);
   pinMode(ROM_RW_PIN, INPUT);
+  pinMode(CPU_BUS_ENABLE_PIN, OUTPUT);
+  digitalWrite(CPU_BUS_ENABLE_PIN, LOW);
   Serial.begin(9600);
 }
 
@@ -143,6 +146,10 @@ void setup() {
 #define BUS_DATA_COMMAND 8
 #define DONE_COMMAND 9
 #define ROM_WRITE_COMMAND 10
+#define DISABLE_CLOCK_COMMAND 11
+#define ENABLE_CLOCK_COMMAND 12
+#define CPU_BUS_ENABLE_COMMAND 13
+#define CPU_BUS_DISABLE_COMMAND 14
 
 #define VPA_COMMAND_FLAG 0x80
 #define VDA_COMMAND_FLAG 0x40
@@ -171,6 +178,18 @@ void loop() {
         break;
       case ROM_WRITE_COMMAND:
         handleRomWriteCommand();
+        break;
+      case DISABLE_CLOCK_COMMAND:
+        handleDisableClockCommand();
+        break;
+      case ENABLE_CLOCK_COMMAND:
+        handleEnableClockCommand();
+        break;
+      case CPU_BUS_ENABLE_COMMAND:
+        handleEnableCpuBusCommand();
+        break;
+      case CPU_BUS_DISABLE_COMMAND:
+        handleDisableCpuBusCommand();
         break;
     }
   }
@@ -218,7 +237,7 @@ void handleResetCommand() {
   for (int i = 0; i <= RESET_TICK_COUNT; i++)
     tickCPU();
   pinMode(RESET_PIN, INPUT);
-  tickCPUCommand();
+  // tickCPUCommand();
 }
 
 void tickCPU() {
@@ -256,6 +275,7 @@ void handleRamWriteCommand() {
   commandToWrite[0] = DONE_COMMAND;
   pinMode(RW_PIN, INPUT);
   addrReg.outputDisable();
+  dataReg.outputDisable();
   Serial.write(commandToWrite, 1);
 }
 
@@ -272,5 +292,30 @@ void handleRomWriteCommand() {
   commandToWrite[0] = DONE_COMMAND;
   pinMode(ROM_RW_PIN, INPUT);
   addrReg.outputDisable();
+  dataReg.outputDisable();
+  Serial.write(commandToWrite, 1);
+}
+
+void handleDisableClockCommand() {
+  pinMode(CPU_CLOCK_PIN, INPUT);
+  commandToWrite[0] = DONE_COMMAND;
+  Serial.write(commandToWrite, 1);
+}
+
+void handleEnableClockCommand() {
+  pinMode(CPU_CLOCK_PIN, OUTPUT);
+  commandToWrite[0] = DONE_COMMAND;
+  Serial.write(commandToWrite, 1);
+}
+
+void handleEnableCpuBusCommand() {
+  digitalWrite(CPU_BUS_ENABLE_PIN, HIGH);
+  commandToWrite[0] = DONE_COMMAND;
+  Serial.write(commandToWrite, 1);
+}
+
+void handleDisableCpuBusCommand() {
+  digitalWrite(CPU_BUS_ENABLE_PIN, LOW);
+  commandToWrite[0] = DONE_COMMAND;
   Serial.write(commandToWrite, 1);
 }
