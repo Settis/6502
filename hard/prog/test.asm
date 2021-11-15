@@ -7,8 +7,9 @@
     sta %10010
 ; ; <-- comment disabled . This IS assembled 
 
-    MACRO "sadfas"
 
-sadfasf:
+foo: equ $123
 
-    ENDM
+    echo foo
+
+.foo: STA $5609

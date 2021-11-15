@@ -9,13 +9,13 @@ INIT_DISPLAY:
     LDX #$0
 
 ; 3 times first part of 8-bit mode
-    ; LDA #%00110000
-    ; STA (DISPLAY_ADDR,X)
-    ; JSR delay
-    ; STA (DISPLAY_ADDR,X)
-    ; JSR delay
-    ; STA (DISPLAY_ADDR,X)
-    ; JSR delay
+    LDA #%00110000
+    STA (DISPLAY_ADDR,X)
+    JSR delay
+    STA (DISPLAY_ADDR,X)
+    JSR delay
+    STA (DISPLAY_ADDR,X)
+    JSR delay
 
 ; first part of 4-bit mode
     LDA #%00100000
