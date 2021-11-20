@@ -14,6 +14,7 @@ const int VDA = 41;
 const int IRQ = 50;
 const int NMI = 51;
 const int ROM_W = 52;
+const int BE = 53;
 const int CLOCK_ENABLE_PIN = 60;
 const int CLOCK_PIN = 61;
 
@@ -36,10 +37,13 @@ void setup() {
   digitalWrite(CLOCK_ENABLE_PIN, LOW);
   pinMode(CLOCK_PIN, OUTPUT);
   digitalWrite(CLOCK_PIN, LOW);
+  pinMode(BE, OUTPUT);
+  digitalWrite(BE, HIGH);
   lcd.setCursor(0, 0);
   lcd.print("Addr: ");
   lcd.setCursor(0, 1);
   lcd.print("Data: ");
+  reset();
 }
 
 int readKeyPressed() {
@@ -78,6 +82,17 @@ int readAddress() {
 
 int readData() {
   return PINL;
+}
+
+void reset() {
+  pinMode(RESB, OUTPUT);
+  digitalWrite(RESB, LOW);
+  tick();
+  tick();
+  tick();
+  tick();
+  tick();
+  pinMode(RESB, INPUT);
 }
 
 void tick() {
@@ -121,5 +136,9 @@ void loop() {
     tick();
     printData();
     delay(500);
+  }
+  if (keyPressed == DOWN_KEY) {
+    digitalWrite(CLOCK_PIN, LOW);
+    digitalWrite(CLOCK_ENABLE_PIN, HIGH);
   }
 }

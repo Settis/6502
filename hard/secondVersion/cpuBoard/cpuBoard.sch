@@ -259,20 +259,6 @@ Entry Wire Line
 Entry Wire Line
 	3500 5100 3600 5000
 Entry Wire Line
-	3600 5100 3700 5000
-Entry Wire Line
-	3700 5250 3800 5150
-Entry Wire Line
-	3800 5250 3900 5150
-Entry Wire Line
-	3900 5250 4000 5150
-Entry Wire Line
-	4000 5250 4100 5150
-Entry Wire Line
-	4100 5250 4200 5150
-Entry Wire Line
-	4200 5250 4300 5150
-Entry Wire Line
 	4300 5250 4400 5150
 Entry Wire Line
 	4400 5250 4500 5150
@@ -310,8 +296,6 @@ Wire Wire Line
 	3500 5550 3500 5100
 Wire Wire Line
 	3600 5100 3600 5550
-Wire Bus Line
-	3800 4750 3800 5150
 Wire Bus Line
 	3800 4750 4750 4750
 Entry Wire Line
@@ -415,18 +399,6 @@ Wire Wire Line
 	2800 3900 3200 3900
 Wire Wire Line
 	3200 4000 2800 4000
-Wire Wire Line
-	3700 5250 3700 5550
-Wire Wire Line
-	3800 5550 3800 5250
-Wire Wire Line
-	3900 5250 3900 5550
-Wire Wire Line
-	4000 5550 4000 5250
-Wire Wire Line
-	4100 5250 4100 5550
-Wire Wire Line
-	4200 5250 4200 5550
 Wire Wire Line
 	4300 5550 4300 5250
 Wire Wire Line
@@ -557,18 +529,6 @@ Text Label 3500 5450 1    50   ~ 0
 A1
 Text Label 3600 5450 1    50   ~ 0
 A0
-Text Label 3700 5450 1    50   ~ 0
-D7
-Text Label 3800 5450 1    50   ~ 0
-D6
-Text Label 3900 5450 1    50   ~ 0
-D5
-Text Label 4000 5450 1    50   ~ 0
-D4
-Text Label 4100 5450 1    50   ~ 0
-D3
-Text Label 4200 5450 1    50   ~ 0
-D2
 Text Label 4300 5450 1    50   ~ 0
 D1
 Text Label 4400 5450 1    50   ~ 0
@@ -646,17 +606,6 @@ Wire Wire Line
 	3050 2000 3050 2200
 Wire Wire Line
 	3050 2200 3200 2200
-$Comp
-L 6502_comp:myBus J1
-U 1 1 619391D5
-P 3550 5850
-F 0 "J1" H 3775 5577 50  0000 C CNN
-F 1 "myBus" H 3775 5486 50  0000 C CNN
-F 2 "" H 2500 6550 50  0001 C CNN
-F 3 "" H 2500 6550 50  0001 C CNN
-	1    3550 5850
-	1    0    0    -1  
-$EndComp
 NoConn ~ 5200 5550
 Text Label 4250 2500 0    50   ~ 0
 BE
@@ -709,16 +658,6 @@ Wire Wire Line
 Connection ~ 4000 1200
 Wire Wire Line
 	4000 1200 3800 1200
-Wire Bus Line
-	4650 3700 4650 4400
-Wire Bus Line
-	3800 5150 4500 5150
-Wire Bus Line
-	4750 2900 4750 4750
-Wire Bus Line
-	2700 3000 2700 4100
-Wire Bus Line
-	2100 5000 3700 5000
 $Comp
 L 6502_comp:w65c816s U1
 U 1 1 619758B7
@@ -730,4 +669,65 @@ F 3 "" H 4000 3700 50  0001 C CNN
 	1    3750 2950
 	1    0    0    -1  
 $EndComp
+Wire Bus Line
+	2700 3000 2700 4100
+Wire Bus Line
+	4650 3700 4650 4400
+Wire Bus Line
+	4750 2900 4750 4750
+Wire Bus Line
+	2100 5000 3700 5000
+Wire Bus Line
+	3800 5150 4500 5150
+$Comp
+L 6502_comp:myBus J1
+U 1 1 619391D5
+P 3550 5850
+F 0 "J1" H 3775 5577 50  0000 C CNN
+F 1 "myBus" H 3775 5486 50  0000 C CNN
+F 2 "" H 2500 6550 50  0001 C CNN
+F 3 "" H 2500 6550 50  0001 C CNN
+	1    3550 5850
+	1    0    0    -1  
+$EndComp
+Text Label 4200 5450 1    50   ~ 0
+D2
+Text Label 4100 5450 1    50   ~ 0
+D3
+Text Label 4000 5450 1    50   ~ 0
+D4
+Text Label 3900 5450 1    50   ~ 0
+D5
+Text Label 3800 5450 1    50   ~ 0
+D6
+Text Label 3700 5450 1    50   ~ 0
+D7
+Wire Wire Line
+	4200 5250 4200 5550
+Wire Wire Line
+	4100 5250 4100 5550
+Wire Wire Line
+	4000 5550 4000 5250
+Wire Wire Line
+	3900 5250 3900 5550
+Wire Wire Line
+	3800 5550 3800 5250
+Wire Wire Line
+	3700 5250 3700 5550
+Wire Bus Line
+	3800 4750 3800 5150
+Entry Wire Line
+	4200 5250 4300 5150
+Entry Wire Line
+	4100 5250 4200 5150
+Entry Wire Line
+	4000 5250 4100 5150
+Entry Wire Line
+	3900 5250 4000 5150
+Entry Wire Line
+	3800 5250 3900 5150
+Entry Wire Line
+	3700 5250 3800 5150
+Entry Wire Line
+	3600 5100 3700 5000
 $EndSCHEMATC
