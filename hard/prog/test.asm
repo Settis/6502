@@ -1,15 +1,12 @@
-    processor 6502
+    INCDIR "std"
+    INCLUDE "in_ram.asm"
 
-    ORG $0300
-    STA $89
+    RTI
 
- lda #2
-    sta %10010
-; ; <-- comment disabled . This IS assembled 
-
-
-foo: equ $123
-
-    echo foo
-
-.foo: STA $5609
+debug_start:
+reset_start:
+    LDA #$7F
+    STA $03
+    STA $13
+    
+    DC $FF

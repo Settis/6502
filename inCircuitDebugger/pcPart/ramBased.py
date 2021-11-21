@@ -7,9 +7,7 @@ import time
 
 INVALID_COMMAND = 0
 TICK_COMMAND = 1
-DATA_WRITE_COMMAND = 2
-CPU_READ_COMMAND = 3
-CPU_WRITE_COMMAND = 4
+BUS_STATUS_COMMAND = 2
 RESET_COMMAND = 5
 RAM_READ_COMMAND = 6
 RAM_WRITE_COMMAND = 7
@@ -20,70 +18,60 @@ DISABLE_CLOCK_COMMAND = 11
 ENABLE_CLOCK_COMMAND = 12
 CPU_BUS_ENABLE_COMMAND = 13
 CPU_BUS_DISABLE_COMMAND = 14
-VPA_COMMAND_FLAG = 0x80
-VDA_COMMAND_FLAG = 0x40
 
-
-class Command:
-    def __init__(self, command):
-        self.cmd = command & 0x0F
-        self.vpa = bool(command & VPA_COMMAND_FLAG)
-        self.vda = bool(command & VDA_COMMAND_FLAG)
-
-    def suffix(self):
-        result = ""
-        if self.vpa:
-            result += "VPA "
-        if self.vda:
-            result += "VDA"
-        return result
+RW_MASK = 4
+IRQ_MASK = 8
+NMI_MASK = 0x10
 
 
 class Emulator:
     def __init__(self):
         self.memory = {}
-        self.port = serial.Serial('/dev/ttyACM0', 9600, timeout=None)
-        self.commands = {
-            CPU_READ_COMMAND: self.handle_read,
-            CPU_WRITE_COMMAND: self.handle_write,
-            INVALID_COMMAND: self.handle_invalid,
-        }
+        self.port = serial.Serial('/dev/ttyACM1', 9600, timeout=None)
 
-    def run(self):
-        self.enable_clock()
+    def steps(self):
         self.enable_cpu_bus()
-        self.port.write(bytes([RESET_COMMAND]))
-        self.port.write(bytes([TICK_COMMAND]))
+        self.reset()
         while True:
-            data = self.port.read(1)[0]
-            # print(f"Read data: {data:02x}")
-            command = Command(data)
-            self.commands.get(command.cmd, self.unknown)(command)
             self.port.write(bytes([TICK_COMMAND]))
+            command = self.read_serial()
+            if command != BUS_STATUS_COMMAND:
+                print(f"Invalid tick response: ${command}")
+                sys.exit(1)
+            address = (self.read_serial() << 8) + self.read_serial()
+            data = self.read_serial()
+            flags = self.read_serial()
+            print(f"A: {address:04x} D: {data:02x} | {Emulator.print_flags(flags)}")
+            if (flags & 0x3 == 0x3) and data == 0xFF:
+                sys.exit(0)
 
-    def handle_read(self, command):
-        addr = self.read_serial_addr()
-        print(f"R {addr:04x} | {command.suffix()}")
+    def reset(self):
+        self._send_command(RESET_COMMAND)
 
-    def handle_write(self, command):
-        addr = self.read_serial_addr()
-        data = self.read_serial_data()
-        print(f"W {addr:04x} : {data:02x} | {command.suffix()}")
+    @staticmethod
+    def print_flags(flags):
+        result = ""
+        if flags & RW_MASK:
+            result = "R "
+        else:
+            result = "W "
+        valid_address = flags & 0x3
+        if valid_address == 3:
+            result += "OPCODE   "
+        if valid_address == 2:
+            result += "PROGRAM  "
+        if valid_address == 1:
+            result += "DATA     "
+        if valid_address == 0:
+            result += "INTERNAL "
+        if not flags & IRQ_MASK:
+            result += "IRQ "
+        if not flags & NMI_MASK:
+            result += "NMI"
+        return result
 
-    def read_serial_addr(self):
-        rawData = self.port.read(2)
-        return (rawData[0] << 8) + rawData[1]
-
-    def read_serial_data(self):
+    def read_serial(self):
         return self.port.read(1)[0]
-
-    @staticmethod
-    def unknown(command):
-        print(f"Unknown command: {command.cmd}")
-
-    @staticmethod
-    def handle_invalid(data):
-        print("Invalid command")
 
     def print_zp(self):
         ind = 0
@@ -99,42 +87,35 @@ class Emulator:
             print()
 
     def write_prog(self, file_name):
-        self.enable_clock()
         self.disable_cpu_bus()
         with open(file_name, 'rb') as f:
             pointer = f.read(1)[0] + f.read(1)[0]*0x100
             while byte := f.read(1):
                 self.port.write(bytes([RAM_WRITE_COMMAND, pointer // 0x100, pointer % 0x100, byte[0]]))
-                command = self.read_serial_data()
+                command = self.read_serial()
                 if command != DONE_COMMAND:
                     print(f"Bad command: {command}")
                 pointer += 1
-        self.enable_cpu_bus()
-        self.port.write(bytes([RESET_COMMAND]))
-        self.disable_clock()
 
     def clean(self):
-        self.enable_clock()
         self.disable_cpu_bus()
         for i in range(0x100):
             self.port.write(bytes([RAM_WRITE_COMMAND, 0, i, 0]))
-            command = self.read_serial_data()
+            command = self.read_serial()
             if command != DONE_COMMAND:
                 print(f"Bad command: {command}")
-        self.disable_clock()
 
     def show_zp(self):
         self.show_page(0)
 
     def show_page(self, number):
-        self.enable_clock()
         self.disable_cpu_bus()
         for i in range(0x100):
             self.port.write(bytes([RAM_READ_COMMAND, number, i]))
-            command = self.read_serial_data()
+            command = self.read_serial()
             if command != BUS_DATA_COMMAND:
                 print(f"Bad comamnd: {command}")
-            self.memory[i] = self.read_serial_data()
+            self.memory[i] = self.read_serial()
         self.print_zp()
 
     def write_default(self):
@@ -154,7 +135,8 @@ class Emulator:
 
     def _send_command(self, command_id):
         self.port.write(bytes([command_id]))
-        command = self.read_serial_data()
+        time.sleep(0.1)
+        command = self.read_serial()
         if command != DONE_COMMAND:
             print(f"Bad comamnd: {command}")
 
@@ -166,7 +148,7 @@ if __name__ == '__main__':
         if sys.argv[1].lower().startswith('r'):
             Emulator().show_zp()
         if sys.argv[1].lower().startswith('s'):
-            Emulator().run()
+            Emulator().steps()
         if sys.argv[1].lower().startswith('c'):
             Emulator().clean()
     else:
