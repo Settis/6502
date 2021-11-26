@@ -22,12 +22,16 @@ CPU_BUS_DISABLE_COMMAND = 14
 RW_MASK = 4
 IRQ_MASK = 8
 NMI_MASK = 0x10
+C1_MASK = 0x20
+C2_MASK = 0x40
 
 
 class Emulator:
     def __init__(self):
         self.memory = {}
-        self.port = serial.Serial('/dev/ttyACM1', 9600, timeout=None)
+        self.port = serial.Serial('/dev/ttyACM0')
+        time.sleep(2)
+
 
     def steps(self):
         self.enable_cpu_bus()
@@ -40,8 +44,9 @@ class Emulator:
                 sys.exit(1)
             address = (self.read_serial() << 8) + self.read_serial()
             data = self.read_serial()
+            port = self.read_serial()
             flags = self.read_serial()
-            print(f"A: {address:04x} D: {data:02x} | {Emulator.print_flags(flags)}")
+            print(f"A: {address:04x} D: {data:02x} P: {port:02x} | {Emulator.print_flags(flags)}")
             if (flags & 0x3 == 0x3) and data == 0xFF:
                 sys.exit(0)
 
@@ -64,6 +69,16 @@ class Emulator:
             result += "DATA     "
         if valid_address == 0:
             result += "INTERNAL "
+        result += "C1: "
+        if flags & C1_MASK:
+            result += "1 "
+        else:
+            result += "0 "
+        result += "C2: "
+        if flags & C2_MASK:
+            result += "1 "
+        else:
+            result += "0 "
         if not flags & IRQ_MASK:
             result += "IRQ "
         if not flags & NMI_MASK:
@@ -135,7 +150,6 @@ class Emulator:
 
     def _send_command(self, command_id):
         self.port.write(bytes([command_id]))
-        time.sleep(0.1)
         command = self.read_serial()
         if command != DONE_COMMAND:
             print(f"Bad comamnd: {command}")

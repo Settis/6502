@@ -10,17 +10,17 @@ INIT_DISPLAY:
 
 ; 3 times first part of 8-bit mode
     LDA #%00110000
-    STA (DISPLAY_ADDR,X)
-    JSR delay
-    STA (DISPLAY_ADDR,X)
-    JSR delay
-    STA (DISPLAY_ADDR,X)
-    JSR delay
+    ;STA (DISPLAY_ADDR,X)
+    ; JSR delay
+    ;STA (DISPLAY_ADDR,X)
+    ; JSR delay
+    ;STA (DISPLAY_ADDR,X)
+    ; JSR delay
 
 ; first part of 4-bit mode
     LDA #%00100000
     STA (DISPLAY_ADDR,X)
-    JSR delay
+    ; JSR delay
 
 ; 4-bit mode command
     LDA #%00100000
@@ -28,7 +28,7 @@ INIT_DISPLAY:
     ; JSR delay
     LDA #%00000000
     STA (DISPLAY_ADDR,X)
-    JSR delay
+    ; JSR delay
 
 ; Display ON
     LDA #%00000000
@@ -36,7 +36,7 @@ INIT_DISPLAY:
     ; JSR delay
     LDA #%11100000
     STA (DISPLAY_ADDR,X)
-    JSR delay
+    ; JSR delay
 
 ; Clear display
     LDA #%00000000
@@ -44,7 +44,7 @@ INIT_DISPLAY:
     ; JSR delay
     LDA #%00010000
     STA (DISPLAY_ADDR,X)
-    JSR delay
+    ; JSR delay
 
 ; Entry mode set
     LDA #%00000000
@@ -52,7 +52,7 @@ INIT_DISPLAY:
     ; JSR delay
     LDA #%01100000
     STA (DISPLAY_ADDR,X)
-    JSR delay
+    ; JSR delay
 
     RTS
 
@@ -83,7 +83,7 @@ PRINT_CHAR:
     AND #$F0
     ORA #$01
     STA (DISPLAY_ADDR,X)
-    JSR delay
+    ; JSR delay
     RTS
 
 ; WAIT_IF_BUSY:

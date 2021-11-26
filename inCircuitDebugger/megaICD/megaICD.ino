@@ -18,6 +18,17 @@ const int BE_PIN = 53;
 const int CLOCK_ENABLE_PIN = 60;
 const int CLOCK_PIN = 61;
 
+const int C1_PIN = 18;
+const int C2_PIN = 19;
+const int P0_PIN = 62;
+const int P1_PIN = 63;
+const int P2_PIN = 64;
+const int P3_PIN = 65;
+const int P4_PIN = 17;
+const int P5_PIN = 16;
+const int P6_PIN = 15;
+const int P7_PIN = 14;
+
 const int PROC_OPCODE_ADDR = 3, PROC_PROG_ADDR = 2, PROC_DATA_ADDR = 1, PROC_INTERNAL_ADDR = 0;
 
 bool userAction = false;
@@ -42,6 +53,16 @@ void setup() {
   digitalWrite(CLOCK_PIN, LOW);
   pinMode(BE_PIN, OUTPUT);
   digitalWrite(BE_PIN, HIGH);
+  pinMode(C1_PIN, INPUT);
+  pinMode(C2_PIN, INPUT);
+  pinMode(P0_PIN, INPUT);
+  pinMode(P1_PIN, INPUT);
+  pinMode(P2_PIN, INPUT);
+  pinMode(P3_PIN, INPUT);
+  pinMode(P4_PIN, INPUT);
+  pinMode(P5_PIN, INPUT);
+  pinMode(P6_PIN, INPUT);
+  pinMode(P7_PIN, INPUT);
   reset();
   Serial.begin(9600);
   lcd.write("Ready");
@@ -178,6 +199,8 @@ void printData() {
 #define RW_MASK 4
 #define IRQ_MASK 8
 #define NMI_MASK 0x10
+#define C1_MASK 0x20
+#define C2_MASK 0x40
 
 void loop() {
   int keyPressed = readKeyPressed();
@@ -262,6 +285,18 @@ void reportBusStatus() {
   Serial.write(readAddressHi());
   Serial.write(readAddressLo());
   Serial.write(readData());
+
+  int port = digitalRead(P7_PIN);
+  port = (port << 1) + digitalRead(P6_PIN);
+  port = (port << 1) + digitalRead(P5_PIN);
+  port = (port << 1) + digitalRead(P4_PIN);
+  port = (port << 1) + digitalRead(P3_PIN);
+  port = (port << 1) + digitalRead(P2_PIN);
+  port = (port << 1) + digitalRead(P1_PIN);
+  port = (port << 1) + digitalRead(P0_PIN);
+
+  Serial.write(port);
+  
   int flags = readProcVitrualAddr();
   if (digitalRead(RWB_PIN))
     flags |= RW_MASK;
@@ -269,6 +304,10 @@ void reportBusStatus() {
     flags |= IRQ_MASK;
   if (digitalRead(NMI_PIN))
     flags |= NMI_MASK;
+  if (digitalRead(C1_PIN))
+    flags |= C1_MASK;
+  if (digitalRead(C2_PIN))
+    flags |= C2_MASK;
   Serial.write(flags);
 }
 

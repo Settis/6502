@@ -40,6 +40,5 @@ start:
     LDA #"!"
     JSR PRINT_CHAR
 
-loop:
-    JMP loop
+    DC $FF
     
