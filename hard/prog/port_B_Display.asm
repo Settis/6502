@@ -24,16 +24,18 @@ start:
     STA VIA_FIRST_DDRB
 
 ; Setup handshakes
-    LDA #%10101010
+    LDA #%11001100
     STA VIA_FIRST_PCR
 
+    LDA #%00100000
+    STA DISPLAY_PCR_MASK
+
 ; Init display 2
-    WRITE_WORD VIA_FIRST_DDRB, DISPLAY_DDR
+    WRITE_WORD VIA_FIRST_PCR, DISPLAY_PCR
     WRITE_WORD VIA_FIRST_RB, DISPLAY_ADDR
     JSR INIT_DISPLAY
 
     WRITE_WORD VIA_FIRST_RB, DISPLAY_ADDR
-    WRITE_WORD VIA_FIRST_DDRB, DISPLAY_DDR
     WRITE_WORD wdc_srt, DISPLAY_STRING_ADDR
     JSR PRINT_STRING   
 
@@ -45,7 +47,10 @@ start:
     LDA #"3"
     JSR PRINT_CHAR
 
-; loop:
-;     JMP loop
+ if STEPS = 1
     DC $FF
+ else
+loop:
+    JMP loop
+    endif
     

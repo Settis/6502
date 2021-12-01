@@ -1,9 +1,10 @@
 DISPLAY_ADDR = $01
 DISPLAY_STRING_ADDR = $03
 DISPLAY_TMP = $05
-DISPLAY_DDR = $09
+DISPLAY_PCR = $09
+DISPLAY_PCR_MASK = $0B
 
-STEPS = 1
+STEPS = 0
 
 ; Longer delay 1.52 ms
 ; other delay 37 µs
@@ -38,19 +39,9 @@ delay_1.52:
     RTS
 
 delay_100:
-    LDA #1
-    STA DELAY_Y
-    LDA #1
-    STA DELAY_X
-    JSR delayxy
     RTS
 
 delay_37:
-    LDA #1
-    STA DELAY_Y
-    LDA #1
-    STA DELAY_X
-    JSR delayxy
     RTS
 
  else
@@ -92,55 +83,45 @@ INIT_DISPLAY:
 
 ; 3 times first part of 8-bit mode
     LDA #%00110000
-    STA (DISPLAY_ADDR,X)
+    JSR WRITE_TO_DISPLAY
     JSR delay_4.1
-    STA (DISPLAY_ADDR,X)
+    JSR WRITE_TO_DISPLAY
     JSR delay_100
-    STA (DISPLAY_ADDR,X)
-    JSR delay_37
+    JSR WRITE_TO_DISPLAY
 
 ; first part of 4-bit mode
     LDA #%00100000
-    STA (DISPLAY_ADDR,X)
-    JSR delay_37
+    JSR WRITE_TO_DISPLAY
 
 ; 4-bit mode command
     LDA #%00100000
-    STA (DISPLAY_ADDR,X)
+    JSR WRITE_TO_DISPLAY
     LDA #%00000000
-    STA (DISPLAY_ADDR,X)
-    JSR delay_37
+    JSR WRITE_TO_DISPLAY
 
 ; Display ON
     LDA #%00000000
-    STA (DISPLAY_ADDR,X)
+    JSR WRITE_TO_DISPLAY
     LDA #%11100000
-    STA (DISPLAY_ADDR,X)
-    JSR delay_37
+    JSR WRITE_TO_DISPLAY
 
 ; Clear display
     JSR CLEAR_DISPLAY
 
 ; Entry mode set
     LDA #%00000000
-    STA (DISPLAY_ADDR,X)
+    JSR WRITE_TO_DISPLAY
     LDA #%01100000
-    STA (DISPLAY_ADDR,X)
-    JSR delay_37
+    JSR WRITE_TO_DISPLAY
 
     RTS
 
 CLEAR_DISPLAY:
     LDA #%00000000
-    STA (DISPLAY_ADDR,X)
-    JSR delay_4.1
+    JSR WRITE_TO_DISPLAY
     LDA #%00010000
-    STA (DISPLAY_ADDR,X)
-    JSR delay_4.1
-    JSR delay_4.1
-    JSR delay_4.1
-    JSR delay_4.1
-    JSR delay_4.1
+    JSR WRITE_TO_DISPLAY
+    JSR delay_1.52
     RTS
 
 PRINT_STRING:
@@ -161,7 +142,7 @@ PRINT_CHAR:
     STA DISPLAY_TMP
     AND #$F0
     ORA #$01
-    STA (DISPLAY_ADDR,X)
+    JSR WRITE_TO_DISPLAY
     LDA DISPLAY_TMP
     ROL
     ROL
@@ -169,24 +150,22 @@ PRINT_CHAR:
     ROL
     AND #$F0
     ORA #$01
-    STA (DISPLAY_ADDR,X)
-    JSR delay_37
+    JSR WRITE_TO_DISPLAY
     RTS
 
-; WAIT_IF_BUSY:
-;     ; Set bit 7 as input
-;     LDA #$03
-;     STA (DISPLAY_DDR,X)
-
-;     ; This depends on the port
-
-
-; wait_loop:
-;     LDA #$02
-;     STA (DISPLAY_ADDR,X)
-;     LDA (DISPLAY_ADDR,X)  
-;     AND #$80
-;     BNE wait_loop
-;     LDA #$F3
-;     STA (DISPLAY_DDR,X)
-;     RTS
+WRITE_TO_DISPLAY:
+    ; Write data to port
+    STA (DISPLAY_ADDR,X)
+    ; Invert Enable
+    LDA (DISPLAY_PCR,X)
+    EOR DISPLAY_PCR_MASK
+    STA (DISPLAY_PCR,X)
+    ; enable pulse must be >450ns
+    NOP
+    NOP
+    ; Invert Enable
+    EOR DISPLAY_PCR_MASK
+    STA (DISPLAY_PCR,X)
+    ; commands need > 37us to settle
+    JSR delay_37
+    RTS
