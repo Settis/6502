@@ -1,6 +1,25 @@
 DELAY_X = $07
 DELAY_Y = $08
 
+TMP_STORE_A = $40
+
+delayxy:
+    STA TMP_STORE_A
+
+    LDA DELAY_X
+delayxy_loop_y:
+    STA DELAY_X
+delayxy_loop_x:
+    DEC DELAY_X
+    BNE delayxy_loop_x
+    CLC
+    DEC DELAY_Y
+    BNE delayxy_loop_y
+    CLC
+
+    LDA TMP_STORE_A
+    RTS
+
 delay_loop:
 ; Save state to stack
     PHA

@@ -36,9 +36,16 @@ start:
     WRITE_WORD VIA_FIRST_DDRB, DISPLAY_DDR
     WRITE_WORD wdc_srt, DISPLAY_STRING_ADDR
     JSR PRINT_STRING   
+
+    JSR CLEAR_DISPLAY
     
     LDA #"!"
     JSR PRINT_CHAR
 
+    LDA #"3"
+    JSR PRINT_CHAR
+
+; loop:
+;     JMP loop
     DC $FF
     
