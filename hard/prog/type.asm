@@ -9,21 +9,23 @@ keymap:
     .byte "??'?[=?????]?\??" ; 50-5F
     .byte "?????????1?47???" ; 60-6F
     .byte "0.2568???+3-*9??" ; 70-7F
-    .byte "????????????????" ; 80-8F
-    .byte "????????????????" ; 90-9F
-    .byte "????????????????" ; A0-AF
-    .byte "????????????????" ; B0-BF
-    .byte "????????????????" ; C0-CF
-    .byte "????????????????" ; D0-DF
-    .byte "????????????????" ; E0-EF
-    .byte "????????????????" ; F0-FF
+    .byte "????????????? ~?" ; 80-8F
+    .byte "?????Q!???ZSAW@?" ; 90-9F
+    .byte "?CXDE$#?? VFTR%?" ; A0-AF
+    .byte "?NBHGY^???MJU&*?" ; B0-BF
+    .byte "?<KIO)(??>?L:P_?" ; C0-CF
+    .byte "??'?{+?????}?|??" ; D0-DF
+    .byte "?????????!?$&???" ; E0-EF
+    .byte ")>@%^*???+#_*(??" ; F0-FF
 
     INCDIR "std"
     INCLUDE "in_ram.asm"
     
-buf_write_ind = 11
-buf_read_ind = 12
+buf_write_ind = $11
+buf_read_ind = $12
 buf_start = $80
+release_button = $13
+shift_pressed = $14
 
 read_kb:
     PHA
@@ -58,6 +60,8 @@ reset_start:
     LDA #$00
     STA buf_write_ind
     STA buf_read_ind
+    STA release_button
+    STA shift_pressed
 
     ; Disable all interrupts
     LDA #$7F
@@ -68,7 +72,7 @@ reset_start:
     STA VIA_FIRST_DDRB
 
 ; Setup handshakes
-    LDA #%10100001
+    LDA #%11000001
     STA VIA_FIRST_PCR
 
 
@@ -94,12 +98,12 @@ reset_start:
     CLI
 
 ; Init display 2
-    WRITE_WORD VIA_FIRST_DDRB, DISPLAY_DDR
+    WRITE_WORD VIA_FIRST_PCR, DISPLAY_PCR
     WRITE_WORD VIA_FIRST_RB, DISPLAY_ADDR
+    LDA #%00100000
+    STA DISPLAY_PCR_MASK
     JSR INIT_DISPLAY
 
-    LDA #"_"
-    JSR PRINT_CHAR
     LDA #">"
     JSR PRINT_CHAR
 
@@ -107,26 +111,65 @@ main_loop:
 ; Check if something in the buffer
     LDA buf_read_ind
     CMP buf_write_ind
-    ;BEQ proceed
-    ;JSR process_key
+    BEQ proceed
+    JSR process_key
 proceed:
     JMP main_loop
 
-resease_button = 13
-shift_pressed = 14
 process_key:
     ; Read the char and print it
     LDX buf_read_ind
     LDA buf_start,X
-    STA buf_start+$10,X
+
+    ; Check if that scan code after release
+    LDX #0
+    CPX release_button
+    BEQ print_check_release
+    DEC release_button
+    CMP #$12
+    BEQ shift_released_branch
+    CMP #$59
+    BEQ shift_released_branch
+    JMP process_key_end
+
+print_check_release:
+    ; Check for release scan code
+    CMP #$F0
+    BNE after_release_check
+    INC release_button
+    JMP process_key_end
+
+shift_released_branch:
+    LDX #0
+    STX shift_pressed
+    JMP process_key_end
+
+after_release_check:
+    CMP #$12
+    BEQ shift_pressed_branch
+    CMP #$59
+    BEQ shift_pressed_branch
+    JMP print_key
+
+shift_pressed_branch:
+    LDX #1
+    STX shift_pressed
+    JMP process_key_end
+
+print_key:
+    LDX #0
+    CPX shift_pressed
+    BEQ convert_and_print
+    ORA #$80
+convert_and_print:
     TAX
     LDA keymap,X
-    LDX buf_read_ind
-    STA buf_start+$20,X
     JSR PRINT_CHAR
 
+process_key_end:
     ; Increase pointer
     LDA buf_read_ind
+    CLC
     ADC #$1
     AND #$0F
     STA buf_read_ind

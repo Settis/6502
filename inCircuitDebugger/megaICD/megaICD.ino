@@ -212,6 +212,10 @@ void loop() {
     delay(500);
   }
   if (keyPressed == DOWN_KEY) {
+    lcd.clear();
+    lcd.print("  Running at");
+    lcd.setCursor(4,2);
+    lcd.print("full speed");
     digitalWrite(CLOCK_PIN, LOW);
     digitalWrite(CLOCK_ENABLE_PIN, HIGH);
   }

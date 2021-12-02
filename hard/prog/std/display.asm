@@ -139,6 +139,7 @@ PS_END:
     RTS
 
 PRINT_CHAR:
+    LDX #0
     STA DISPLAY_TMP
     AND #$F0
     ORA #$01
