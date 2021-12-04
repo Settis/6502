@@ -25,5 +25,3 @@
     ORG $FFFE
     DC.W {2}
     ENDM
-
-    ORG $FF00

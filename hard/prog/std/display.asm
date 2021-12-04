@@ -4,7 +4,7 @@ DISPLAY_TMP = $05
 DISPLAY_PCR = $09
 DISPLAY_PCR_MASK = $0B
 
-STEPS = 0
+STEPS = 1
 
 ; Longer delay 1.52 ms
 ; other delay 37 µs

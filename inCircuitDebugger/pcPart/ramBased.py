@@ -154,9 +154,26 @@ class Emulator:
         if command != DONE_COMMAND:
             print(f"Bad comamnd: {command}")
 
+    def write_rom(self):
+        self.write_prog_to_rom('/home/stk/projects/8-bit/6502/hard/prog/a.out')
+
+    def write_prog_to_rom(self, file_name):
+        self.disable_cpu_bus()
+        with open(file_name, 'rb') as f:
+            pointer = f.read(1)[0] + f.read(1)[0]*0x100
+            while byte := f.read(1):
+                self.port.write(bytes([ROM_WRITE_COMMAND, pointer // 0x100, pointer % 0x100, byte[0]]))
+                command = self.read_serial()
+                if command != DONE_COMMAND:
+                    print(f"Bad command: {command}")
+                pointer += 1
+
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
+        if sys.argv[1].lower() == 'rom':
+            Emulator().write_rom()
+            sys.exit(0)
         if sys.argv[1].lower().startswith("w"):
             Emulator().write_default()
         if sys.argv[1].lower().startswith('r'):
