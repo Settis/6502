@@ -219,6 +219,19 @@ void loop() {
     digitalWrite(CLOCK_PIN, LOW);
     digitalWrite(CLOCK_ENABLE_PIN, HIGH);
   }
+  if (keyPressed == UP_KEY) {
+    lcd.clear();
+    lcd.print("Stopped and");
+    lcd.setCursor(6,2);
+    lcd.print("ready.");
+    digitalWrite(CLOCK_PIN, LOW);
+    digitalWrite(CLOCK_ENABLE_PIN, LOW);
+  }
+  if (keyPressed == LEFT_KEY) {
+    pinMode(RESB_PIN, OUTPUT);
+    digitalWrite(RESB_PIN, LOW);
+    pinMode(RESB_PIN, INPUT);
+  }
   if (Serial.available()) {
     delay(10);
     byte commandByte = Serial.read();
