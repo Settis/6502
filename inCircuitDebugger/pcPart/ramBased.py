@@ -183,4 +183,4 @@ if __name__ == '__main__':
         if sys.argv[1].lower().startswith('c'):
             Emulator().clean()
     else:
-        print("Use with 'write' or 'read' or 'steps' or 'clean'")
+        print("Use with 'write' or 'rom' or 'read' or 'steps' or 'clean'")

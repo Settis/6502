@@ -6,23 +6,29 @@ DISPLAY_PCR_MASK = $0B
 
 STEPS = 0
 
+; Initial delay 50 ms
 ; Longer delay 1.52 ms
 ; other delay 37 µs
 
 ; 5 KHz = 200 µs
+; 50 ms   => Y=1, X=250
 ; 1.52 ms => Y=1, X=7
 ; 4.1 ms  => Y=1, X=20
 
 ; 6 MHz = 0.16 µs
-; 4.1 ms  => (25625) Y=171, X=150
-; 1.52 ms =>  (9500)  Y=95, X=100
-; 100 µs  =>   (625)   Y=5, X=125
-; 37 µs   =>   (231)   Y=1, X=230
+; 50 ms   => (312500) Y=250, X=250 *5
+; 4.1 ms  =>  (25625) Y=171, X=150
+; 1.52 ms =>   (9500)  Y=95, X=100
+; 100 µs  =>    (625)   Y=5, X=125
+; 37 µs   =>    (231)   Y=1, X=230
 
     INCLUDE "delay.asm"
 
  if STEPS = 1
-delay_4.1:
+delay_10:
+    RTS
+
+delay_4_1:
     LDA #1
     STA DELAY_Y
     LDA #20
@@ -30,7 +36,7 @@ delay_4.1:
     JSR delayxy
     RTS
 
-delay_1.52:
+delay_1_52:
     LDA #1
     STA DELAY_Y
     LDA #7
@@ -45,7 +51,15 @@ delay_37:
     RTS
 
  else
-delay_4.1:
+delay_10:
+    LDA #250
+    STA DELAY_Y
+    LDA #250
+    STA DELAY_X
+    JSR delayxy
+    RTS
+
+delay_4_1:
     LDA #171
     STA DELAY_Y
     LDA #150
@@ -53,7 +67,7 @@ delay_4.1:
     JSR delayxy
     RTS
 
-delay_1.52:
+delay_1_52:
     LDA #95
     STA DELAY_Y
     LDA #100
@@ -80,14 +94,23 @@ delay_37:
 
 INIT_DISPLAY:
     LDX #$0
+; wait 50ms
+    JSR delay_10
+    JSR delay_10
+    JSR delay_10
+    JSR delay_10
+    JSR delay_10
 
 ; 3 times first part of 8-bit mode
     LDA #%00110000
     JSR WRITE_TO_DISPLAY
-    JSR delay_4.1
+    JSR delay_4_1
+    LDA #%00110000
+    JSR WRITE_TO_DISPLAY
+    JSR delay_4_1
+    LDA #%00110000
     JSR WRITE_TO_DISPLAY
     JSR delay_100
-    JSR WRITE_TO_DISPLAY
 
 ; first part of 4-bit mode
     LDA #%00100000
@@ -121,7 +144,7 @@ CLEAR_DISPLAY:
     JSR WRITE_TO_DISPLAY
     LDA #%00010000
     JSR WRITE_TO_DISPLAY
-    JSR delay_1.52
+    JSR delay_1_52
     RTS
 
 PRINT_STRING:
@@ -155,6 +178,7 @@ PRINT_CHAR:
     RTS
 
 WRITE_TO_DISPLAY:
+    LDX #$0
     ; Write data to port
     STA (DISPLAY_ADDR,X)
     ; Invert Enable

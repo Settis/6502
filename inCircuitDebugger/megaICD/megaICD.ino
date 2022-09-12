@@ -41,7 +41,9 @@ void setup() {
   setAddressToReadState();
   setDataToReadState();
   pinMode(RWB_PIN, INPUT);
-  pinMode(RESB_PIN, INPUT);
+  //pinMode(RESB_PIN, INPUT);
+  pinMode(RESB_PIN, OUTPUT);
+  digitalWrite(RESB_PIN, LOW);
   pinMode(VPA_PIN, INPUT);
   pinMode(VDA_PIN, INPUT);
   pinMode(IRQ_PIN, INPUT);
@@ -132,14 +134,15 @@ void writeData(int data) {
 }
 
 void reset() {
-  pinMode(RESB_PIN, OUTPUT);
+  //pinMode(RESB_PIN, OUTPUT);
   digitalWrite(RESB_PIN, LOW);
   tick();
   tick();
   tick();
   tick();
   tick();
-  pinMode(RESB_PIN, INPUT);
+  //pinMode(RESB_PIN, INPUT);
+  digitalWrite(RESB_PIN, HIGH);
 }
 
 void tick() {
@@ -228,9 +231,11 @@ void loop() {
     digitalWrite(CLOCK_ENABLE_PIN, LOW);
   }
   if (keyPressed == LEFT_KEY) {
-    pinMode(RESB_PIN, OUTPUT);
+    //pinMode(RESB_PIN, OUTPUT);
     digitalWrite(RESB_PIN, LOW);
-    pinMode(RESB_PIN, INPUT);
+    //pinMode(RESB_PIN, INPUT);
+    delay(100);
+    digitalWrite(RESB_PIN, HIGH);
   }
   if (Serial.available()) {
     delay(10);
