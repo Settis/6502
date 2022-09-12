@@ -4,6 +4,8 @@ DISPLAY_TMP = $05
 DISPLAY_PCR = $09
 DISPLAY_PCR_MASK = $0B
 
+
+
 STEPS = 0
 
 ; Initial delay 50 ms
@@ -117,21 +119,32 @@ INIT_DISPLAY:
     JSR WRITE_TO_DISPLAY
 
 ; 4-bit mode command
+    ; 00100000 - command
+    ; 00010000 - 8-bit mode
+    ; 00001000 - 2 lines
+    ; 00000100 - font
     LDA #%00100000
     JSR WRITE_TO_DISPLAY
-    LDA #%00000000
+    LDA #%11000000
     JSR WRITE_TO_DISPLAY
 
 ; Display ON
+    ; 00001000 - command
+    ; 00000100 - ON/OFF flag
+    ; 00000010 - cursor ON/OFF
+    ; 00000001 - blinking ON/OFF
     LDA #%00000000
     JSR WRITE_TO_DISPLAY
-    LDA #%11100000
+    LDA #%11110000
     JSR WRITE_TO_DISPLAY
 
 ; Clear display
     JSR CLEAR_DISPLAY
 
 ; Entry mode set
+    ; 00000100 - command
+    ; 00000010 - increment cursor move
+    ; 00000001 - display shift
     LDA #%00000000
     JSR WRITE_TO_DISPLAY
     LDA #%01100000
@@ -145,6 +158,15 @@ CLEAR_DISPLAY:
     LDA #%00010000
     JSR WRITE_TO_DISPLAY
     JSR delay_1_52
+    RTS
+
+GO_TO_2_LINE:
+    ; 1000000 - command
+    ; 40H address
+    LDA #%11000000
+    JSR WRITE_TO_DISPLAY
+    LDA #%00000000
+    JSR WRITE_TO_DISPLAY
     RTS
 
 PRINT_STRING:

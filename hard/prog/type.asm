@@ -1,4 +1,10 @@
-    ORG $0200
+RAM = 1
+
+    IF RAM = 0
+        ORG $FD00
+    else
+        ORG $0200
+    endif
 
 keymap:
     .byte "????????????? `?" ; 00-0F
@@ -19,7 +25,12 @@ keymap:
     .byte ")>@%^*???+#_*(??" ; F0-FF
 
     INCDIR "std"
-    INCLUDE "in_ram.asm"
+
+    if RAM = 0
+        INCLUDE "std.asm"
+    else
+        INCLUDE "in_ram.asm"
+    endif
     
 buf_write_ind = $11
 buf_read_ind = $12
@@ -149,11 +160,28 @@ after_release_check:
     BEQ shift_pressed_branch
     CMP #$59
     BEQ shift_pressed_branch
-    JMP print_key
+    JMP check_key_pressed
 
 shift_pressed_branch:
     LDX #1
     STX shift_pressed
+    JMP process_key_end
+
+check_key_pressed:
+    ; Check if it was pressed some non ASCII
+    CMP #$76
+    BEQ esc_key_pressed
+    CMP #$5A
+    BEQ enter_key_pressed
+    ; Print ASCII
+    JMP print_key
+
+esc_key_pressed:
+    JSR CLEAR_DISPLAY
+    JMP process_key_end
+
+enter_key_pressed:
+    JSR GO_TO_2_LINE
     JMP process_key_end
 
 print_key:
@@ -174,3 +202,7 @@ process_key_end:
     AND #$0F
     STA buf_read_ind
     RTS
+
+    if RAM = 0
+        RESET_VECTOR reset_start, read_kb, debug_start
+    endif
