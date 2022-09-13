@@ -222,7 +222,7 @@ READ_FROM_DISPLAY:
     STA (DISPLAY_DDR,X)
 
     ; Send to display read from RS
-    LDA #$03
+    LDA #$02
     STA (DISPLAY_ADDR,X)
 
     JSR READ_4_BYTES_FROM_DISPLAY

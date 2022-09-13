@@ -61,6 +61,7 @@ read_kb:
     RTI
 
     INCLUDE "display.asm"
+    INCLUDE "hex_ascii.asm"
 
 debug_start:
 reset_start:
@@ -126,6 +127,14 @@ main_loop:
     JSR process_key
 proceed:
     JMP main_loop
+
+print_hex:
+    JSR HEX_TO_ASCII
+    LDA ASCII_FIRST
+    JSR PRINT_CHAR
+    LDA ASCII_SECOND
+    JSR PRINT_CHAR
+    RTS
 
 process_key:
     ; Read the char and print it
