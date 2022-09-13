@@ -13,6 +13,16 @@
     STA {2}+1
     ENDM
 
+; Writes two bytes into named var
+; {1} - data
+; {2} - var_name
+    MAC WRITE_WORD_BY_NAME
+    LDA #<{1}
+    STA {2}
+    LDA #>{1}
+    STA _{2}_second_byte
+    ENDM
+
 ; Setup reset vector
 ; {1} - reset
 ; {2} - IRQ
@@ -24,4 +34,25 @@
     DC.W {1}
     ORG $FFFE
     DC.W {2}
+    ENDM
+
+ZP_POINTER SET 0
+
+ZP_MAX_ADDR SET $FF
+; Creates named variable in zero page and check if it no up than max addr
+; {1} - variable name
+    MAC ALLOC
+    if ZP_POINTER > ZP_MAX_ADDR
+        echo "Too many variables was allocated"
+        err
+    endif
+{1} = ZP_POINTER
+ZP_POINTER SET ZP_POINTER + 1
+    ENDM
+
+; Creates named variable with length of two bytes
+; {1} - variable name
+    MAC ALLOC_WORD
+    ALLOC {1}
+    ALLOC _{1}_second_byte
     ENDM

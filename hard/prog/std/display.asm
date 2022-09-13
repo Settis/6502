@@ -2,11 +2,13 @@ DISPLAY_ADDR = $01
 DISPLAY_STRING_ADDR = $03
 DISPLAY_TMP = $05
 DISPLAY_PCR = $09
-DISPLAY_PCR_MASK = $0B
+DISPLAY_PCR_MASK = $0B ; 0C
+DISPLAY_DDR = $0D; 0E
 
 
-
+    IFNCONST STEPS
 STEPS = 0
+    ENDIF
 
 ; Initial delay 50 ms
 ; Longer delay 1.52 ms
@@ -31,19 +33,11 @@ delay_10:
     RTS
 
 delay_4_1:
-    LDA #1
-    STA DELAY_Y
-    LDA #20
-    STA DELAY_X
-    JSR delayxy
+    delay 20, 1
     RTS
 
 delay_1_52:
-    LDA #1
-    STA DELAY_Y
-    LDA #7
-    STA DELAY_X
-    JSR delayxy
+    delay 7, 1
     RTS
 
 delay_100:
@@ -54,54 +48,37 @@ delay_37:
 
  else
 delay_10:
-    LDA #250
-    STA DELAY_Y
-    LDA #250
-    STA DELAY_X
-    JSR delayxy
+    delay 250, 250
     RTS
 
 delay_4_1:
-    LDA #171
-    STA DELAY_Y
-    LDA #150
-    STA DELAY_X
-    JSR delayxy
+    delay 150, 171
     RTS
 
 delay_1_52:
-    LDA #95
-    STA DELAY_Y
-    LDA #100
-    STA DELAY_X
-    JSR delayxy
+    delay 100, 95
     RTS
 
 delay_100:
-    LDA #5
-    STA DELAY_Y
-    LDA #125
-    STA DELAY_X
-    JSR delayxy
+    delay 125, 5
     RTS
 
 delay_37:
-    LDA #1
-    STA DELAY_Y
-    LDA #230
-    STA DELAY_X
-    JSR delayxy
+    delay 230, 1
     RTS
  endif
 
 INIT_DISPLAY:
-    LDX #$0
 ; wait 50ms
     JSR delay_10
     JSR delay_10
     JSR delay_10
     JSR delay_10
     JSR delay_10
+
+    LDX #$0
+    LDA #$F3
+    STA (DISPLAY_DDR,X)
 
 ; 3 times first part of 8-bit mode
     LDA #%00110000
@@ -160,10 +137,20 @@ CLEAR_DISPLAY:
     JSR delay_1_52
     RTS
 
-GO_TO_2_LINE:
-    ; 1000000 - command
-    ; 40H address
+DISPLAY_CHANGE_LINE:
+    ; Load cursor position
+    JSR READ_FROM_DISPLAY
+
+    AND #$40
+    BEQ DISPLAY_CHANGE_LINE_TO_2
+    LDA #%10000000
+    JMP DISPLAY_CHANGE_LINE_END
+DISPLAY_CHANGE_LINE_TO_2:
     LDA #%11000000
+DISPLAY_CHANGE_LINE_END:
+    ; 1000000 - command
+    ; 40H address for second line
+    ; LDA #%11000000
     JSR WRITE_TO_DISPLAY
     LDA #%00000000
     JSR WRITE_TO_DISPLAY
@@ -215,4 +202,65 @@ WRITE_TO_DISPLAY:
     STA (DISPLAY_PCR,X)
     ; commands need > 37us to settle
     JSR delay_37
+    RTS
+
+READ_FROM_DISPLAY:
+    ; Set port to input
+    LDX #$0
+    LDA #$03
+    STA (DISPLAY_DDR,X)
+
+    ; Send to display read from RS
+    LDA #$03
+    STA (DISPLAY_ADDR,X)
+
+    ; Invert Enable
+    LDA (DISPLAY_PCR,X)
+    EOR DISPLAY_PCR_MASK
+    STA (DISPLAY_PCR,X)
+    ; enable pulse must be >450ns
+    NOP
+    NOP
+    ; Load upper bits
+    LDA (DISPLAY_ADDR,X)
+    AND #$F0
+    STA DISPLAY_TMP
+    ; Invert Enable
+    LDA (DISPLAY_PCR,X)
+    EOR DISPLAY_PCR_MASK
+    STA (DISPLAY_PCR,X)
+    ; commands need > 37us to settle
+    JSR delay_37
+
+    LDX #$0
+    ; Invert Enable
+    LDA (DISPLAY_PCR,X)
+    EOR DISPLAY_PCR_MASK
+    STA (DISPLAY_PCR,X)
+    ; enable pulse must be >450ns
+    NOP
+    NOP
+    ; Load lower bits
+    LDA (DISPLAY_ADDR,X)
+    AND #$F0
+    ROR
+    ROR
+    ROR
+    ROR
+    ORA DISPLAY_TMP
+    STA DISPLAY_TMP
+    ; Invert Enable
+    LDA (DISPLAY_PCR,X)
+    EOR DISPLAY_PCR_MASK
+    STA (DISPLAY_PCR,X)
+    ; commands need > 37us to settle
+    JSR delay_37
+
+    ; Set port to output
+    LDX #$0
+    LDA #$F3
+    STA (DISPLAY_DDR,X)
+
+    ; Load data back to A
+    LDA DISPLAY_TMP
     RTS

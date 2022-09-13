@@ -25,10 +25,9 @@ keymap:
     .byte ")>@%^*???+#_*(??" ; F0-FF
 
     INCDIR "std"
+    INCLUDE "std.asm"
 
-    if RAM = 0
-        INCLUDE "std.asm"
-    else
+    if RAM = 1
         INCLUDE "in_ram.asm"
     endif
     
@@ -79,8 +78,8 @@ reset_start:
     STA VIA_FIRST_IER
 
 ; Setup port directions
-    LDA #$F3
-    STA VIA_FIRST_DDRB
+    ; LDA #$F3
+    ; STA VIA_FIRST_DDRB
 
 ; Setup handshakes
     LDA #%11000001
@@ -111,6 +110,7 @@ reset_start:
 ; Init display 2
     WRITE_WORD VIA_FIRST_PCR, DISPLAY_PCR
     WRITE_WORD VIA_FIRST_RB, DISPLAY_ADDR
+    WRITE_WORD VIA_FIRST_DDRB, DISPLAY_DDR
     LDA #%00100000
     STA DISPLAY_PCR_MASK
     JSR INIT_DISPLAY
@@ -181,7 +181,7 @@ esc_key_pressed:
     JMP process_key_end
 
 enter_key_pressed:
-    JSR GO_TO_2_LINE
+    JSR DISPLAY_CHANGE_LINE
     JMP process_key_end
 
 print_key:
