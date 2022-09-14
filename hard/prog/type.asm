@@ -1,7 +1,7 @@
-RAM = 1
+RAM = 0
 
     IF RAM = 0
-        ORG $FD00
+        ORG $FC00
     else
         ORG $0200
     endif
