@@ -193,6 +193,8 @@ check_key_pressed:
     BEQ arrow_left_pressed
     CMP #$74
     BEQ arrow_right_pressed
+    CMP #$66
+    BEQ backspace_pressed
     ; Print ASCII
     JMP print_key
 
@@ -224,6 +226,19 @@ arrow_right_pressed:
     CLC
     ADC #1
     ORA #%10000000
+    JSR SEND_DISPLAY_COMMAND
+    JMP process_key_end
+
+backspace_pressed:
+    JSR READ_FROM_DISPLAY
+    SEC
+    SBC #1
+    ORA #%10000000
+    PHA
+    JSR SEND_DISPLAY_COMMAND
+    LDA #" "
+    JSR PRINT_CHAR
+    PLA
     JSR SEND_DISPLAY_COMMAND
     JMP process_key_end
 
