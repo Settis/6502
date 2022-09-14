@@ -182,6 +182,17 @@ check_key_pressed:
     BEQ esc_key_pressed
     CMP #$5A
     BEQ enter_key_pressed
+    ; Special case for NUM pad, ignore it
+    CMP #$E0
+    BEQ process_key_end
+    CMP #$75
+    BEQ arrow_up_down_pressed
+    CMP #$72
+    BEQ arrow_up_down_pressed
+    CMP #$6B
+    BEQ arrow_left_pressed
+    CMP #$74
+    BEQ arrow_right_pressed
     ; Print ASCII
     JMP print_key
 
@@ -191,6 +202,29 @@ esc_key_pressed:
 
 enter_key_pressed:
     JSR DISPLAY_CHANGE_LINE
+    JMP process_key_end
+
+arrow_up_down_pressed:
+    JSR READ_FROM_DISPLAY
+    EOR #%01000000
+    ORA #%10000000
+    JSR SEND_DISPLAY_COMMAND
+    JMP process_key_end
+
+arrow_left_pressed:
+    JSR READ_FROM_DISPLAY
+    SEC
+    SBC #1
+    ORA #%10000000
+    JSR SEND_DISPLAY_COMMAND
+    JMP process_key_end
+
+arrow_right_pressed:
+    JSR READ_FROM_DISPLAY
+    CLC
+    ADC #1
+    ORA #%10000000
+    JSR SEND_DISPLAY_COMMAND
     JMP process_key_end
 
 print_key:
