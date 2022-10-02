@@ -16,7 +16,7 @@ def run_read(args):
 
     port = get_port(args)
     port.write(bytes([COMMAND_READ]))
-    port.write(convert_word_number_to_bytes(args.page))
+    port.write(convert_word_number_to_bytes(args.offset))
     port.write(bytes([args.size]))
     result = port.read(args.size)
 

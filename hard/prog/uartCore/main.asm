@@ -25,10 +25,12 @@ READ_UART_COMMAND:
     CMP #UART_PING_COMMAND
     BNE .check_write_command
     WRITE_WORD READ_PING_DATA, UART_HANDLER_WORD
+    RTI
 .check_write_command
     CMP #UART_WRITE_COMMAND
     BNE .check_read_command
     WRITE_WORD READ_WRITE_OFFSET_LOW, UART_HANDLER_WORD
+    RTI
 .check_read_command
     CMP #UART_READ_COMMAND
     BNE .ignore
