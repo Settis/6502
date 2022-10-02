@@ -18,23 +18,29 @@ def run_read(args):
     port.write(bytes([COMMAND_READ]))
     port.write(convert_word_number_to_bytes(args.offset))
     port.write(bytes([args.size]))
-    result = port.read(args.size)
+    result = []
+    for i in range(args.size):
+        # send something to trigger interrupt
+        port.write(bytes([0]))
+        result.append(port.read(1)[0])
 
     # Need to check CRC
-    port.read(1)
+    # send something to trigger interrupt
+    port.write(bytes([0]))
+    check = port.read(1)
 
-    print_bytes(args.page, result)
+    print_bytes(args.offset, result)
 
 
 def print_bytes(offset, data):
     pointer = offset
     for data_byte in data:
-        if pointer % 0x10:
+        if pointer % 0x10 == 0:
             print(f"{pointer:04x}:", end='')
-        if pointer % 0x4:
+        if pointer % 0x8 == 0:
             print(' ', end='')
         print(f"{data_byte:02x} ", end='')
         pointer += 1
-        if pointer % 0x10:
+        if pointer % 0x10 == 0:
             print()
     print()
