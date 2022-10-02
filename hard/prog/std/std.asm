@@ -2,6 +2,7 @@
     INCLUDE "via_macro.asm"
 
     DEFINE_VIA FIRST, %1000000000010000
+    INCLUDE "uart_chip.asm"
 
 ; Writes two bytes into memory
 ; {1} - data
