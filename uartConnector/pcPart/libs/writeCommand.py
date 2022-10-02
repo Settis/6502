@@ -1,6 +1,8 @@
+import sys
+
 from libs.consts import COMMAND_WRITE
 from libs.serialPort import get_port
-from libs.utils import convert_word_number_to_bytes, convert_word_bytes_to_number
+from libs.utils import convert_word_number_to_bytes, convert_word_bytes_to_number, crc
 
 
 def register_write(subparsers):
@@ -21,8 +23,13 @@ def run_write(dev, offset, data):
     port.write(convert_word_number_to_bytes(offset))
     port.write(bytes([len(data)]))
     port.write(bytes(data))
-    # Need to check CRC
-    port.read(1)
+
+    calc_crc = crc(data)
+    rec_crc = port.read(1)[0]
+
+    if calc_crc != rec_crc:
+        print('Checksum is wrong')
+        sys.exit(1)
 
 
 class Data:

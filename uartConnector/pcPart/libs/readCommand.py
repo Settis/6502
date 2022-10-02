@@ -1,6 +1,8 @@
+import sys
+
 from libs.consts import COMMAND_READ
 from libs.serialPort import get_port
-from libs.utils import convert_word_number_to_bytes
+from libs.utils import convert_word_number_to_bytes, crc
 
 
 def register_read(subparsers):
@@ -29,10 +31,13 @@ def run_read(dev, offset, size):
         port.write(bytes([0]))
         result.append(port.read(1)[0])
 
-    # Need to check CRC
+    calc_crc = crc(result)
     # send something to trigger interrupt
     port.write(bytes([0]))
-    check = port.read(1)
+    rec_crc = port.read(1)[0]
+    if calc_crc != rec_crc:
+        print('Checksum is wrong')
+        sys.exit(1)
 
     return result
 
