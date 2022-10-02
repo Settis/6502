@@ -1,5 +1,6 @@
 from libs.consts import COMMAND_WRITE
 from libs.serialPort import get_port
+from libs.utils import convert_word_number_to_bytes, convert_word_bytes_to_number
 
 
 def register_write(subparsers):
@@ -16,19 +17,20 @@ def run_write(args):
     port.write(data.get_little_endian_offset())
     port.write(data.get_length())
     port.write(data.get_data())
+    # Need to check CRC
     port.read(1)
 
 
 class Data:
     def __init__(self, args):
         with open(args.file, 'rb') as file:
-            self.offset = file.read(1)[0] + file.read(1)[0]*0x100
+            self.offset = convert_word_bytes_to_number(file.read(2))
             self.content = []
             while byte := file.read(1):
                 self.content.append(byte[0])
 
     def get_little_endian_offset(self):
-        return bytes([self.offset & 0xFF, (self.offset & 0xFF00) >> 8])
+        return convert_word_number_to_bytes(self.offset)
 
     def get_length(self):
         return bytes([len(self.content)])

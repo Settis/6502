@@ -2,6 +2,7 @@ import argparse
 import sys
 
 from libs.pingCommand import register_ping
+from libs.readCommand import register_read
 from libs.writeCommand import register_write
 
 
@@ -17,6 +18,7 @@ def create_parser():
     subparsers = parser.add_subparsers(title='subcommands')
     register_ping(subparsers)
     register_write(subparsers)
+    register_read(subparsers)
     return parser
 
 
