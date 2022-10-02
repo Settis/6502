@@ -1,18 +1,29 @@
+RAM = 0
+    
     INCDIR "../std"
     INCLUDE "std.asm"
+    if RAM
     INCLUDE "in_ram.asm"
+    else
+    ORG $FE00
+    endif
 
-UART_ADDR_LOW = $FD
-UART_ADDR_HIGH = $FE
-UART_DATA_LENGTH = $FC
-UART_HANDLER_WORD = $FA ; & $FB
-UART_CRC = $F9
+
+INTERRUPT_INDIRECT = $FE ; $ $FF
+UART_ADDR_LOW = $FC
+UART_ADDR_HIGH = $FD
+UART_DATA_LENGTH = $FB
+UART_HANDLER_WORD = $F9 ; & $FA
+UART_CRC = $F8
 
 
 UART_PING_COMMAND = 1
 UART_WRITE_COMMAND = 2
 UART_READ_COMMAND = 3
 UART_RUN_COMMAND = 4
+
+IRQ_REDIRECT:
+    JMP (INTERRUPT_INDIRECT)
 
 IRQ_HANDLER:
     subroutine
@@ -152,6 +163,11 @@ CRC_IT:
 
 debug_start:
 reset_start:
+
+    ; Init stack pointer
+    LDX #$FF
+	TXS
+
     ; Set control register
     LDA #UART_CONTROL_DEFAULT
     STA UART_CONTROL_REG
@@ -163,7 +179,14 @@ reset_start:
     ; Init UART handler
     WRITE_WORD READ_UART_COMMAND, UART_HANDLER_WORD
 
+    ; Set proper redirect for interrupt
+    WRITE_WORD IRQ_HANDLER, INTERRUPT_INDIRECT
+
     CLI
 
 loop:
     jmp loop
+
+    if RAM == 0
+    RESET_VECTOR reset_start, IRQ_REDIRECT, IRQ_REDIRECT
+    endif
