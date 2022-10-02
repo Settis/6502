@@ -3,6 +3,7 @@ import sys
 
 from libs.pingCommand import register_ping
 from libs.readCommand import register_read
+from libs.runCommand import register_run
 from libs.writeCommand import register_write
 
 
@@ -19,6 +20,7 @@ def create_parser():
     register_ping(subparsers)
     register_write(subparsers)
     register_read(subparsers)
+    register_run(subparsers)
     return parser
 
 
