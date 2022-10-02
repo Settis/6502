@@ -1,5 +1,5 @@
 import serial
 
 
-def get_port(args):
-    return serial.Serial(args.dev, parity=serial.PARITY_EVEN)
+def get_port(dev):
+    return serial.Serial(dev, parity=serial.PARITY_EVEN)

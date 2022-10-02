@@ -5,18 +5,22 @@ from libs.utils import convert_word_number_to_bytes, convert_word_bytes_to_numbe
 
 def register_write(subparsers):
     write_parser = subparsers.add_parser('write')
-    write_parser.set_defaults(func=run_write)
+    write_parser.set_defaults(func=run_write_cmd)
     write_parser.add_argument('-f', '--file', default='test.bin',
                               help='The binary file with two initial bytes for offset')
 
 
-def run_write(args):
+def run_write_cmd(args):
     data = Data(args)
-    port = get_port(args)
+    run_write(args.dev, data.offset, data.content)
+
+
+def run_write(dev, offset, data):
+    port = get_port(dev)
     port.write(bytes([COMMAND_WRITE]))
-    port.write(data.get_little_endian_offset())
-    port.write(data.get_length())
-    port.write(data.get_data())
+    port.write(convert_word_number_to_bytes(offset))
+    port.write(bytes([len(data)]))
+    port.write(bytes(data))
     # Need to check CRC
     port.read(1)
 
