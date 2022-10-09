@@ -143,6 +143,9 @@ READ_RUN_SUB_HIGH:
     JMP (UART_ADDR_LOW) 
 
 END_OF_RUN:
+    ; Set proper redirect for interrupt
+    WRITE_WORD IRQ_HANDLER, INTERRUPT_INDIRECT
+    ; Report about the endda
     LDA #UART_RUN_COMMAND
     STA UART_DATA_REG
     RTI
