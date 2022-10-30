@@ -2,7 +2,7 @@ import sys
 
 from .consts import COMMAND_READ
 from .serialPort import get_port
-from .utils import convert_word_number_to_bytes, crc
+from .utils import convert_word_number_to_bytes, crc, construct_chunks
 
 
 def register_read(subparsers):
@@ -25,6 +25,16 @@ def run_read_cmd(args):
 
 
 def run_read(dev, offset, size):
+    chunks = construct_chunks(size)
+    result = []
+    chunk_offset = 0
+    for chunk in chunks:
+        result.extend(run_read_chunk(dev, offset + chunk_offset, chunk))
+        chunk_offset += chunk
+    return result
+
+
+def run_read_chunk(dev, offset, size):
     port = get_port(dev)
     port.write(bytes([COMMAND_READ]))
     port.write(convert_word_number_to_bytes(offset))

@@ -7,7 +7,7 @@ import sys
 #  60       |  RTS
 from .readCommand import run_read
 from .runCommand import run_run
-from .writeCommand import run_write
+from .writeCommand import run_write_chunk
 
 OFFSET = 0x0A00
 PROG = [0xa9, 0xb5, 0x8d, 0x00, 0x0a, 0x60]
@@ -22,7 +22,7 @@ def run_test(args):
     dev = args.dev
     run_ping(dev)
     print('Write prog')
-    run_write(dev, OFFSET, PROG)
+    run_write_chunk(dev, OFFSET, PROG)
     print('Read it back')
     result = run_read(dev, OFFSET, len(PROG))
     if result != PROG:

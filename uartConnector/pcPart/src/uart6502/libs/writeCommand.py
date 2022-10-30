@@ -2,7 +2,7 @@ import sys
 
 from .consts import COMMAND_WRITE
 from .serialPort import get_port
-from .utils import convert_word_number_to_bytes, convert_word_bytes_to_number, crc
+from .utils import convert_word_number_to_bytes, convert_word_bytes_to_number, crc, construct_chunks
 
 
 def register_write(subparsers):
@@ -18,10 +18,22 @@ def run_write_cmd(args):
 
 
 def run_write(dev, offset, data):
+    chunks = construct_chunks(len(data))
+    chunk_offset = 0
+    for chunk in chunks:
+        run_write_chunk(dev, offset + chunk_offset, data[chunk_offset:chunk_offset+chunk])
+        chunk_offset += chunk
+
+
+def run_write_chunk(dev, offset, data):
     port = get_port(dev)
     port.write(bytes([COMMAND_WRITE]))
     port.write(convert_word_number_to_bytes(offset))
-    port.write(bytes([len(data)]))
+    length = len(data)
+    if length == 0x100:
+        port.write(bytes([0]))
+    else:
+        port.write(bytes([len(data)]))
     port.write(bytes(data))
 
     calc_crc = crc(data)

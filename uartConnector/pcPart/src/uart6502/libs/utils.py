@@ -18,3 +18,13 @@ def crc(array):
             if result & 0x100:
                 result ^= POLY
     return result
+
+
+def construct_chunks(total_size):
+    chunks = []
+    for _ in range(total_size // 0x0ff):
+        chunks.append(0x0ff)
+    reminder = total_size % 0x0ff
+    if reminder:
+        chunks.append(reminder)
+    return chunks
