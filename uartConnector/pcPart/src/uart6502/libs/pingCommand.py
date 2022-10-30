@@ -1,8 +1,8 @@
 import random
 import sys
 
-from libs.consts import COMMAND_PING
-from libs.serialPort import get_port
+from .consts import COMMAND_PING
+from .serialPort import get_port
 
 
 def register_ping(subparsers):

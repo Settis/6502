@@ -1,8 +1,8 @@
 import sys
 
-from libs.consts import COMMAND_WRITE
-from libs.serialPort import get_port
-from libs.utils import convert_word_number_to_bytes, convert_word_bytes_to_number, crc
+from .consts import COMMAND_WRITE
+from .serialPort import get_port
+from .utils import convert_word_number_to_bytes, convert_word_bytes_to_number, crc
 
 
 def register_write(subparsers):

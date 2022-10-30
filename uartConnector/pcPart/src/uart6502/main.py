@@ -1,11 +1,11 @@
 import argparse
 import sys
 
-from libs.pingCommand import register_ping
-from libs.readCommand import register_read
-from libs.runCommand import register_run
-from libs.testCommand import register_test
-from libs.writeCommand import register_write
+from .libs.pingCommand import register_ping
+from .libs.readCommand import register_read
+from .libs.runCommand import register_run
+from .libs.testCommand import register_test
+from .libs.writeCommand import register_write
 
 
 def no_command(args):

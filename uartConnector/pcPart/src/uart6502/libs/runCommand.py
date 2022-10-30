@@ -1,6 +1,6 @@
-from libs.consts import COMMAND_RUN
-from libs.serialPort import get_port
-from libs.utils import convert_word_number_to_bytes
+from .consts import COMMAND_RUN
+from .serialPort import get_port
+from .utils import convert_word_number_to_bytes
 
 
 def register_run(subparsers):

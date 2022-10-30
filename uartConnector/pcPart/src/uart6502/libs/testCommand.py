@@ -1,13 +1,13 @@
-from libs.pingCommand import run_ping
+from .pingCommand import run_ping
 import sys
 
 #  ORG $0A00
 #  A9 B5    |  LDA  #$B5
 #  8B 00 0A |  STA $0A00
 #  60       |  RTS
-from libs.readCommand import run_read
-from libs.runCommand import run_run
-from libs.writeCommand import run_write
+from .readCommand import run_read
+from .runCommand import run_run
+from .writeCommand import run_write
 
 OFFSET = 0x0A00
 PROG = [0xa9, 0xb5, 0x8d, 0x00, 0x0a, 0x60]
