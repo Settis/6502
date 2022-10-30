@@ -8,7 +8,7 @@ from .utils import convert_word_number_to_bytes, convert_word_bytes_to_number, c
 def register_write(subparsers):
     write_parser = subparsers.add_parser('write')
     write_parser.set_defaults(func=run_write_cmd)
-    write_parser.add_argument('-f', '--file', default='test.bin',
+    write_parser.add_argument('-f', '--file', default='a.out',
                               help='The binary file with two initial bytes for offset')
 
 
