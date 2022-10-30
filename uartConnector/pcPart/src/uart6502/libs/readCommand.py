@@ -9,7 +9,8 @@ def register_read(subparsers):
     read_parser = subparsers.add_parser('read')
     read_parser.set_defaults(func=run_read_cmd)
     read_parser.add_argument('-o', '--offset', default='0', help='The starting point')
-    read_parser.add_argument('-s', '--size', default='FF', help='How many bytes to read')
+    read_parser.add_argument('-s', '--size', default='100', help='How many bytes to read')
+    read_parser.add_argument('-r', '--raw', action='store_true', help='Return raw data to output')
 
 
 def run_read_cmd(args):
@@ -17,14 +18,20 @@ def run_read_cmd(args):
     offset = int(args.offset, 16)
     size = int(args.size, 16)
     result = run_read(dev, offset, size)
-    print_bytes(offset, result)
+    if args.raw:
+        print_raw_bytes(result)
+    else:
+        print_bytes(offset, result)
 
 
 def run_read(dev, offset, size):
     port = get_port(dev)
     port.write(bytes([COMMAND_READ]))
     port.write(convert_word_number_to_bytes(offset))
-    port.write(bytes([size]))
+    if size == 0x100:
+        port.write(bytes([0]))
+    else:
+        port.write(bytes([size]))
     result = []
     for i in range(size):
         # send something to trigger interrupt
@@ -54,3 +61,7 @@ def print_bytes(offset, data):
         if pointer % 0x10 == 0:
             print()
     print()
+
+
+def print_raw_bytes(data):
+    sys.stdout.buffer.write(bytes(data))

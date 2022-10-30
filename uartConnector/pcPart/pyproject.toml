@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 name = "uart6502"
 version = "0.0.6"
 authors = [
-  { name="Strannik", email="strannik.anton@gmail.com" },
+    { name="Strannik", email="strannik.anton@gmail.com" },
 ]
 description = "Communicate with 6502 via UART"
 readme = "README.md"
@@ -15,12 +15,13 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-  "pyserial",
+    "pyserial",
 ]
 [project.scripts]
 uart6502 = "uart6502.main:run"
 [tool.hatch.build.targets.sdist]
 exclude = [
-  "/.venv",
-  ".gitignore"
+    "/.venv",
+    ".gitignore",
+    "devRun.py"
 ]
