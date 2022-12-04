@@ -20,8 +20,8 @@ MUL_1_L = $03
 MUL_1_H = $04
 MUL_2_L = $05
 MUL_2_H = $06
-MUL_RES_L = $07
-MUL_RES_H = $08
+MUL_REM_L = $07
+MUL_REM_H = $08
 
 DIV_1_L = $09
 DIV_1_H = $0A
@@ -29,8 +29,8 @@ DIV_2_L = $0B
 DIV_2_H = $0C
 DIV_CEIL_L = $0D
 DIV_CEIL_H = $0E
-DIV_RES_L = $0F
-DIV_RES_H = $10
+DIV_RES_L = $09
+DIV_RES_H = $0A
 
 CARRY_L = $11
 CARRY_H = $12
@@ -49,62 +49,54 @@ CARRY = 0
 ; CONST
 TO_PRINT = $0A
 
-test_mul:
-;0020: 09 00 00 03 01 84 84 2C  2C
-;0030: 00 00 00 00 00 03 03 01  01
+test_div:
+;0020: 00 01 01 2C 03 2c 01
+;0030: 00 00 00 01 00 01 00
+;0040: 00 00 01 00 00 00 03
+;0050: 00 00 00 00 00 00 00
     LDX #0
 
-    WRITE_WORD 3, MUL_1_L
-    WRITE_WORD 3, MUL_2_L
-    JSR mul_it
+    WRITE_WORD 0, DIV_1_L
+    WRITE_WORD 1, DIV_2_L
+    JSR div_it
 
-    WRITE_WORD 0, MUL_1_L
-    WRITE_WORD 0, MUL_2_L
-    JSR mul_it
+    WRITE_WORD 1, DIV_1_L
+    WRITE_WORD 1, DIV_2_L
+    JSR div_it
 
-    WRITE_WORD 3, MUL_1_L
-    WRITE_WORD 0, MUL_2_L
-    JSR mul_it
+    WRITE_WORD 3, DIV_1_L
+    WRITE_WORD 2, DIV_2_L
+    JSR div_it
 
-    WRITE_WORD 3, MUL_1_L
-    WRITE_WORD 1, MUL_2_L
-    JSR mul_it
+    WRITE_WORD 300, DIV_1_L
+    WRITE_WORD 1, DIV_2_L
+    JSR div_it
 
-    WRITE_WORD 1, MUL_1_L
-    WRITE_WORD 1, MUL_2_L
-    JSR mul_it
+    WRITE_WORD 900, DIV_1_L
+    WRITE_WORD 300, DIV_2_L
+    JSR div_it
 
-    WRITE_WORD $12C, MUL_1_L
-    WRITE_WORD 3, MUL_2_L
-    JSR mul_it
+    WRITE_WORD 900, DIV_1_L
+    WRITE_WORD 3, DIV_2_L
+    JSR div_it
 
-    WRITE_WORD 3, MUL_1_L
-    WRITE_WORD $12C, MUL_2_L
-    JSR mul_it
-
-    WRITE_WORD $12C, MUL_1_L
-    WRITE_WORD 1, MUL_2_L
-    JSR mul_it
-
-    WRITE_WORD 1, MUL_1_L
-    WRITE_WORD $12C, MUL_2_L
-    JSR mul_it
+    WRITE_WORD 10, DIV_1_L
+    WRITE_WORD 7, DIV_2_L
+    JSR div_it
 
     RTS
 
-mul_it:
-    JSR clear
-    JSR MUL
-    LDA MUL_RES_L
+div_it:
+    JSR DIV
+    LDA DIV_RES_L
     STA $20,X
-    LDA MUL_RES_H
+    LDA DIV_RES_H
     STA $30,X
+    LDA DIV_CEIL_L
+    STA $40,X
+    LDA DIV_CEIL_H
+    STA $50,X
     INX
-
-clear:
-    LDA #$FF
-    STA MUL_RES_H
-    STA MUL_RES_L
     RTS
 
 main:
@@ -195,14 +187,13 @@ main:
 
     RTS
 
-; A = MUL_1 * MUL_2
-; affects Y
+; MUL_REM_H .. MUL_REM_L = MUL_1_H .. MUL_1_L * MUL_2_H .. MUL_2_L
 MUL:
     subroutine
     ; put 0 to result
     LDA #0
-    STA MUL_RES_L
-    STA MUL_RES_H
+    STA MUL_REM_L
+    STA MUL_REM_H
     LDA MUL_2_L
     BNE .loop
     LDA MUL_2_H
@@ -212,11 +203,11 @@ MUL:
 .loop:
     CLC
     LDA MUL_1_L
-    ADC MUL_RES_L
-    STA MUL_RES_L
+    ADC MUL_REM_L
+    STA MUL_REM_L
     LDA MUL_1_H
-    ADC MUL_RES_H
-    STA MUL_RES_H
+    ADC MUL_REM_H
+    STA MUL_REM_H
     
     SEC
     LDA MUL_2_L
@@ -231,20 +222,43 @@ MUL:
     BNE .loop   
     RTS
 
-; DIV_CEIL = DIV_1 // DIV_2
-; A = DIV_1 % DIV_2
-; affects Y
+; DIV_CEIL_H .. DIV_CEIL_L = DIV_1_H .. DIV_1_L // DIV_2_H .. DIV_2_L
+; DIV_RES_H .. DIV_RES_L = DIV_1_H .. DIV_1_L % DIV_2_H .. DIV_2_L
 DIV:
     subroutine
-    LDY #0
-    LDA DIV_1
+    LDA #0
+    STA DIV_CEIL_H
+    STA DIV_CEIL_L
+
+.cmp_h:
+    ; Check if DIV_1 >= DIV_2
+    LDA DIV_1_H
+    CMP DIV_2_H
+    BEQ .cmp_l
+    BMI .end
+    JMP .loop
+.cmp_l:
+    LDA DIV_1_L
+    CMP DIV_2_L
+    BCC .end
+
+.loop:
     SEC
-.loop
-    INY
-    SBC DIV_2
-    BCS .loop
-    ADC DIV_2
-    DEY
-    STY DIV_CEIL
-    STA $0F
+    LDA DIV_1_L
+    SBC DIV_2_L
+    STA DIV_1_L
+    LDA DIV_1_H
+    SBC DIV_2_H
+    STA DIV_1_H
+
+    CLC
+    LDA DIV_CEIL_L
+    ADC #1
+    STA DIV_CEIL_L
+    LDA DIV_CEIL_H
+    ADC #0
+    STA DIV_CEIL_H
+    JMP .cmp_h
+
+.end:
     RTS
