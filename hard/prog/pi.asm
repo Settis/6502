@@ -20,8 +20,8 @@ MUL_1_L = $03
 MUL_1_H = $04
 MUL_2_L = $05
 MUL_2_H = $06
-MUL_REM_L = $07
-MUL_REM_H = $08
+MUL_RES_L = $07
+MUL_RES_H = $08
 
 DIV_1_L = $09
 DIV_1_H = $0A
@@ -29,8 +29,8 @@ DIV_2_L = $0B
 DIV_2_H = $0C
 DIV_CEIL_L = $0D
 DIV_CEIL_H = $0E
-DIV_RES_L = $09
-DIV_RES_H = $0A
+DIV_REM_L = $09
+DIV_REM_H = $0A
 
 CARRY_L = $11
 CARRY_H = $12
@@ -38,66 +38,8 @@ CARRY_H = $12
 DIGIT_FROM_CARRY = $13
 NEXT_DIGIT = $14
 
-; STUB for compile
-MUL_1 = 0
-MUL_2 = 0
-DIV_1 = 0
-DIV_2 = 0
-DIV_CEIL = 0
-CARRY = 0
-
 ; CONST
 TO_PRINT = $0A
-
-test_div:
-;0020: 00 01 01 2C 03 2c 01
-;0030: 00 00 00 01 00 01 00
-;0040: 00 00 01 00 00 00 03
-;0050: 00 00 00 00 00 00 00
-    LDX #0
-
-    WRITE_WORD 0, DIV_1_L
-    WRITE_WORD 1, DIV_2_L
-    JSR div_it
-
-    WRITE_WORD 1, DIV_1_L
-    WRITE_WORD 1, DIV_2_L
-    JSR div_it
-
-    WRITE_WORD 3, DIV_1_L
-    WRITE_WORD 2, DIV_2_L
-    JSR div_it
-
-    WRITE_WORD 300, DIV_1_L
-    WRITE_WORD 1, DIV_2_L
-    JSR div_it
-
-    WRITE_WORD 900, DIV_1_L
-    WRITE_WORD 300, DIV_2_L
-    JSR div_it
-
-    WRITE_WORD 900, DIV_1_L
-    WRITE_WORD 3, DIV_2_L
-    JSR div_it
-
-    WRITE_WORD 10, DIV_1_L
-    WRITE_WORD 7, DIV_2_L
-    JSR div_it
-
-    RTS
-
-div_it:
-    JSR DIV
-    LDA DIV_RES_L
-    STA $20,X
-    LDA DIV_RES_H
-    STA $30,X
-    LDA DIV_CEIL_L
-    STA $40,X
-    LDA DIV_CEIL_H
-    STA $50,X
-    INX
-    RTS
 
 main:
     ; Init vars
@@ -187,13 +129,13 @@ main:
 
     RTS
 
-; MUL_REM_H .. MUL_REM_L = MUL_1_H .. MUL_1_L * MUL_2_H .. MUL_2_L
+; MUL_RES_H .. MUL_RES_L = MUL_1_H .. MUL_1_L * MUL_2_H .. MUL_2_L
 MUL:
     subroutine
     ; put 0 to result
     LDA #0
-    STA MUL_REM_L
-    STA MUL_REM_H
+    STA MUL_RES_L
+    STA MUL_RES_H
     LDA MUL_2_L
     BNE .loop
     LDA MUL_2_H
@@ -203,11 +145,11 @@ MUL:
 .loop:
     CLC
     LDA MUL_1_L
-    ADC MUL_REM_L
-    STA MUL_REM_L
+    ADC MUL_RES_L
+    STA MUL_RES_L
     LDA MUL_1_H
-    ADC MUL_REM_H
-    STA MUL_REM_H
+    ADC MUL_RES_H
+    STA MUL_RES_H
     
     SEC
     LDA MUL_2_L
@@ -223,7 +165,7 @@ MUL:
     RTS
 
 ; DIV_CEIL_H .. DIV_CEIL_L = DIV_1_H .. DIV_1_L // DIV_2_H .. DIV_2_L
-; DIV_RES_H .. DIV_RES_L = DIV_1_H .. DIV_1_L % DIV_2_H .. DIV_2_L
+; DIV_REM_H .. DIV_REM_L = DIV_1_H .. DIV_1_L % DIV_2_H .. DIV_2_L
 DIV:
     subroutine
     LDA #0
