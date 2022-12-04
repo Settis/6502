@@ -2,27 +2,110 @@
 
     .org $0200
 
+    MAC WRITE_WORD
+    LDA #<{1}
+    STA {2}
+    LDA #>{1}
+    STA {2}+1
+    ENDM
+
 ARRAY_ADDR = $1000
-RESULT_ADDR = $1080
+RESULT_ADDR = $900
 
 ; ZP vars
 PREV_DIGIT = $00
 NINE_COUNT = $01
 PRINTED = $02
-MUL_1 = $03
-MUL_2 = $04
+MUL_1_L = $03
+MUL_1_H = $04
+MUL_2_L = $05
+MUL_2_H = $06
+MUL_RES_L = $07
+MUL_RES_H = $08
 
-DIV_1 = $05
-DIV_2 = $06
-DIV_CEIL = $07
+DIV_1_L = $09
+DIV_1_H = $0A
+DIV_2_L = $0B
+DIV_2_H = $0C
+DIV_CEIL_L = $0D
+DIV_CEIL_H = $0E
+DIV_RES_L = $0F
+DIV_RES_H = $10
 
-CARRY = $08
+CARRY_L = $11
+CARRY_H = $12
 
-DIGIT_FROM_CARRY = $09
-NEXT_DIGIT = $0A
+DIGIT_FROM_CARRY = $13
+NEXT_DIGIT = $14
+
+; STUB for compile
+MUL_1 = 0
+MUL_2 = 0
+DIV_1 = 0
+DIV_2 = 0
+DIV_CEIL = 0
+CARRY = 0
 
 ; CONST
 TO_PRINT = $0A
+
+test_mul:
+;0020: 09 00 00 03 01 84 84 2C  2C
+;0030: 00 00 00 00 00 03 03 01  01
+    LDX #0
+
+    WRITE_WORD 3, MUL_1_L
+    WRITE_WORD 3, MUL_2_L
+    JSR mul_it
+
+    WRITE_WORD 0, MUL_1_L
+    WRITE_WORD 0, MUL_2_L
+    JSR mul_it
+
+    WRITE_WORD 3, MUL_1_L
+    WRITE_WORD 0, MUL_2_L
+    JSR mul_it
+
+    WRITE_WORD 3, MUL_1_L
+    WRITE_WORD 1, MUL_2_L
+    JSR mul_it
+
+    WRITE_WORD 1, MUL_1_L
+    WRITE_WORD 1, MUL_2_L
+    JSR mul_it
+
+    WRITE_WORD $12C, MUL_1_L
+    WRITE_WORD 3, MUL_2_L
+    JSR mul_it
+
+    WRITE_WORD 3, MUL_1_L
+    WRITE_WORD $12C, MUL_2_L
+    JSR mul_it
+
+    WRITE_WORD $12C, MUL_1_L
+    WRITE_WORD 1, MUL_2_L
+    JSR mul_it
+
+    WRITE_WORD 1, MUL_1_L
+    WRITE_WORD $12C, MUL_2_L
+    JSR mul_it
+
+    RTS
+
+mul_it:
+    JSR clear
+    JSR MUL
+    LDA MUL_RES_L
+    STA $20,X
+    LDA MUL_RES_H
+    STA $30,X
+    INX
+
+clear:
+    LDA #$FF
+    STA MUL_RES_H
+    STA MUL_RES_L
+    RTS
 
 main:
     ; Init vars
@@ -116,16 +199,36 @@ main:
 ; affects Y
 MUL:
     subroutine
-    CLC
+    ; put 0 to result
     LDA #0
-    LDY MUL_2
+    STA MUL_RES_L
+    STA MUL_RES_H
+    LDA MUL_2_L
     BNE .loop
-    LDA #0
+    LDA MUL_2_H
+    BNE .loop
+    ; Multiply by 0
     RTS
 .loop:
-    ADC MUL_1
-    DEY
+    CLC
+    LDA MUL_1_L
+    ADC MUL_RES_L
+    STA MUL_RES_L
+    LDA MUL_1_H
+    ADC MUL_RES_H
+    STA MUL_RES_H
+    
+    SEC
+    LDA MUL_2_L
+    SBC #1
+    STA MUL_2_L
+    LDA MUL_2_H
+    SBC #0
+    STA MUL_2_H
+
     BNE .loop
+    LDA MUL_2_L
+    BNE .loop   
     RTS
 
 ; DIV_CEIL = DIV_1 // DIV_2
