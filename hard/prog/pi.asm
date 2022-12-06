@@ -2,13 +2,6 @@
 
     .org $0200
 
-    MAC WRITE_WORD
-    LDA #<{1}
-    STA {2}
-    LDA #>{1}
-    STA {2}+1
-    ENDM
-
 ARRAY_ADDR = $1000
 RESULT_ADDR = $900
 
@@ -38,8 +31,16 @@ CARRY_H = $12
 DIGIT_FROM_CARRY = $13
 NEXT_DIGIT = $14
 
+ARRAY_POINTER_L = $15
+ARRAY_POINTER_H = $16
+ARRAY_INDEX_L = $17
+ARRAY_INDEX_H = $18
+
 ; CONST
-TO_PRINT = $0A
+TO_PRINT = $0a
+;ARRAY_LENGTH = $353
+ARRAY_LENGTH = [10*TO_PRINT]/3+1
+ARRAY_END = ARRAY_ADDR + ARRAY_LENGTH*2
 
 main:
     ; Init vars
@@ -50,84 +51,219 @@ main:
     STA PREV_DIGIT
 
     ; Fill array by 2
-    ; LDA #2
-    ; A must be 2 already
-    LDX #0
-.loop:
-    STA ARRAY_ADDR,X
-    INX
-    BNE .loop
+    LDA #<ARRAY_END
+    STA ARRAY_POINTER_L
+    LDA #>ARRAY_END
+    STA ARRAY_POINTER_H
+.fill_loop
+    LDY #0
+    LDA #2
+    STA (ARRAY_POINTER_L),Y
+    INY
+    LDA #0
+    STA (ARRAY_POINTER_L),Y
+    
+    SEC
+    LDA ARRAY_POINTER_L
+    SBC #2
+    STA ARRAY_POINTER_L
+    LDA ARRAY_POINTER_H
+    SBC #0
+    STA ARRAY_POINTER_H
+
+    CMP #>ARRAY_ADDR
+    BEQ .cpm_array_addr_l
+    BMI .fill_end
+    JMP .fill_loop
+.cpm_array_addr_l
+    LDA ARRAY_POINTER_L
+    CMP #<ARRAY_ADDR
+    BNE .fill_loop
+
+.fill_end:
     subroutine
 
     ; For by printed
+    ; not really loop for each digit without cascade carry resolving
 .print_loop:
     LDA #0
-    STA CARRY
+    STA CARRY_L
+    STA CARRY_H
+
     ; Go throught array
-    LDX #$30
+    LDA #<ARRAY_END
+    STA ARRAY_POINTER_L
+    LDA #>ARRAY_END
+    STA ARRAY_POINTER_H
+    LDA #<ARRAY_LENGTH
+    STA ARRAY_INDEX_L
+    LDA #>ARRAY_LENGTH
+    STA ARRAY_INDEX_H
 .array_loop:
     ; x = a[i] * 10
-    LDA ARRAY_ADDR,X
-    STA MUL_1
+    LDY #0
+    LDA (ARRAY_POINTER_L),Y
+    STA MUL_1_L
+    INY
+    LDA (ARRAY_POINTER_L),Y
+    STA MUL_1_H
+
     LDA #10
-    STA MUL_2
+    STA MUL_2_L
+    LDA #0
+    STA MUL_2_H
     JSR MUL
+
     ; x += carry
-    ADC CARRY
+    ; x in MULTIPLY result
+    ; result is puted for DIV
+    CLC
+    LDA MUL_RES_L
+    ADC CARRY_L
+    STA DIV_1_L
+    LDA MUL_RES_H
+    ADC CARRY_H
+    STA DIV_1_H
 
     ; x / numerator
-    STA DIV_1
+    ; DIV_1 is already here
     ; save numerator
-    TXA
+    LDA ARRAY_INDEX_L
     SEC
     ROL
-    STA DIV_2
+    STA DIV_2_L
+    LDA ARRAY_INDEX_H
+    ROL
+    STA DIV_2_H
     JSR DIV
+
     ; a[i] = x % numerator
-    STA ARRAY_ADDR,X
+    ; Y is 1
+    LDA DIV_REM_H
+    STA (ARRAY_POINTER_L),Y
+    DEY
+    LDA DIV_REM_L
+    STA (ARRAY_POINTER_L),Y
 
     ; carry = Math.floor(x / numerator) * i;
-    LDA DIV_CEIL
-    STA MUL_1
-    STX MUL_2
-    JSR MUL
-    STA CARRY
-    STA ARRAY_ADDR+$90,X
+    LDA DIV_CEIL_L
+    STA MUL_1_L
+    LDA DIV_CEIL_H
+    STA MUL_1_H
 
-    DEX
-    ; CPX #1
+    LDA ARRAY_INDEX_L
+    STA MUL_2_L
+    LDA ARRAY_INDEX_H
+    STA MUL_2_H
+    JSR MUL
+
+    LDA MUL_RES_L
+    STA CARRY_L
+    LDA MUL_RES_H
+    STA CARRY_H
+
+    ; Decrement array index by 1
+    SEC
+    LDA ARRAY_INDEX_L
+    SBC #1
+    STA ARRAY_INDEX_L
+    LDA ARRAY_INDEX_H
+    SBC #0
+    STA ARRAY_INDEX_H
+
+    ; Decrement array pointer by 2
+    SEC
+    LDA ARRAY_POINTER_L
+    SBC #2
+    STA ARRAY_POINTER_L
+    LDA ARRAY_POINTER_H
+    SBC #0
+    STA ARRAY_POINTER_H
+
+    CMP #>ARRAY_ADDR
+    BEQ .cpm_array_addr_l
+    BMI .array_loop_end
+    JMP .array_loop
+.cpm_array_addr_l
+    LDA ARRAY_POINTER_L
+    CMP #<ARRAY_ADDR
     BNE .array_loop
+
+.array_loop_end:
 
     ; [debug] print carry 
     ; LDX PRINTED
     ; STA ARRAY_ADDR+$90,X
 
     ; const digitFromCarry = Math.floor(carry / 10);
-    LDA CARRY
-    STA DIV_1
+    LDA CARRY_L
+    STA DIV_1_L
+    LDA CARRY_H
+    STA DIV_1_H
+    
     LDA #10
-    STA DIV_2
+    STA DIV_2_L
+    LDA #0
+    STA DIV_2_H
     JSR DIV
 
-    ; const nextDigit = carry % 10;
-    STA NEXT_DIGIT
-    LDA DIV_CEIL
+    ; const digitFromCarry assignment
+    LDA DIV_CEIL_L
     STA DIGIT_FROM_CARRY
 
+    ; const nextDigit = carry % 10;
+    LDA DIV_REM_L
+    STA NEXT_DIGIT
+
+    ; Check if we have cascade carry
+    CMP #9
+    BNE .not_cascade_carry
+    INC NINE_COUNT
+    JMP .print_loop
+.not_cascade_carry:
+
     CLC
+    LDA DIGIT_FROM_CARRY
     ADC PREV_DIGIT
     LDX PRINTED
     STA RESULT_ADDR,X
     INX
+
+    ; if previous digit is followed by 9s, then print them 
+    ;   or 0s, if we have cascade carry
+    LDA DIGIT_FROM_CARRY
+    BNE .short_jump
+    LDA #0
+    JMP .loop_for_nine
+.short_jump:
+    LDA #9
+
+.loop_for_nine
+    LDY NINE_COUNT
+.nine_print_loop
+    BEQ .nine_print_loop_end
+
+    STA RESULT_ADDR,X
+    INX
+    
+    DEY
+    JMP .nine_print_loop
+.nine_print_loop_end
+    
+    ; After loop y==0
+    STY NINE_COUNT
+    ; X is printed
     STX PRINTED
 
     LDA NEXT_DIGIT
     STA PREV_DIGIT
 
     CPX #TO_PRINT
-    BNE .print_loop
+    BNE .jump_to_print_loop
 
     RTS
+.jump_to_print_loop
+    JMP .print_loop
 
 ; MUL_RES_H .. MUL_RES_L = MUL_1_H .. MUL_1_L * MUL_2_H .. MUL_2_L
 MUL:
