@@ -1,3 +1,22 @@
+; Results
+; || ==Digits== || ==Time==   || ==Time shift== ||
+; |  $10        |      0,398s  |      0,419s     |
+; |  $20        |      2,21s   |      1,604s     |
+; |  $30        |      6,391s  |      3,445s     |
+; |  $40        |     14,079s  |      6,041s     |
+; |  $50        |     26,590s  |      9,492s     |
+; |  $60        |     44,089s  |     13,475s     |
+; |  $70        |  1m  7,973s  |     18,272s     |
+; |  $80        |  1m 39,073s  |     23,803s     |
+; |  $90        |  2m 18,804s  |     30,130s     |
+; |  $a0        |  3m  7,187s  |     37,143s     |
+; |  $b0        |  4m  5,504s  |     44,877s     |
+; |  $c0        |  5m 15,651s  |     53,440s     |
+; |  $d0        |  6m 38,734s  |  1m  2,950s     |
+; |  $e0        |  8m 10,720s  |  1m 12,596s     |
+; |  $f0        |  9m 59,723s  |  1m 23,384s     |
+; |  $ff        | 11m 54,544s  |  1m 34,118s     |
+
     PROCESSOR 6502
 
     .org $0200
@@ -22,8 +41,12 @@ DIV_2_L = $0B
 DIV_2_H = $0C
 DIV_CEIL_L = $0D
 DIV_CEIL_H = $0E
-DIV_REM_L = $09
-DIV_REM_H = $0A
+; For div on sub
+;DIV_REM_L = $09
+;DIV_REM_H = $0A
+; For div on shift
+DIV_REM_L = $0F
+DIV_REM_H = $10
 
 CARRY_L = $11
 CARRY_H = $12
@@ -36,8 +59,12 @@ ARRAY_POINTER_H = $16
 ARRAY_INDEX_L = $17
 ARRAY_INDEX_H = $18
 
+TMP_WORD_L = $19
+TMP_WORD_H = $1A
+TMP_FOR_XY = $1B
+
 ; CONST
-TO_PRINT = $0a
+TO_PRINT = $FF
 ;ARRAY_LENGTH = $353
 ARRAY_LENGTH = [10*TO_PRINT]/3+1
 ARRAY_END = ARRAY_ADDR + ARRAY_LENGTH*2
@@ -191,10 +218,6 @@ main:
 
 .array_loop_end:
 
-    ; [debug] print carry 
-    ; LDX PRINTED
-    ; STA ARRAY_ADDR+$90,X
-
     ; const digitFromCarry = Math.floor(carry / 10);
     LDA CARRY_L
     STA DIV_1_L
@@ -229,25 +252,24 @@ main:
     STA RESULT_ADDR,X
     INX
 
+    ; check if we have 9s
+    LDY NINE_COUNT
+    BEQ .nine_print_loop_end
+
     ; if previous digit is followed by 9s, then print them 
     ;   or 0s, if we have cascade carry
     LDA DIGIT_FROM_CARRY
-    BNE .short_jump
+    BEQ .short_jump
     LDA #0
     JMP .loop_for_nine
 .short_jump:
     LDA #9
 
 .loop_for_nine
-    LDY NINE_COUNT
-.nine_print_loop
-    BEQ .nine_print_loop_end
-
     STA RESULT_ADDR,X
     INX
-    
     DEY
-    JMP .nine_print_loop
+    BNE .loop_for_nine
 .nine_print_loop_end
     
     ; After loop y==0
@@ -259,14 +281,14 @@ main:
     STA PREV_DIGIT
 
     CPX #TO_PRINT
-    BNE .jump_to_print_loop
+    BCC .jump_to_print_loop
 
     RTS
 .jump_to_print_loop
     JMP .print_loop
 
 ; MUL_RES_H .. MUL_RES_L = MUL_1_H .. MUL_1_L * MUL_2_H .. MUL_2_L
-MUL:
+MUL_ADD:
     subroutine
     ; put 0 to result
     LDA #0
@@ -300,9 +322,40 @@ MUL:
     BNE .loop   
     RTS
 
+; MUL on shifts
+MUL:
+    subroutine
+    LDA #0
+    STA TMP_WORD_H
+    STA TMP_WORD_L
+    STY TMP_FOR_XY
+    LDY #16
+.loop:
+    LSR MUL_1_H
+    ROR MUL_1_L
+    BCC .no_add
+    CLC
+    LDA MUL_2_L
+    ADC TMP_WORD_L
+    STA TMP_WORD_L
+    LDA MUL_2_H
+    ADC TMP_WORD_H
+    STA TMP_WORD_H
+.no_add:
+    LSR TMP_WORD_H
+    ROR TMP_WORD_L
+    ROR MUL_RES_H
+    ROR MUL_RES_L
+    DEY
+    BNE .loop
+    LDY TMP_FOR_XY
+    RTS
+
+
 ; DIV_CEIL_H .. DIV_CEIL_L = DIV_1_H .. DIV_1_L // DIV_2_H .. DIV_2_L
 ; DIV_REM_H .. DIV_REM_L = DIV_1_H .. DIV_1_L % DIV_2_H .. DIV_2_L
-DIV:
+; NB: DIV_1 points the same area as DIV_REM
+DIV_SUB:
     subroutine
     LDA #0
     STA DIV_CEIL_H
@@ -339,4 +392,51 @@ DIV:
     JMP .cmp_h
 
 .end:
+    RTS
+
+; DIV via shift
+DIV:
+    subroutine
+    LDA #0
+    STA DIV_REM_H
+    STA DIV_REM_L
+    STY TMP_FOR_XY
+    LDY #16
+.loop:
+    ASL DIV_1_L
+    ROL DIV_1_H
+    ROL DIV_REM_L
+    ROL DIV_REM_H
+
+    CLC
+    ROL TMP_WORD_L
+    ; if DIV_REM >= DIV_2
+    LDA DIV_REM_H
+    CMP DIV_2_H
+    BEQ .cmp_l
+    BMI .no_subtract
+    JMP .subtract
+.cmp_l:
+    LDA DIV_REM_L
+    CMP DIV_2_L
+    BCC .no_subtract
+
+.subtract:
+    SEC
+    LDA DIV_REM_L
+    SBC DIV_2_L
+    STA DIV_REM_L
+    LDA DIV_REM_H
+    SBC DIV_2_H
+    STA DIV_REM_H
+
+    ROL TMP_WORD_L
+
+.no_subtract:
+    ROR TMP_WORD_L
+    ROL DIV_CEIL_L
+    ROL DIV_CEIL_H
+    DEY
+    BNE .loop
+    LDY TMP_FOR_XY
     RTS
