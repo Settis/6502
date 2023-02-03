@@ -3,6 +3,11 @@
 
     .org $0200
 
+; RTS connected to port B
+; Pin 7 - DATA
+; Pin 6 - Clock
+; Pin 4 - RST / CS
+
     ALLOC command
     ALLOC argument
 
