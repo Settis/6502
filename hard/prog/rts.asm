@@ -13,7 +13,7 @@
 
 main:
     JSR init
-    ;JSR setupTime
+    JSR setupTime
     JSR readTime
     RTS
 
@@ -47,7 +47,7 @@ setupTime:
     ; Day of week
     LDA #$8A
     STA command
-    LDA #$5
+    LDA #$6
     STA argument
     JSR write
 
@@ -61,21 +61,21 @@ setupTime:
     ; Date
     LDA #$86
     STA command
-    LDA #$3
+    LDA #$4
     STA argument
     JSR write
 
     ; Hour
     LDA #$84
     STA command
-    LDA #$22
+    LDA #$15
     STA argument
     JSR write
 
     ; Minutes
     LDA #$82
     STA command
-    LDA #$55
+    LDA #$11
     STA argument
     JSR write
 

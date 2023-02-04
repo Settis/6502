@@ -155,7 +155,7 @@ class Emulator:
             print(f"Bad comamnd: {command}")
 
     def write_rom(self):
-        self.write_prog_to_rom('/home/stk/projects/8-bit/6502/hard/prog/a.out')
+        self.write_prog_to_rom('/home/anton/projects/6502/hard/prog/a.out')
 
     def write_prog_to_rom(self, file_name):
         self.disable_cpu_bus()
