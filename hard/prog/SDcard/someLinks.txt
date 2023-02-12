@@ -1,0 +1,2 @@
+http://elm-chan.org/docs/mmc/mmc_e.html
+https://electronics.stackexchange.com/questions/77417/what-is-the-correct-command-sequence-for-microsd-card-initialization-in-spi
