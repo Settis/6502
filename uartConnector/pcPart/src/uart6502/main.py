@@ -6,6 +6,7 @@ from .libs.readCommand import register_read
 from .libs.runCommand import register_run
 from .libs.testCommand import register_test
 from .libs.writeCommand import register_write
+from .libs.compileRunCommand import register_compile_and_run
 
 
 def no_command(args):
@@ -23,6 +24,7 @@ def create_parser():
     register_read(subparsers)
     register_run(subparsers)
     register_test(subparsers)
+    register_compile_and_run(subparsers)
     return parser
 
 
