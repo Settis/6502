@@ -30,5 +30,5 @@ def run_run(dev, addr):
                 print()
             return
         has_logs = True
-        print(byte.decode('utf-8'), end='')
+        print(byte.decode('utf-8'), end='', flush=True)
         last_byte = byte[0]
