@@ -20,4 +20,15 @@ def run_run(dev, addr):
     port.write(convert_word_number_to_bytes(addr))
 
     # wait for the end
-    port.read(1)
+    # and print logs
+    has_logs = False
+    last_byte = None
+    while True:
+        byte = port.read(1)
+        if byte[0] == 4:
+            if last_byte != 0xA and has_logs:  # Newline
+                print()
+            return
+        has_logs = True
+        print(byte.decode('utf-8'), end='')
+        last_byte = byte[0]
