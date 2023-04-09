@@ -52,7 +52,7 @@ initSD:
     DEX
     BNE .loop
 
-    ; Send CMD0
+    ; Send CMD0 =============================
     LDA #$40
     STA CMD
     LDA #0
@@ -64,7 +64,7 @@ initSD:
     STA CRC
 
     subroutine
-    LDA #$F0
+    LDA #$4
     PHA
 .loop:
     JSR sendSDCommand
@@ -81,7 +81,7 @@ initSD:
 
     subroutine
     ; Send CMD41 with leading CMD55
-    LDA #$F0
+    LDA #$4
     PHA
 .loop
     LDA #[55 | $40]
@@ -144,15 +144,7 @@ sendSDCommand:
     DEX
     BPL .loop
     ; wait for response
-    subroutine
-    LDX #$F0
-.loop:
-    JSR readByteFromSD
-    LDA RESPONSE
-    BPL .end
-    DEX
-    BNE .loop
-.end:
+    JSR waitForR1FromSD
     ; Disable SD
     LDA #%00010000
     STA VIA_FIRST_RB
@@ -177,11 +169,33 @@ sendByteToSD:
     BNE .loop
     RTS
 
+waitForR1FromSD:
+    subroutine
+    LDA #$FF
+    STA RESPONSE
+    LDY #$F0
+.loop:
+    JSR readBitFromSD
+    LDA RESPONSE
+    BMI .loop_tail
+    RTS
+.loop_tail:
+    DEY
+    BNE .loop
+    RTS
+
 ; The result will be in RESPONSE
 readByteFromSD:
     subroutine
     LDY #8
 .loop:
+    JSR readBitFromSD
+    DEY
+    BNE .loop
+    RTS
+
+; The bit will be shifted in RESPONSE
+readBitFromSD:
     LDA #%01000000
     STA VIA_FIRST_RB
     LDA #%01100000
@@ -191,6 +205,4 @@ readByteFromSD:
     ROL RESPONSE
     LDA #%01000000
     STA VIA_FIRST_RB
-    DEY
-    BNE .loop
     RTS
