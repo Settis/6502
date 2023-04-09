@@ -57,3 +57,8 @@ ZP_POINTER SET ZP_POINTER + 1
     ALLOC {1}
     ALLOC _{1}_second_byte
     ENDM
+
+    MAC STRING
+    DC {1}
+    DC $0
+    ENDM

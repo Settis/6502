@@ -16,6 +16,14 @@ string:
     DC "Foo bar baz 1234567890."
     DC $0
 
+    mac uart_log
+    JSR LOG_STRING
+    dc .end - .start
+.start
+    dc {1}
+.end
+    endm
+
 main:
     LDA #0
     STA BUFFER_READ_IND
@@ -28,6 +36,14 @@ main:
     LDA #$0
     STA VIA_FIRST_ACR
 
+    uart_log "Foo bar"
+
+    JSR wait_for_buffer
+    RTS
+
+LOG_STRING:
+
+    ; Old implementation
     LDY #0
 read_string:
     LDA string,Y
@@ -37,7 +53,6 @@ read_string:
     JMP read_string
 read_string_end:
 
-    JSR wait_for_buffer
     RTS
 
 interrupt:
