@@ -34,6 +34,9 @@ sendCmd0Msg:
 sendCmd55Msg:
     STRING "Send CMD41 & CMD55"
 
+sendCmd8Msg:
+    STRING "Send CMD8"
+
 initSD:
     ; Disable all interrupts
     ; I need a timer for uart logs
@@ -92,17 +95,48 @@ initSD:
     PLA
 
     UART_PRINTLN
+
+    UART_PRINTLN_STRING sendCmd8Msg
+
+    LDA #[ 8 | $40 ]
+    STA CMD
+    LDA #$1
+    STA ARG_1
+    LDA #$AA
+    STA ARG_0
+    LDA #$87
+    STA CRC
+    JSR sendSCCommandAndReadR3R7
+    
+    LDA CMD
+    JSR UART_PRINT_NUMBER
+    LDA ARG_3
+    JSR UART_PRINT_NUMBER
+    LDA ARG_2
+    JSR UART_PRINT_NUMBER
+    LDA ARG_1
+    JSR UART_PRINT_NUMBER
+    LDA ARG_0
+    JSR UART_PRINT_NUMBER
+
+    UART_PRINTLN
+
     subroutine
     UART_PRINTLN_STRING sendCmd55Msg
     ; Send CMD41 with leading CMD55
-    LDA #$10
+    LDA #$F0
     PHA
 .loop
     LDA #[55 | $40]
     STA CMD
     LDA #0
+    STA ARG_0
+    STA ARG_1
+    STA ARG_2
     STA ARG_3
     JSR sendSDCommand
+    LDA RESPONSE
+    JSR UART_PRINT_NUMBER
 
     LDA #[41 | $40]
     STA CMD
@@ -113,6 +147,7 @@ initSD:
     CMP #$0 ; R1 Ready
     BEQ .end
     JSR UART_PRINT_NUMBER
+    delay 250, 250
     PLA
     SEC
     SBC #1
@@ -130,6 +165,36 @@ initSD:
 ; You must prepare the command, arg and crc
 ; Sends command to SD card and wait for expected response
 sendSDCommand:
+    JSR sendJustComandAndWaitForR1
+    ; Disable SD
+    LDA #%00010000
+    STA VIA_FIRST_RB
+    RTS
+
+; You must prepare the command, arg and crc
+; Sends command to SD card and wait for expected response
+; R3 or R7 data will be placed in args
+; Response will be in CMD
+sendSCCommandAndReadR3R7:
+    subroutine
+    JSR sendJustComandAndWaitForR1
+    LDA RESPONSE
+    STA CMD
+    ; Read 32 bits of data and save them into args
+    LDX #$3
+.loop:
+    JSR readByteFromSD
+    LDA RESPONSE
+    STA ARG_0,X
+    DEX
+    BPL .loop
+
+    ; Disable SD
+    LDA #%00010000
+    STA VIA_FIRST_RB
+    RTS
+
+sendJustComandAndWaitForR1:
     ; Disable SD card
     LDA #%00010000
     STA VIA_FIRST_RB
@@ -160,9 +225,6 @@ sendSDCommand:
     BPL .loop
     ; wait for response
     JSR waitForR1FromSD
-    ; Disable SD
-    LDA #%00010000
-    STA VIA_FIRST_RB
     RTS
 
 ; The byte must be in SEND_BYTE
