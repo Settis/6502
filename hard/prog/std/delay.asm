@@ -1,5 +1,5 @@
-DELAY_X = $07
-DELAY_Y = $08
+    ALLOC DELAY_X
+    ALLOC DELAY_Y
 
 ; Delay 
 ; {1} - X

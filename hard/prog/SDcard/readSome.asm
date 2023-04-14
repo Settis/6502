@@ -9,26 +9,36 @@
 ; SCK  - P5
 ; MISO - P7 / from SD
 
-RESPONSE = $2
-SEND_BYTE = $2
+    ALLOC RESPONSE
+SEND_BYTE = RESPONSE
 ; They must be sequential from CRC to CMD
-CRC = $3
-ARG_0 = $4
-ARG_1 = $5
-ARG_2 = $6
-ARG_3 = $7
-CMD = $8
+    ALLOC CRC
+    ALLOC ARG_0
+    ALLOC ARG_1
+    ALLOC ARG_2
+    ALLOC ARG_3
+    ALLOC CMD
 
 main:
+    JSR INIT_UART_PRINT
     JSR initSD
+    JSR UART_PRINT_WAIT_FOR_BUFFER
     RTS
 
+    include uart_print.asm
     INCLUDE "delay.asm"
+
+sendCmd0Msg:
+    STRING "Send CMD0"
+
+sendCmd55Msg:
+    STRING "Send CMD41 & CMD55"
 
 initSD:
     ; Disable all interrupts
-    LDA #$7F
-    STA VIA_FIRST_IER
+    ; I need a timer for uart logs
+    ; LDA #$7F
+    ; STA VIA_FIRST_IER
     ; Setup output pins
     LDA #%01110000
     STA VIA_FIRST_DDRB
@@ -52,6 +62,7 @@ initSD:
     DEX
     BNE .loop
 
+    UART_PRINTLN_STRING sendCmd0Msg
     ; Send CMD0 =============================
     LDA #$40
     STA CMD
@@ -71,6 +82,7 @@ initSD:
     LDA RESPONSE
     CMP #$1
     BEQ .end
+    JSR UART_PRINT_NUMBER
     PLA
     SEC
     SBC #1
@@ -79,9 +91,11 @@ initSD:
 .end:
     PLA
 
+    UART_PRINTLN
     subroutine
+    UART_PRINTLN_STRING sendCmd55Msg
     ; Send CMD41 with leading CMD55
-    LDA #$4
+    LDA #$10
     PHA
 .loop
     LDA #[55 | $40]
@@ -98,6 +112,7 @@ initSD:
     LDA RESPONSE
     CMP #$0 ; R1 Ready
     BEQ .end
+    JSR UART_PRINT_NUMBER
     PLA
     SEC
     SBC #1
