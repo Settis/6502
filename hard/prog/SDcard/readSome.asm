@@ -22,6 +22,7 @@ SEND_BYTE = RESPONSE
 main:
     JSR INIT_UART_PRINT
     JSR initSD
+    JSR readData
     JSR UART_PRINT_WAIT_FOR_BUFFER
     RTS
 
@@ -36,6 +37,9 @@ sendCmd55Msg:
 
 sendCmd8Msg:
     STRING "Send CMD8"
+
+sendCmdRead:
+    STRING "Read data from card"
 
 initSD:
     ; Disable all interrupts
@@ -106,7 +110,7 @@ initSD:
     STA ARG_0
     LDA #$87
     STA CRC
-    JSR sendSCCommandAndReadR3R7
+    JSR sendSDCommandAndReadR3R7
     
     LDA CMD
     JSR UART_PRINT_NUMBER
@@ -162,6 +166,20 @@ initSD:
     STA VIA_FIRST_RB
     RTS
 
+
+readData:
+    UART_PRINTLN_STRING sendCmdRead
+    LDA #[ 17 | $40 ]
+    STA CMD
+    LDA #$0
+    STA ARG_0
+    STA ARG_1
+    STA ARG_2
+    STA ARG_3
+    STA CRC
+    JSR sendSDCommandAndReadData
+    RTS
+
 ; You must prepare the command, arg and crc
 ; Sends command to SD card and wait for expected response
 sendSDCommand:
@@ -175,7 +193,7 @@ sendSDCommand:
 ; Sends command to SD card and wait for expected response
 ; R3 or R7 data will be placed in args
 ; Response will be in CMD
-sendSCCommandAndReadR3R7:
+sendSDCommandAndReadR3R7:
     subroutine
     JSR sendJustComandAndWaitForR1
     LDA RESPONSE
@@ -188,6 +206,26 @@ sendSCCommandAndReadR3R7:
     STA ARG_0,X
     DEX
     BPL .loop
+
+    ; Disable SD
+    LDA #%00010000
+    STA VIA_FIRST_RB
+    RTS
+
+sendSDCommandAndReadData:
+    subroutine
+    JSR sendJustComandAndWaitForR1
+    LDA RESPONSE
+    STA CMD
+    JSR UART_PRINT_NUMBER
+    UART_PRINTLN
+    LDY #$10
+.loop:
+    JSR readByteFromSD
+    LDA RESPONSE
+    JSR UART_PRINT_NUMBER
+    DEY
+    BNE .loop
 
     ; Disable SD
     LDA #%00010000
