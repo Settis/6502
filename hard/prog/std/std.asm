@@ -1,5 +1,5 @@
     PROCESSOR 6502
-    INCDIR "dasm-structure-macros/lib"
+    INCDIR "std/dasm-structure-macros/lib"
     INCLUDE "STRUCMAC.ASM"
     INCLUDE "via_macro.asm"
 
