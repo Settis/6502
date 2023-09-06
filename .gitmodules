@@ -1,0 +1,3 @@
+[submodule "hard/prog/std/dasm-structure-macros"]
+	path = hard/prog/std/dasm-structure-macros
+	url = git@github.com:Settis/dasm-structure-macros.git

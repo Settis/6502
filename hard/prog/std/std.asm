@@ -1,4 +1,6 @@
     PROCESSOR 6502
+    INCDIR "dasm-structure-macros/lib"
+    INCLUDE "STRUCMAC.ASM"
     INCLUDE "via_macro.asm"
 
     DEFINE_VIA FIRST, %1000000000010000
