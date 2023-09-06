@@ -46,7 +46,6 @@ main:
 
 loop:
     JSR printTime
-    JMP loop
 
     if RAM = 0
     JMP loop

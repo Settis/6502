@@ -55,7 +55,7 @@ ZP_POINTER SET ZP_POINTER + 1
 
 ; Creates named variable with length of two bytes
 ; {1} - variable name
-    MAC ALLOC_WORD
+    MAC ALLOC_2
     ALLOC {1}
     ALLOC _{1}_second_byte
     ENDM
