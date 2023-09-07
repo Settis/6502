@@ -164,6 +164,10 @@ DISPLAY_CHANGE_LINE:
 
     subroutine
 PRINT_STRING:
+    TYA
+    PHA
+    TXA
+    PHA
     LDY #$0
     LDX #$0
 
@@ -175,6 +179,10 @@ PRINT_STRING:
     JMP .PS_LOOP
 
 .PS_END:
+    PLA
+    TAX
+    PLA
+    TAY
     RTS
     subroutine
 
@@ -193,6 +201,8 @@ SEND_DISPLAY_COMMAND:
     RTS
 
 WRITE_TO_DISPLAY:
+    TXA
+    PHA
     LDX #0
     LDA DISPLAY_TMP
     AND #$F0
@@ -206,9 +216,13 @@ WRITE_TO_DISPLAY:
     AND #$F0
     ORA DISPLAY_REGISTER
     JSR WRITE_4_BYTES_TO_DISPLAY
+    PLA
+    TAX
     RTS
 
 READ_FROM_DISPLAY:
+    TXA
+    PHA
     ; Set port to input
     LDX #$0
     LDA #$03
@@ -237,6 +251,8 @@ READ_FROM_DISPLAY:
     LDA #$F3
     STA (DISPLAY_DDR,X)
 
+    PLA
+    TAX
     ; Load data back to A
     LDA DISPLAY_TMP
     RTS
