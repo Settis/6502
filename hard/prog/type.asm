@@ -1,4 +1,4 @@
-RAM = 0
+RAM = 1
 
     IF RAM = 0
         ORG $FC00
@@ -27,10 +27,6 @@ keymap:
     INCDIR "std"
     INCLUDE "std.asm"
 
-    if RAM = 1
-        INCLUDE "in_ram.asm"
-    endif
-    
 buf_write_ind = $11
 buf_read_ind = $12
 buf_start = $80
@@ -67,6 +63,15 @@ debug_start:
 reset_start:
     LDX #$00
     TXS
+
+main:
+    IF RAM = 1
+        LDA #<read_kb
+        STA $FE
+        LDA #>read_kb
+        STA $FF
+    ENDIF
+    
 
     LDA #$00
     STA buf_write_ind
