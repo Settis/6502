@@ -2,34 +2,59 @@
 ;
 ;  The WOZ Monitor for the Apple 1
 ;  Written by Steve Wozniak 1976
+;  And updated to work with 16*2 character display
+;  Also with ability to work in ROM and runned via UART
+;  Hardware:
+;       Keyboard connected to VIA1 port A
+;       Display connected to VIA1 port B
 ;
 ;-------------------------------------------------------------------------
 
-                PROCESSOR 6502
+RAM = 1
+    IF RAM = 0
+        ORG $FC00
+    else
+        ORG $0300
+    endif
+
                 ; .CR     6502
                 ; .OR     $FF00
-                ORG $FF00
                 ; .TF     WOZMON.HEX,HEX,8
 
 ;-------------------------------------------------------------------------
 ;  Memory declaration
 ;-------------------------------------------------------------------------
 
-XAML            =     $24            ; Last "opened" location Low
-XAMH            =     $25            ; Last "opened" location High
-STL             =     $26            ; Store address Low
-STH             =     $27            ; Store address High
-L               =     $28            ; Hex value parsing Low
-H               =     $29            ; Hex value parsing High
-YSAV            =     $2A            ; Used to see if hex value is given
-MODE            =     $2B            ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
+;XAML            =     $24            ; Last "opened" location Low
+    ALLOC XAML
+;XAMH            =     $25            ; Last "opened" location High
+    ALLOC XAMH
+;STL             =     $26            ; Store address Low
+    ALLOC STL
+;STH             =     $27            ; Store address High
+    ALLOC STH
+;L               =     $28            ; Hex value parsing Low
+    ALLOC L
+;H               =     $29            ; Hex value parsing High
+    ALLOC H
+;YSAV            =     $2A            ; Used to see if hex value is given
+    ALLOC YSAV
+;MODE            =     $2B            ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
+    ALLOC MODE
 
-IN              =     $0200,$027F    ; Input buffer
+IN              =     $0200 ;,$027F    ; Input buffer
 
-KBD             =     $D010          ; PIA.A keyboard input
-KBDCR           =     $D011          ; PIA.A keyboard control register
-DSP             =     $D012          ; PIA.B display output register
-DSPCR           =     $D013          ; PIA.B display control register
+; KBD             =     $D010          ; PIA.A keyboard input
+; KBDCR           =     $D011          ; PIA.A keyboard control register
+; DSP             =     $D012          ; PIA.B display output register
+; DSPCR           =     $D013          ; PIA.B display control register
+
+    ALLOC buf_write_ind
+    ALLOC buf_read_ind
+    ALLOC release_button
+    ALLOC shift_pressed
+
+buf_start = $0280 ; Size $0F up to $028F
 
 ; KBD b7..b0 are inputs, b6..b0 is ASCII input, b7 is constant high
 ;     Programmed to respond to low to high KBD strobe
@@ -44,8 +69,186 @@ DSPCR           =     $D013          ; PIA.B display control register
 
 BS              =     $DF            ; Backspace key, arrow left key
 CR              =     $8D            ; Carriage Return
+NEXT_LINE       =     $8E
 ESC             =     $9B            ; ESC key
-PROMPT          =     "\"            ; Prompt character
+PROMPT          =     ">"            ; Prompt character
+
+keymap:
+    .byte "????????????? `?" ; 00-0F
+    .byte "?????q1???zsaw2?" ; 10-1F
+    .byte "?cxde43?? vftr5?" ; 20-2F
+    .byte "?nbhgy6???mju78?" ; 30-3F
+    .byte "?,kio09??./l;p-?" ; 40-4F
+    .byte "??'?[=?????]?\??" ; 50-5F
+    .byte "?????????1?47???" ; 60-6F
+    .byte "0.2568???+3-*9??" ; 70-7F
+    .byte "????????????? ~?" ; 80-8F
+    .byte "?????Q!???ZSAW@?" ; 90-9F
+    .byte "?CXDE$#?? VFTR%?" ; A0-AF
+    .byte "?NBHGY^???MJU&*?" ; B0-BF
+    .byte "?<KIO)(??>?L:P_?" ; C0-CF
+    .byte "??'?{+?????}?|??" ; D0-DF
+    .byte "?????????!?$&???" ; E0-EF
+    .byte ")>@%^*???+#_*(??" ; F0-FF
+
+    INCDIR "std"
+    INCLUDE "std.asm"
+    INCLUDE "display.asm"
+
+read_kb: ; Interrupt handler for read from Keyboard
+    PHA
+    TXA
+    PHA
+
+    LDA VIA_FIRST_IFR
+    LDX buf_write_ind
+    LDA VIA_FIRST_RA
+    STA buf_start,X
+    INX
+    TXA
+    AND #$0F
+    STA buf_write_ind
+    
+    PLA
+    TAX
+    PLA
+
+    RTI
+
+wait_for_key_press:
+read_kb_buffer:
+    ; Check if something in the buffer
+    LDA buf_read_ind
+    CMP buf_write_ind
+    BEQ read_kb_buffer
+    ; Read the scan code from buffer
+    LDX buf_read_ind
+    LDA buf_start,X
+    TAX
+    ; Increase buffer pointer
+    LDA buf_read_ind
+    CLC
+    ADC #$1
+    AND #$0F
+    STA buf_read_ind
+    TXA
+
+    ; Check if that scan code after release
+    LDX #0
+    CPX release_button
+    BEQ print_check_release
+    DEC release_button
+    CMP #$12
+    BEQ shift_released_branch
+    CMP #$59
+    BEQ shift_released_branch
+    JMP read_kb_buffer
+
+print_check_release:
+    ; Check for release scan code
+    CMP #$F0
+    BNE after_release_check
+    INC release_button
+    JMP read_kb_buffer
+
+shift_released_branch:
+    LDX #0
+    STX shift_pressed
+    JMP read_kb_buffer
+
+after_release_check:
+    CMP #$12
+    BEQ shift_pressed_branch
+    CMP #$59
+    BEQ shift_pressed_branch
+    JMP check_key_pressed
+
+shift_pressed_branch:
+    LDX #1
+    STX shift_pressed
+    JMP read_kb_buffer
+
+check_key_pressed:
+    ; Check if it was pressed some non ASCII
+    CMP #$76
+    BEQ esc_key_pressed
+    CMP #$5A
+    BEQ enter_key_pressed
+    ; Special case for NUM pad, ignore it
+    CMP #$E0
+    BEQ read_kb_buffer
+    CMP #$75
+    BEQ arrow_up_down_pressed
+    CMP #$72
+    BEQ arrow_up_down_pressed
+    CMP #$6B
+    BEQ arrow_left_pressed
+    CMP #$74
+    BEQ arrow_right_pressed
+    CMP #$66
+    BEQ backspace_pressed
+    ; Here is an ASCII convert and return it
+    JMP convert_key
+
+esc_key_pressed:
+    ; JSR CLEAR_DISPLAY
+    ; JMP process_key_end
+    LDA #ESC
+    RTS
+
+enter_key_pressed:
+    ; JSR DISPLAY_CHANGE_LINE
+    ; JMP process_key_end
+    LDA #CR
+    RTS
+
+arrow_up_down_pressed:
+    JSR READ_FROM_DISPLAY
+    EOR #%01000000
+    ORA #%10000000
+    JSR SEND_DISPLAY_COMMAND
+    JMP read_kb_buffer
+
+arrow_left_pressed:
+    JSR READ_FROM_DISPLAY
+    SEC
+    SBC #1
+    ORA #%10000000
+    JSR SEND_DISPLAY_COMMAND
+    JMP read_kb_buffer
+
+arrow_right_pressed:
+    JSR READ_FROM_DISPLAY
+    CLC
+    ADC #1
+    ORA #%10000000
+    JSR SEND_DISPLAY_COMMAND
+    JMP read_kb_buffer
+
+backspace_pressed:
+    ; JSR READ_FROM_DISPLAY
+    ; SEC
+    ; SBC #1
+    ; ORA #%10000000
+    ; PHA
+    ; JSR SEND_DISPLAY_COMMAND
+    ; LDA #" "
+    ; JSR PRINT_CHAR
+    ; PLA
+    ; JSR SEND_DISPLAY_COMMAND
+    ; JMP process_key_end
+    LDA #BS
+    RTS
+
+convert_key:
+    LDX #0
+    CPX shift_pressed
+    BEQ convert_and_return
+    ORA #$80
+convert_and_return:
+    TAX
+    LDA keymap,X
+    RTS
 
 ;-------------------------------------------------------------------------
 ;  Let's get started
@@ -55,13 +258,68 @@ PROMPT          =     "\"            ; Prompt character
 ;  are selected.
 ;-------------------------------------------------------------------------
 
+main:
 RESET           CLD                  ;   Clear decimal arithmetic mode
-                CLI
+
+    IF RAM = 1
+        LDA #<read_kb
+        STA $FE
+        LDA #>read_kb
+        STA $FF
+    ENDIF
+
+    LDA #$00
+    STA buf_write_ind
+    STA buf_read_ind
+    STA release_button
+    STA shift_pressed
+
+    ; Disable all interrupts
+    LDA #$7F
+    STA VIA_FIRST_IER
+
+; Setup port directions
+    ; LDA #$F3
+    ; STA VIA_FIRST_DDRB
+
+; Setup handshakes
+    LDA #%11000001
+    STA VIA_FIRST_PCR
+
+    ; Enable CA1 interrupt
+    LDA #$82
+    STA VIA_FIRST_IER
+
+; Disable latch
+    LDA #$00
+    STA VIA_FIRST_ACR
+
+; CA1 interrupts on positive edge
+    ; LDA #$01
+    ; STA VIA_FIRST_PCR
+
+; Setup port directions
+    LDA #$00
+    STA VIA_FIRST_DDRA
+
+    LDA VIA_FIRST_IFR
+    LDA VIA_FIRST_RA
+
+    CLI
+
+; Init display 2
+    WRITE_WORD VIA_FIRST_PCR, DISPLAY_PCR
+    WRITE_WORD VIA_FIRST_RB, DISPLAY_ADDR
+    WRITE_WORD VIA_FIRST_DDRB, DISPLAY_DDR
+    LDA #%00100000
+    STA DISPLAY_PCR_MASK
+    JSR INIT_DISPLAY
+
                 LDY     #%01111111  ;   Mask for DSP data direction reg
-                STY     DSP          ;    (DDR mode is assumed after reset)
+                ;STY     DSP          ;    (DDR mode is assumed after reset)
                 LDA     #%10100111  ;   KBD and DSP control register mask
-                STA     KBDCR        ;   Enable interrupts, set CA1, CB1 for
-                STA     DSPCR        ;    positive edge sense/output mode.
+                ;STA     KBDCR        ;   Enable interrupts, set CA1, CB1 for
+                ;STA     DSPCR        ;    positive edge sense/output mode.
 
 ; Program falls through to the GETLINE routine to save some program bytes
 ; Please note that Y still holds $7F, which will cause an automatic Escape
@@ -77,19 +335,25 @@ NOTCR           CMP     #BS            ; Backspace key?
                 INY                    ; Advance text index
                 BPL     NEXTCHAR       ; Auto ESC if line longer than 127
 
-ESCAPE          LDA     #PROMPT        ; Print prompt character
+ESCAPE          
+    JSR CLEAR_DISPLAY
+                LDA     #PROMPT        ; Print prompt character
                 JSR     ECHO           ; Output it.
+; GETLINE: 
+    ; doing nothing line was changed in ECHO
 
-GETLINE         LDA     #CR            ; Send CR
-                JSR     ECHO
+; Initial GETLINE
+; GETLINE         LDA     #CR            ; Send CR
+;                 JSR     ECHO
 
                 LDY     #0+1           ; Start a new input line
 BACKSPACE       DEY                    ; Backup text index
-                BMI     GETLINE        ; Oops, line's empty, reinitialize
+                BMI     ESCAPE        ; Oops, line's empty, reinitialize
 
-NEXTCHAR        LDA     KBDCR          ; Wait for key press
-                BPL     NEXTCHAR       ; No key yet!
-                LDA     KBD            ; Load character. B7 should be '1'
+NEXTCHAR        ;LDA     KBDCR          ; Wait for key press
+                ;BPL     NEXTCHAR       ; No key yet!
+                ;LDA     KBD            ; Load character. B7 should be '1'
+    JSR read_kb_buffer
                 STA     IN,Y           ; Add to text buffer
                 JSR     ECHO           ; Display character
                 CMP     #CR
@@ -101,6 +365,8 @@ NEXTCHAR        LDA     KBDCR          ; Wait for key press
                 LDA     #0             ; Default mode is XAM
                 TAX                    ; X=0
 
+SETBLOCK:
+    ASL
 SETSTOR         ASL                    ; Leaves $7B if setting STOR mode
 
 SETMODE         STA     MODE           ; Set mode flags
@@ -109,14 +375,21 @@ BLSKIP          INY                    ; Advance text index
 
 NEXTITEM        LDA     IN,Y           ; Get character
                 CMP     #CR
-                BEQ     GETLINE        ; We're done if it's CR!
+                ; BEQ     GETLINE        ; We're done if it's CR!
+                BNE     PROCEED_NEXT_ITEM
+                JSR wait_for_key_press
+                JMP ESCAPE
+PROCEED_NEXT_ITEM:
                 CMP     #"."
                 BCC     BLSKIP         ; Ignore everything below "."!
-                BEQ     SETMODE        ; Set BLOCK XAM mode ("." = $AE)
+                BEQ     SETBLOCK        ; Set BLOCK XAM mode ("." = $AE)
                 CMP     #":"
                 BEQ     SETSTOR        ; Set STOR mode! $BA will become $7B
                 CMP     #"R"
                 BEQ     RUN            ; Run the program! Forget the rest
+    ; For lower case too
+    CMP #"r"
+    BEQ RUN
                 STX     L              ; Clear input value (X=0)
                 STX     H
                 STY     YSAV           ; Save Y for comparison
@@ -124,9 +397,10 @@ NEXTITEM        LDA     IN,Y           ; Get character
 ; Here we're trying to parse a new hex value
 
 NEXTHEX         LDA     IN,Y           ; Get character for hex test
-                EOR     #$B0           ; Map digits to 0-9
+                EOR     #$30           ; Map digits to 0-9
                 CMP     #9+1           ; Is it a decimal digit?
                 BCC     DIG            ; Yes!
+    ORA #%00100000 ; I need it for case insensitive convertion
                 ADC     #$88           ; Map letter "A"-"F" to $FA-FF
                 CMP     #$FA           ; Hex letter?
                 BCC     NOTHEX         ; No! Character not hex
@@ -184,7 +458,7 @@ SETADR          LDA     L-1,X          ; Copy hex data to
 ; Print address and data from this address, fall through next BNE.
 
 NXTPRNT         BNE     PRDATA         ; NE means no address to print
-                LDA     #CR            ; Print CR first
+                LDA     #NEXT_LINE            ; Print CR first
                 JSR     ECHO
                 LDA     XAMH           ; Output high-order byte of address
                 JSR     PRBYTE
@@ -192,9 +466,11 @@ NXTPRNT         BNE     PRDATA         ; NE means no address to print
                 JSR     PRBYTE
                 LDA     #":"           ; Print colon
                 JSR     ECHO
+                JMP SKIP_SPACE
 
 PRDATA          LDA     #" "           ; Print space
                 JSR     ECHO
+SKIP_SPACE:
                 LDA     (XAML,X)       ; Get data from address (X=0)
                 JSR     PRBYTE         ; Output it in hex format
 XAMNEXT         STX     MODE           ; 0 -> MODE (XAM mode).
@@ -208,8 +484,8 @@ XAMNEXT         STX     MODE           ; 0 -> MODE (XAM mode).
                 BNE     MOD8CHK        ; No carry!
                 INC     XAMH
 
-MOD8CHK         LDA     XAML           ; If address MOD 8 = 0 start new line
-                AND     #%00000111
+MOD8CHK         LDA     XAML           ; If address MOD 4 = 0 start new line
+                AND     #%00000011
                 BPL     NXTPRNT        ; Always taken.
 
 ;-------------------------------------------------------------------------
@@ -242,10 +518,66 @@ PRHEX           AND     #%00001111    ; Mask LSD for hex print
 ;  Subroutine to print a character to the terminal
 ;-------------------------------------------------------------------------
 
-ECHO            BIT     DSP            ; DA bit (B7) cleared yet?
-                BMI     ECHO           ; No! Wait for display ready
-                STA     DSP            ; Output character. Sets DA
+; ECHO            BIT     DSP            ; DA bit (B7) cleared yet?
+;                 BMI     ECHO           ; No! Wait for display ready
+;                 STA     DSP            ; Output character. Sets DA
+;                 RTS
+
+ECHO:
+    PHA
+    CASE ACCUM
+        CASE_OF BS
+            JSR READ_FROM_DISPLAY
+            SEC
+            SBC #1
+            ORA #%10000000
+            PHA
+            JSR SEND_DISPLAY_COMMAND
+            LDA #" "
+            JSR PRINT_CHAR
+            PLA
+            JSR SEND_DISPLAY_COMMAND
+        END_OF
+        CASE_OF CR
+            ; Ignoring CR from keyboard
+        END_OF
+        CASE_OF NEXT_LINE
+            ; Load cursor position
+            JSR READ_FROM_DISPLAY
+            AND #%01000000
+            IF_NOT_ZERO
+                TXA
+                PHA
+                JSR wait_for_key_press
+                JSR CLEAR_DISPLAY
+                PLA
+                TAX
+                LDA #%10000000
+            ELSE_
+                LDA #%11000000
+            END_IF
+            JSR SEND_DISPLAY_COMMAND
+        END_OF
+        if RAM = 1
+            CASE_OF ESC
+                ; Disable interrupts from keyboard
+                ; Disable all interrupts
+                LDA #$7F
+                STA VIA_FIRST_IER
+                ; Read keyboard content just in case
+                LDA VIA_FIRST_IFR
+                LDA VIA_FIRST_RA
+                ; Work with stack
+                PLA ; pull character
+                PLA ; pull echo L
+                PLA ; pull echo H
                 RTS
+            END_OF
+        endif
+        JSR PRINT_CHAR
+    END_CASE
+    PLA
+    RTS
 
 ;-------------------------------------------------------------------------
 ;  Vector area
