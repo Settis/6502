@@ -1,6 +1,7 @@
     ALLOC_2 DISPLAY_ADDR ;= $01
     ALLOC_2 DISPLAY_STRING_ADDR ;= $03
     ALLOC DISPLAY_TMP ;= $05
+    ALLOC DISPLAY_READ_TMP
     ALLOC_2 DISPLAY_PCR ;= $09
     ALLOC DISPLAY_PCR_MASK ;= $0B ; 0C
     ALLOC_2 DISPLAY_DDR ;= $0D; 0E
@@ -95,59 +96,52 @@ INIT_DISPLAY:
 ; first part of 4-bit mode
     LDA #%00100000
     JSR WRITE_4_BYTES_TO_DISPLAY
+    JSR delay_37
 
 ; 4-bit mode command
     ; 00100000 - command
     ; 00010000 - 8-bit mode
     ; 00001000 - 2 lines
     ; 00000100 - font
-    ; LDA #%00100000
-    ; JSR WRITE_4_BYTES_TO_DISPLAY
-    ; LDA #%11000000
-    ; JSR WRITE_4_BYTES_TO_DISPLAY
-
-    LDA #%00101100
-    JSR SEND_DISPLAY_COMMAND
+    LDA #%00100000
+    JSR WRITE_4_BYTES_TO_DISPLAY
+    LDA #%11000000
+    JSR WRITE_4_BYTES_TO_DISPLAY
+    JSR delay_37
 
 ; Display ON
     ; 00001000 - command
     ; 00000100 - ON/OFF flag
     ; 00000010 - cursor ON/OFF
     ; 00000001 - blinking ON/OFF
-    ; LDA #%00000000
-    ; JSR WRITE_4_BYTES_TO_DISPLAY
-    ; LDA #%11110000
-    ; JSR WRITE_4_BYTES_TO_DISPLAY
-
-    LDA #%00001111
-    JSR SEND_DISPLAY_COMMAND
+    LDA #%00000000
+    JSR WRITE_4_BYTES_TO_DISPLAY
+    LDA #%11110000
+    JSR WRITE_4_BYTES_TO_DISPLAY
+    JSR delay_37
 
 ; Clear display
-    JSR CLEAR_DISPLAY
+    LDA #%00000000
+    JSR WRITE_4_BYTES_TO_DISPLAY
+    LDA #%00010000
+    JSR WRITE_4_BYTES_TO_DISPLAY
+    JSR delay_1_52
 
 ; Entry mode set
     ; 00000100 - command
     ; 00000010 - increment cursor move
     ; 00000001 - display shift
-    ; LDA #%00000000
-    ; JSR WRITE_4_BYTES_TO_DISPLAY
-    ; LDA #%01100000
-    ; JSR WRITE_4_BYTES_TO_DISPLAY
-
-    LDA #%00000110
-    JSR SEND_DISPLAY_COMMAND
+    LDA #%00000000
+    JSR WRITE_4_BYTES_TO_DISPLAY
+    LDA #%01100000
+    JSR WRITE_4_BYTES_TO_DISPLAY
+    JSR delay_37
 
     RTS
 
 CLEAR_DISPLAY:
-    ; LDA #%00000000
-    ; JSR WRITE_4_BYTES_TO_DISPLAY
-    ; LDA #%00010000
-    ; JSR WRITE_4_BYTES_TO_DISPLAY
-
     LDA #%00000001
     JSR SEND_DISPLAY_COMMAND
-    JSR delay_1_52
     RTS
 
 DISPLAY_CHANGE_LINE:
@@ -203,6 +197,10 @@ SEND_DISPLAY_COMMAND:
 WRITE_TO_DISPLAY:
     TXA
     PHA
+    BEGIN ; Wait if display is busy
+        JSR READ_FROM_DISPLAY
+        AND #%10000000
+    UNTIL_ZERO
     LDX #0
     LDA DISPLAY_TMP
     AND #$F0
@@ -234,7 +232,7 @@ READ_FROM_DISPLAY:
 
     JSR READ_4_BYTES_FROM_DISPLAY
 
-    STA DISPLAY_TMP
+    STA DISPLAY_READ_TMP
 
     JSR READ_4_BYTES_FROM_DISPLAY
 
@@ -243,8 +241,8 @@ READ_FROM_DISPLAY:
     ROR
     ROR
     ROR
-    ORA DISPLAY_TMP
-    STA DISPLAY_TMP
+    ORA DISPLAY_READ_TMP
+    STA DISPLAY_READ_TMP
 
     ; Set port to output
     LDX #$0
@@ -254,7 +252,7 @@ READ_FROM_DISPLAY:
     PLA
     TAX
     ; Load data back to A
-    LDA DISPLAY_TMP
+    LDA DISPLAY_READ_TMP
     RTS
 
 WRITE_4_BYTES_TO_DISPLAY:
@@ -270,8 +268,6 @@ WRITE_4_BYTES_TO_DISPLAY:
     ; Invert Enable
     EOR DISPLAY_PCR_MASK
     STA (DISPLAY_PCR,X)
-    ; commands need > 37us to settle
-    JSR delay_37
     RTS
 
 ; Return 4 upper bytes in A
@@ -291,7 +287,5 @@ READ_4_BYTES_FROM_DISPLAY:
     LDA (DISPLAY_PCR,X)
     EOR DISPLAY_PCR_MASK
     STA (DISPLAY_PCR,X)
-    ; commands need > 37us to settle
-    JSR delay_37
     PLA
     RTS
