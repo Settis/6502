@@ -10,9 +10,9 @@
 ;
 ;-------------------------------------------------------------------------
 
-RAM = 1
+RAM = 0
     IF RAM = 0
-        ORG $FC00
+        ORG $F900
     else
         ORG $0300
     endif
@@ -1140,6 +1140,10 @@ CHARACTERS:
 ; NMI_VEC         .DA     $0F00          ; NMI vector
 ; RESET_VEC       .DA     RESET          ; RESET vector
 ; IRQ_VEC         .DA     $0000          ; IRQ vector
+
+	IF RAM = 0
+		RESET_VECTOR main, read_kb, main
+	ENDIF
 
 ;-------------------------------------------------------------------------
 
