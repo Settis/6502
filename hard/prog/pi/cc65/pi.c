@@ -15,7 +15,7 @@
 // |  $d0        |   58,499s
 // |  $e0        | 1m07,703s 
 // |  $f0        | 1m18,005s
-// |  $ff        | 1m28,259s
+// |  $ff        | 1m28,259s | for 65C02 = 1m 27,895s
 
 #define TO_PRINT ((unsigned char) 0xff)
 
