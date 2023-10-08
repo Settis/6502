@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cc65 -Os pi.c
+cc65 -Oi -Or -Os -T -r pi.c
 ca65 pi.s
 cl65 -m map.txt -C uartMon.cfg pi.o uartMon.lib
 
