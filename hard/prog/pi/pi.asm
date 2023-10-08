@@ -17,6 +17,9 @@
 ; |  $f0        |  9m 59,723s  |  1m 23,384s     |
 ; |  $ff        | 11m 54,544s  |  1m 34,118s     |
 
+; With mul10 1m 10,405s
+; With div10 1m 10,396s
+
     PROCESSOR 6502
 
     .org $0200
@@ -134,12 +137,7 @@ main:
     INY
     LDA (ARRAY_POINTER_L),Y
     STA MUL_1_H
-
-    LDA #10
-    STA MUL_2_L
-    LDA #0
-    STA MUL_2_H
-    JSR MUL
+    JSR MUL10
 
     ; x += carry
     ; x in MULTIPLY result
@@ -223,12 +221,7 @@ main:
     STA DIV_1_L
     LDA CARRY_H
     STA DIV_1_H
-    
-    LDA #10
-    STA DIV_2_L
-    LDA #0
-    STA DIV_2_H
-    JSR DIV
+    JSR DIV10
 
     ; const digitFromCarry assignment
     LDA DIV_CEIL_L
@@ -288,40 +281,6 @@ main:
     JMP .print_loop
 
 ; MUL_RES_H .. MUL_RES_L = MUL_1_H .. MUL_1_L * MUL_2_H .. MUL_2_L
-MUL_ADD:
-    subroutine
-    ; put 0 to result
-    LDA #0
-    STA MUL_RES_L
-    STA MUL_RES_H
-    LDA MUL_2_L
-    BNE .loop
-    LDA MUL_2_H
-    BNE .loop
-    ; Multiply by 0
-    RTS
-.loop:
-    CLC
-    LDA MUL_1_L
-    ADC MUL_RES_L
-    STA MUL_RES_L
-    LDA MUL_1_H
-    ADC MUL_RES_H
-    STA MUL_RES_H
-    
-    SEC
-    LDA MUL_2_L
-    SBC #1
-    STA MUL_2_L
-    LDA MUL_2_H
-    SBC #0
-    STA MUL_2_H
-
-    BNE .loop
-    LDA MUL_2_L
-    BNE .loop   
-    RTS
-
 ; MUL on shifts
 MUL:
     subroutine
@@ -351,49 +310,29 @@ MUL:
     LDY TMP_FOR_XY
     RTS
 
+MUL10:
+    ASL MUL_1_L
+    ROL MUL_1_H
+    LDA MUL_1_L
+    STA MUL_RES_L
+    LDA MUL_1_H
+    STA MUL_RES_H
+    ASL MUL_1_L
+    ROL MUL_1_H
+    ASL MUL_1_L
+    ROL MUL_1_H
+    CLC
+    LDA MUL_1_L
+    ADC MUL_RES_L
+    STA MUL_RES_L
+    LDA MUL_1_H
+    ADC MUL_RES_H
+    STA MUL_RES_H
+    RTS
 
 ; DIV_CEIL_H .. DIV_CEIL_L = DIV_1_H .. DIV_1_L // DIV_2_H .. DIV_2_L
 ; DIV_REM_H .. DIV_REM_L = DIV_1_H .. DIV_1_L % DIV_2_H .. DIV_2_L
 ; NB: DIV_1 points the same area as DIV_REM
-DIV_SUB:
-    subroutine
-    LDA #0
-    STA DIV_CEIL_H
-    STA DIV_CEIL_L
-
-.cmp_h:
-    ; Check if DIV_1 >= DIV_2
-    LDA DIV_1_H
-    CMP DIV_2_H
-    BEQ .cmp_l
-    BMI .end
-    JMP .loop
-.cmp_l:
-    LDA DIV_1_L
-    CMP DIV_2_L
-    BCC .end
-
-.loop:
-    SEC
-    LDA DIV_1_L
-    SBC DIV_2_L
-    STA DIV_1_L
-    LDA DIV_1_H
-    SBC DIV_2_H
-    STA DIV_1_H
-
-    CLC
-    LDA DIV_CEIL_L
-    ADC #1
-    STA DIV_CEIL_L
-    LDA DIV_CEIL_H
-    ADC #0
-    STA DIV_CEIL_H
-    JMP .cmp_h
-
-.end:
-    RTS
-
 ; DIV via shift
 DIV:
     subroutine
@@ -429,6 +368,46 @@ DIV:
     LDA DIV_REM_H
     SBC DIV_2_H
     STA DIV_REM_H
+
+    ROL TMP_WORD_L
+
+.no_subtract:
+    ROR TMP_WORD_L
+    ROL DIV_CEIL_L
+    ROL DIV_CEIL_H
+    DEY
+    BNE .loop
+    LDY TMP_FOR_XY
+    RTS
+
+DIV10:
+    subroutine
+    LDA #0
+    STA DIV_REM_H
+    STA DIV_REM_L
+    STY TMP_FOR_XY
+    LDY #16
+.loop:
+    ASL DIV_1_L
+    ROL DIV_1_H
+    ROL DIV_REM_L
+    ; ROL DIV_REM_H
+
+    CLC
+    ROL TMP_WORD_L
+    ; if DIV_REM >= DIV_2
+    LDA DIV_REM_L
+    CMP #10
+    BCC .no_subtract
+
+.subtract:
+    SEC
+    LDA DIV_REM_L
+    SBC #10
+    STA DIV_REM_L
+    ; LDA DIV_REM_H
+    ; SBC DIV_2_H
+    ; STA DIV_REM_H
 
     ROL TMP_WORD_L
 
