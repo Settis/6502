@@ -14,15 +14,32 @@ SEND_BYTE = RESPONSE
 ; They must be sequential from CRC to CMD
     ALLOC CRC
     ALLOC ARG_0
+PAGE_ADDR_POINTER = ARG_0
     ALLOC ARG_1
+PAGE_ADDR_POINTER_H = ARG_1
     ALLOC ARG_2
     ALLOC ARG_3
     ALLOC CMD
 
-main:
+SD_SECTOR_0 = ARG_0
+SD_SECTOR_1 = ARG_1
+SD_SECTOR_2 = ARG_2
+SD_SECTOR_3 = ARG_3
+
+SD_PAGE_ADDR = $7E00
+
+main_SD:
     JSR INIT_UART_PRINT
     JSR initSD
     JSR readData
+
+    ; check the magic number must be 55 aa
+    UART_PRINTLN
+    LDA $7FFE
+    JSR UART_PRINT_NUMBER
+    LDA $7FFF
+    JSR UART_PRINT_NUMBER
+
     JSR UART_PRINT_WAIT_FOR_BUFFER
     RTS
 
@@ -32,11 +49,14 @@ main:
 sendCmd0Msg:
     STRING "Send CMD0"
 
-sendCmd55Msg:
-    STRING "Send CMD41 & CMD55"
+sendAcmd41Msg:
+    STRING "Send ACMD41 & CMD55"
 
 sendCmd8Msg:
     STRING "Send CMD8"
+
+sendCmd58Msg:
+    STRING "Send CMD58"
 
 sendCmdRead:
     STRING "Read data from card"
@@ -57,18 +77,53 @@ initSD:
     
     ; Dummy clock for enable native command mode
     subroutine
-    ; CS = DI = HIGH
-    LDA #%01010000
-    STA VIA_FIRST_RB
-    LDX #80
+    LDX #10
 .loop:
-    LDA #%01110000
-    STA VIA_FIRST_RB
-    LDA #%01010000
-    STA VIA_FIRST_RB
+    JSR dummyClockWithDisabledCard
     DEX
     BNE .loop
 
+    SUBROUTINE
+
+    JSR SEND_CMD_0
+    
+    JSR SEND_CMD_8
+    JSR SEND_CMD_58
+
+    LDA #10
+    PHA
+.loop    
+    JSR SEND_CMD_ACMD41
+
+    LDA RESPONSE
+    CMP #$0 ; R1 Ready
+    BEQ .end
+    JSR LONG_WAITING
+    PLA
+    SEC
+    SBC #1
+    PHA
+    BNE .loop
+.end:
+    PLA
+
+    JSR disableSDAfterOperation
+    RTS
+
+LONG_WAITING:
+    SUBROUTINE
+    LDX #$10
+.loop:
+    TXA
+    PHA
+    delay 200, 200
+    PLA
+    TAX
+    DEX
+    BEQ .loop
+    RTS
+
+SEND_CMD_0:
     UART_PRINTLN_STRING sendCmd0Msg
     ; Send CMD0 =============================
     LDA #$40
@@ -97,7 +152,9 @@ initSD:
     BNE .loop
 .end:
     PLA
+    RTS
 
+SEND_CMD_8:
     UART_PRINTLN
 
     UART_PRINTLN_STRING sendCmd8Msg
@@ -124,13 +181,43 @@ initSD:
     JSR UART_PRINT_NUMBER
 
     UART_PRINTLN
+    RTS
 
+SEND_CMD_58: ; For OCR reading
+    UART_PRINTLN
+
+    UART_PRINTLN_STRING sendCmd58Msg
+
+    LDA #[ 58 | $40 ]
+    STA CMD
+    LDA #$0
+    STA ARG_3
+    STA ARG_2
+    STA ARG_1
+    STA ARG_0
+    LDA #$FD
+    STA CRC
+    JSR sendSDCommandAndReadR3R7
+    
+    LDA CMD
+    JSR UART_PRINT_NUMBER
+    LDA ARG_3
+    JSR UART_PRINT_NUMBER
+    LDA ARG_2
+    JSR UART_PRINT_NUMBER
+    LDA ARG_1
+    JSR UART_PRINT_NUMBER
+    LDA ARG_0
+    JSR UART_PRINT_NUMBER
+
+    UART_PRINTLN
+    RTS
+
+SEND_CMD_ACMD41:
     subroutine
-    UART_PRINTLN_STRING sendCmd55Msg
+    UART_PRINTLN_STRING sendAcmd41Msg
     ; Send CMD41 with leading CMD55
-    LDA #$F0
-    PHA
-.loop
+
     LDA #[55 | $40]
     STA CMD
     LDA #0
@@ -138,6 +225,8 @@ initSD:
     STA ARG_1
     STA ARG_2
     STA ARG_3
+    LDA #$65
+    STA CRC
     JSR sendSDCommand
     LDA RESPONSE
     JSR UART_PRINT_NUMBER
@@ -146,37 +235,44 @@ initSD:
     STA CMD
     LDA #$40
     STA ARG_3
+    LDA #$77
+    STA CRC
     JSR sendSDCommand
     LDA RESPONSE
-    CMP #$0 ; R1 Ready
-    BEQ .end
     JSR UART_PRINT_NUMBER
-    delay 250, 250
-    PLA
-    SEC
-    SBC #1
-    PHA
-    BNE .loop
-.end:
-    PLA
+    UART_PRINTLN
+    RTS
 
-
-    ; Disable SD
-    LDA #%00010000
+disableSDAfterOperation:
+dummyClockWithDisabledCard:
+    SUBROUTINE
+        ; CS = DI = HIGH
+    LDA #%01010000
     STA VIA_FIRST_RB
+    LDY #10
+.loop:
+    LDA #%01110000
+    STA VIA_FIRST_RB
+    LDA #%01010000
+    STA VIA_FIRST_RB
+    DEY
+    BNE .loop
     RTS
 
 
+; The address must be already in ARG_0 .. ARG_3
 readData:
+readSector:
+    UART_PRINTLN
     UART_PRINTLN_STRING sendCmdRead
     LDA #[ 17 | $40 ]
     STA CMD
-    LDA #$0
-    STA ARG_0
-    STA ARG_1
-    STA ARG_2
-    STA ARG_3
-    STA CRC
+    ; LDA #$0
+    ; STA ARG_0
+    ; STA ARG_1
+    ; STA ARG_2
+    ; STA ARG_3
+    ; STA CRC
     JSR sendSDCommandAndReadData
     RTS
 
@@ -184,9 +280,7 @@ readData:
 ; Sends command to SD card and wait for expected response
 sendSDCommand:
     JSR sendJustComandAndWaitForR1
-    ; Disable SD
-    LDA #%00010000
-    STA VIA_FIRST_RB
+    JSR disableSDAfterOperation
     RTS
 
 ; You must prepare the command, arg and crc
@@ -207,9 +301,7 @@ sendSDCommandAndReadR3R7:
     DEX
     BPL .loop
 
-    ; Disable SD
-    LDA #%00010000
-    STA VIA_FIRST_RB
+    JSR disableSDAfterOperation
     RTS
 
 sendSDCommandAndReadData:
@@ -219,17 +311,55 @@ sendSDCommandAndReadData:
     STA CMD
     JSR UART_PRINT_NUMBER
     UART_PRINTLN
-    LDY #$10
+    JSR waitForDataToken
+    LDA #<SD_PAGE_ADDR
+    STA PAGE_ADDR_POINTER
+    LDA #>SD_PAGE_ADDR
+    STA PAGE_ADDR_POINTER_H
+    JSR readAPageFromSD
+    INC PAGE_ADDR_POINTER_H
+    JSR readAPageFromSD
+    ; reading CRC
+    JSR readByteFromSD
+    JSR readByteFromSD
+    UART_PRINTLN
+
+    JSR disableSDAfterOperation
+    RTS
+
+waitForDataToken:
+    SUBROUTINE
+    LDY #$FF
 .loop:
+    TYA
+    PHA
+    JSR readByteFromSD
+    LDA RESPONSE
+    CMP #$FE
+    BEQ .end
+    PLA
+    TAY
+    DEY
+    BNE .loop
+.end:
+    PLA
+    RTS
+
+readAPageFromSD:
+    SUBROUTINE
+    LDY #0
+.loop:
+    TYA
+    PHA
     JSR readByteFromSD
     LDA RESPONSE
     JSR UART_PRINT_NUMBER
-    DEY
+    PLA
+    TAY
+    LDA RESPONSE
+    STA (PAGE_ADDR_POINTER),Y
+    INY
     BNE .loop
-
-    ; Disable SD
-    LDA #%00010000
-    STA VIA_FIRST_RB
     RTS
 
 sendJustComandAndWaitForR1:

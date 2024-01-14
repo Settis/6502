@@ -28,8 +28,8 @@ main:
 */
 
 ; You can change buffer size and place if needed
-OUTPUT_BUFFER_AND_MASK set $0F
-OUTPUT_BUFFER set $7F00
+OUTPUT_BUFFER_AND_MASK set $FF
+OUTPUT_BUFFER set $7D00
 
 INTERRUPT_INDIRECT = $FE ; $ $FF
 BUFFER_TIMER_FLAG = $01
@@ -69,6 +69,8 @@ INIT_UART_PRINT:
     ENDM
 
 UART_PRINT_STRING_SUB:
+    TYA
+    PHA
     subroutine
     LDY #0
 .loop:
@@ -78,6 +80,8 @@ UART_PRINT_STRING_SUB:
     INY
     JMP .loop
 .end:
+    PLA
+    TAY
     RTS
 
 UART_PRINT_NUMBER:

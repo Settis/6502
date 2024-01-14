@@ -87,6 +87,8 @@ fat_1_region_sector_number = partition_start_sector + fat_reserved_logical_secto
 fat_2_region_sector_number = fat_1_region_sector_number + fat_logical_sectors_per_fat
 data_region_sector_number = fat_2_region_sector_number + fat_logical_sectors_per_fat
 
+print("data region start sector: " + hex(data_region_sector_number))
+
 def get_block_for_cluster(cluster):
     return getBlock(data_region_sector_number + (cluster - 2)*fat_sectors_per_cluster)
 
@@ -107,9 +109,11 @@ def print_directory(byte_array):
         if entry_data[0] == 0:
             break
         if entry_data[0] == 0xe5:
+            print("deleted")
             deleted += 1
             continue
         if entry_data[0xB] == 0x0F:
+            print("vfat")
             vfat_name += 1
             continue
         print_directory_entry(entry_data)
