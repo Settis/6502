@@ -1,3 +1,7 @@
+; Resource usages
+; ZP $00..$2A, $F8..$FF
+; Stack $1E0..$1FF
+
     INCLUDE readSome.asm
 
 PARTITION_OFFSET = $1BE ; 16 bytes per record, 4 records
