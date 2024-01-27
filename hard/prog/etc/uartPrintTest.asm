@@ -1,7 +1,10 @@
-    incdir std
-    include std.asm
-    org $200
-    include uart_print.asm
+UPPER_RAM_START = $7f00
+    
+    INCLUDE "../std/std.asm"
+
+    include uartPrint.asm
+
+    SEG code
 
 someString:
     STRING "Hello from 6502!"
@@ -16,3 +19,5 @@ main:
     JSR UART_PRINT_NUMBER
     JSR UART_PRINT_WAIT_FOR_BUFFER
     RTS
+
+    INCLUDE checkSegments.asm

@@ -1,5 +1,4 @@
-    INCDIR "std"
-    INCLUDE "std.asm"
+    INCLUDE "../std/std.asm"
 
     .org $0200
 
@@ -8,8 +7,11 @@
 ; Pin 6 - Clock
 ; Pin 4 - RST / CS
 
-    ALLOC command
-    ALLOC argument
+    SEG.U zpVars
+command ds 1
+argument ds 1
+
+    SEG code
 
 main:
     JSR init

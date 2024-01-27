@@ -2,6 +2,8 @@
 ;     JSR INIT_UART_PRINT
 ; End work with:
 ;     JSR UART_PRINT_WAIT_FOR_BUFFER
+; Place buffer after the main code:
+;     INCLUDE uart_buffer.asm
 
 ; Example:
 /*
@@ -27,17 +29,21 @@ main:
 
 */
 
+    ; INCLUDE ../std/std.asm
+
 ; You can change buffer size and place if needed
 OUTPUT_BUFFER_AND_MASK set $FF
-OUTPUT_BUFFER set $7D00
 
 INTERRUPT_INDIRECT = $FE ; $ $FF
 BUFFER_TIMER_FLAG = $01
-    ALLOC BUFFER_READ_IND
-    ALLOC BUFFER_WRITE_IND
-    ALLOC BUFFER_FLAG
-    ALLOC STRING_POINTER
-    ALLOC STRING_POINTER_H
+
+    SEG.U zpVars 
+BUFFER_READ_IND: DS 1
+BUFFER_WRITE_IND: DS 1
+BUFFER_FLAG: DS 1
+STRING_POINTER: DS 2
+
+    SEG code
 
 INIT_UART_PRINT:
     LDA #0

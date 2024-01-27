@@ -1,6 +1,7 @@
     PROCESSOR 6502
-    INCDIR "std"
-    INCLUDE "std.asm"
+    INCLUDE "../std/std.asm"
+
+    SEG code
 
 start:
     LDA #$0
