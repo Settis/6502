@@ -39,7 +39,7 @@ _BUFFER_TIMER_FLAG = $01
 _BUFFER_READ_IND: DS 1
 _BUFFER_WRITE_IND: DS 1
 _BUFFER_FLAG: DS 1
-_STRING_POINTER: DS 2
+uartStringPointer: DS 2
 
     SEG.U upperRam
 
@@ -67,42 +67,64 @@ INIT_UART_PRINT:
     ENDM
 
     MAC UART_PRINT_STRING
-        WRITE_WORD {1}, _STRING_POINTER
-        JSR _UART_PRINT_STRING_SUB
+        WRITE_WORD {1}, uartStringPointer
+        JSR UART_PRINT_STRING_FROM_POINTER
     ENDM
 
     MAC UART_PRINTLN
+        TXA
+        PHA
         LDA #$A ; new line ASCII
         JSR _write_to_uart
+        PLA
+        TAX
     ENDM
 
-_UART_PRINT_STRING_SUB:
+    MAC UART_PRINT_CHAR
+        TXA
+        PHA
+        LDA #{1}
+        JSR _write_to_uart
+        PLA
+        TAX
+    ENDM
+
+UART_PRINT_STRING_FROM_POINTER:
     TYA
+    PHA
+    TXA
     PHA
     subroutine
     LDY #0
 .loop:
-    LDA (_STRING_POINTER),Y
+    LDA (uartStringPointer),Y
     BEQ .end
     JSR _write_to_uart
     INY
     JMP .loop
 .end:
     PLA
+    TAX
+    PLA
     TAY
     RTS
 
 UART_PRINT_NUMBER:
     subroutine
-    STA _STRING_POINTER
+    STA uartStringPointer
+    TXA
+    PHA
+    LDA uartStringPointer
     LSR
     LSR
     LSR
     LSR
     JSR _uart_print_half_humber
-    LDA _STRING_POINTER
+    LDA uartStringPointer
     AND #$F
     JSR _uart_print_half_humber
+    PLA
+    TAX
     RTS
 
 _uart_print_half_humber:
