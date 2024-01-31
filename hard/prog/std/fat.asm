@@ -50,8 +50,9 @@ _EXTRACT_NEXT_NAME:
     ; Fill internal name with spaces
     LDA #" "
     FOR_Y 0, UP_TO, 11
-        STA (_fatFilename),Y
+        STA _fatFilename,Y
     NEXT_Y
+    ; Copy file name
     FOR_Y 0, UP_TO, 8
         LDA (filenamePointer),Y
         BEQ .end
@@ -60,17 +61,37 @@ _EXTRACT_NEXT_NAME:
         CMP #"/"
         BEQ .end
         JSR _TO_UPPER_CASE
-        STA (_fatFilename),Y
+        STA _fatFilename,Y
     NEXT_Y
     ; After the name must be either '.' or the end
-    INY
+    ; INY is not needed Y = 8 already at the end of the loop
     LDA (filenamePointer),Y
     BEQ .end
     CMP #"/"
-
+    BEQ .end
+    CMP #"."
+    BEQ .nameCopied
+    JMP .extractNextNameInvalid
 .nameCopied
-
+    INY ; in order to point on first extension character
+    JSR _SHIFT_FILENAME_POINTER_BY_Y
+    ; Copy extension
+    FOR_Y 0, UP_TO, 3
+        LDA (filenamePointer),Y
+        BEQ .end
+        CMP #"/"
+        BEQ .end
+        JSR _TO_UPPER_CASE
+        STA _fatFilename+8,Y
+    NEXT_Y
+    ; After extension it must be either '/' or end of line
+    LDA (filenamePointer),Y
+    BEQ .end
+    CMP #"/"
+    BEQ .end
+    JMP .extractNextNameInvalid
 .end
+    JSR _SHIFT_FILENAME_POINTER_BY_Y
     PLA
     TAY
     LDA #_EXTRACT_NEXT_NAME_OK
@@ -88,4 +109,14 @@ _TO_UPPER_CASE:
         SEC
         SBC #$20
     END_IF
+    RTS
+
+_SHIFT_FILENAME_POINTER_BY_Y:
+    CLC
+    TYA
+    ADC filenamePointer
+    STA filenamePointer
+    IF_C_SET
+        INC filenamePointer+1
+    END_IF  
     RTS

@@ -86,9 +86,9 @@ testFile:
     TYA
     ADC testFilesPointer
     STA testFilesPointer
-    LDA testFilesPointer+1
-    ADC #0
-    STA testFilesPointer+1
+    IF_C_SET
+        INC testFilesPointer+1
+    END_IF
     ; Check CRC
     PLA
     CMP CRC_SUM
@@ -165,6 +165,14 @@ internalNamePointer: DS 1
     SEG code
 CHECK_INTERNAL_NAME_SUBROUTINE:
     JSR EXTRACT_NAME_WRAPPER
+    PHA
+    UART_PRINT_STRING PARSED_NAME_MSG
+    FOR_Y 0, UP_TO, 11
+        LDA _fatFilename,Y
+        JSR _write_to_uart
+    NEXT_Y
+    UART_PRINT_CHAR " "
+    PLA
     IF_ZERO
         JSR CHECK_EXPECTED_INTERNAL_NAME
     ELSE_
@@ -214,26 +222,19 @@ EXTRACT_NAME_WRAPPER:
     PLA
     RTS
 
-WRONG_NAME_MSG: STRING "wrong name: "
+PARSED_NAME_MSG: STRING "parsed name: "
+OK_MGS: STRING "OK"
 CHECK_EXPECTED_INTERNAL_NAME:
     SUBROUTINE
-    LDX #0
     FOR_Y 0, UP_TO, 11
-        LDA (_fatFilename),Y
+        LDA _fatFilename,Y
         CMP (internalNamePointer),Y
         IF_NEQ
-            LDX #1
-            JMP .fail
+            JSR INCREMENT_FAILED_TESTS
+            RTS
         END_IF
     NEXT_Y
-    RTS
-.fail
-    JSR INCREMENT_FAILED_TESTS
-    UART_PRINT_STRING WRONG_NAME_MSG
-    FOR_Y 0, UP_TO, 11
-        LDA (_fatFilename),Y
-        JSR _write_to_uart
-    NEXT_Y
+    UART_PRINT_STRING OK_MGS
     RTS
 
 WRONG_FILE_NAME: STRING "/testDir/wrong.txt"
