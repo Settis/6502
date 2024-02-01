@@ -1,4 +1,4 @@
-UPPER_RAM_START = $7f00
+UPPER_RAM_START = $7D00
     INCLUDE "../std/std.asm"
     INCLUDE "fat.asm"
     INCLUDE "crc.asm"
@@ -99,14 +99,26 @@ testFile:
     END_IF
     RTS
 
+INIT_FAIL_MSG: STRING "FAT init failed: "
 main:
+    SUBROUTINE
     JSR INIT_UART_PRINT
     LDA #0
     STA failedTests
+    JSR INIT_FAT
+    IF_NOT_ZERO
+        PHA
+        UART_PRINT_STRING INIT_FAIL_MSG
+        PLA
+        JSR UART_PRINT_NUMBER
+        JMP .end
+    END_IF
     JSR TEST_FILE_NAMES
     JSR TEST_FILE_CRC
     JSR TEST_FILE_NOT_FOUND
     JSR PRINT_TOTAL_RESULT
+
+.end:
     JSR UART_PRINT_WAIT_FOR_BUFFER
     RTS
 

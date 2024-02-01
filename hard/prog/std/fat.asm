@@ -1,7 +1,44 @@
     include sd_card.asm
+
+_PARTITION_OFFSET = $1BE ; 16 bytes per record, 4 records
+_PARTITION_TYPE_OFFSET = $4 ; 1 byte
+_PARTITION_START_LBA_OFFSET = $8 ; 4 bytes
+
+_FAT_FIRST_SECTOR_BYTES_PER_LOGICAL_SECTOR_OFFEST = $B ; 2 bytes
+_FAT_FIRST_SECTOR_SECTORS_PER_CLUSTER_OFFEST = $D ; 1 byte
+_FAT_FIRST_SECTOR_RESERVED_LOGICAL_SECTORS_OFFSET = $E ; 2 bytes
+_FAT_FIRST_SECTOR_NUBMER_OF_FATs_OFFSET = $10 ; 1 byte
+_FAT_FIRST_SECTOR_MEDIA_DESCRIPTOR_OFFSET = $15 ; 1 byte
+_FAT_FIRST_SECTOR_TOTAL_LOGICAL_SECTORS_OFFSET = $20 ; 4 bytes
+_FAT_FIRST_SECTOR_LOGICAL_SECTORS_PER_FAT_OFFSET = $24 ; 4 bytes
+_FAT_FIRST_SECTOR_ROOT_DIRECTORY_CLUSTER_NUMBER_OFFSET = $2C ; 4 bytes
+_FAT_FRIST_SECTOR_FS_INFORMATION_SECTOR_NUMBER_OFFSET = $30 ; 2 bytes
+
+_DIR_RECORD_HIGH_START_CLUSTER_OFFSET = $14 ; 2 bytes
+_DIR_RECORD_LOW_START_CLUSTER_OFFSET = $1a ; 2 bytes
+_DIR_RECORD_FILE_SIZE_OFFSET = $1c ; 4 bytes
+_DIR_RECORD_FLAGS_OFFSET = $B ; 1 byte
+
+    SEG code
+INIT_FAT:
+    JSR INIT_SD
+    RTS_IF_NE
+    
+    RTS
     
     SEG.U zpVars
 filenamePointer: ds 2
+_fatSector: ds 4
+; it will be pseudo data sector !!!
+; = real data region - 2 * sectors per cluster
+; for easy cluster address calculation
+_dataSector: ds 4
+_fatSectorsPerCluster: ds 1
+_rootDirectoryClusterNumber: ds 4
+_openedCluster: ds 4
+_openedSectorInCluster: ds 1
+_openedSector: ds 4
+_openedFileSize: ds 4
 
     SEG code
 OPEN_FILE_BY_NAME:
