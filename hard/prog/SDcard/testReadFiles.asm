@@ -111,6 +111,9 @@ main:
         UART_PRINT_STRING INIT_FAIL_MSG
         PLA
         JSR UART_PRINT_NUMBER
+        UART_PRINT_CHAR " "
+        LDA _response
+        JSR UART_PRINT_NUMBER
         JMP .end
     END_IF
     JSR TEST_FILE_NAMES

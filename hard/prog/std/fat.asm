@@ -20,10 +20,25 @@ _DIR_RECORD_FILE_SIZE_OFFSET = $1c ; 4 bytes
 _DIR_RECORD_FLAGS_OFFSET = $B ; 1 byte
 
     SEG code
+BOOT_SECTOR_SIGN_MSG: STRING "Boot sector sign: "
 INIT_FAT:
     JSR INIT_SD
     RTS_IF_NE
+    ; A = 0 already
+    STA sdSector
+    STA sdSector+1
+    STA sdSector+2
+    STA sdSector+3
+    JSR READ_SD_SECTOR
+    RTS_IF_NE
     
+    UART_PRINT_STRING BOOT_SECTOR_SIGN_MSG
+    LDA sdPageStart + $1FE
+    JSR UART_PRINT_NUMBER
+    LDA sdPageStart + $1FF
+    JSR UART_PRINT_NUMBER
+    UART_PRINTLN
+    LDA #0
     RTS
     
     SEG.U zpVars

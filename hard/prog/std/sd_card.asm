@@ -12,12 +12,12 @@ _sendByte = _response
 ; They must be sequential from CRC to CMD
 _crc: ds 1
 _arg: ds 4
-_sd_sector = _arg
+sdSector = _arg
+_sdHalfPageStart = _arg ; 2 bytes
 _cmd: ds 1
-_retry: ds 1
 
     SEG.U upperRam
-_sdPageStart: ds 512
+sdPageStart: ds 512
 
     SEG code
 ; Changes X and Y
@@ -39,24 +39,96 @@ INIT_SD:
     NEXT_X
     ; Try to switch it into idle several times
     LDA #10
-    STA _retry
+    PHA
 .retryGoIdleState:
         JSR _CMD_GO_IDLE_STATE
         BEQ .sdIsIdle
-    DEC _retry
+        TAY ; We need to save A for return
+    ; Decrement counter in the stack
+    TSX
+    DEC $101,X
     BNE .retryGoIdleState
+    PLA ; pull retry counter back
+    TYA ; restore command exit code
     RTS
 .sdIsIdle:
+    PLA ; pull retry counter back
     JSR _CMD_SEND_IF_COND
     RTS_IF_NE
     ; Try is several times
     LDA #10
-    STA _retry
+    PHA
 .retryAppSendOpCond:
         JSR _CMD_APP_SEND_OP_COND
-        RTS_IF_EQ
-    DEC _retry
+        TAY ; We need to save A for return
+        IF_ZERO
+            PLA
+            TYA
+            RTS
+        END_IF
+    ; Decrement counter in the stack
+    TSX
+    DEC $101,X
     BNE .retryAppSendOpCond
+    PLA ; pull retry counter back
+    TYA ; restore command exit code
+    RTS
+
+; You must have prepared sdSector
+; Changes X and Y
+READ_SD_SECTOR:
+    LDA #[ 17 | $40 ]
+    STA _cmd
+    ; _arg is prepared
+    ; _crc is not checked, so I don't care
+    JSR _SEND_SD_COMMAND_AND_WAIT_R1
+    IF_NEQ
+        PHA
+        JSR _DISABLE_SD_AFTER_OPERATION
+        PLA
+        IF_NEG
+            LDA #IO_SD_BUSY_AFTER_READ_SECTOR
+        ELSE_
+            LDA #IO_SD_BUSY_BEFORE_READ_SECTOR
+        END_IF
+        RTS
+    END_IF
+    LDA _response
+    IF_NEQ
+        JSR _DISABLE_SD_AFTER_OPERATION
+        LDA #IO_SD_ERROR_AFTER_READ_SECTOR
+        RTS
+    END_IF
+    ; Wait for data token
+    SUBROUTINE
+    FOR_Y 0, UP_TO, $F0
+        JSR _READ_BYTE_FROM_SD
+        LDA _response
+        CMP #$FE ; Data token for CMD 17/18/24
+        BEQ .dataTokenReceived
+    NEXT_Y
+    JSR _DISABLE_SD_AFTER_OPERATION
+    LDA #IO_SD_DATA_TOKEN_DID_NOT_RECEIVED_AFTER_READ_SECTOR
+    RTS
+.dataTokenReceived
+    WRITE_WORD sdPageStart, _sdHalfPageStart
+    JSR _READ_A_PAGE_FROM_SD
+    INC _sdHalfPageStart+1
+    JSR _READ_A_PAGE_FROM_SD
+    ; reading CRC
+    JSR _READ_BYTE_FROM_SD
+    JSR _READ_BYTE_FROM_SD
+
+    JSR _DISABLE_SD_AFTER_OPERATION
+    LDA #IO_OK
+    RTS
+
+_READ_A_PAGE_FROM_SD:
+    FOR_Y 0, UP_TO, 0
+        JSR _READ_BYTE_FROM_SD
+        LDA _response
+        STA (_sdHalfPageStart),Y
+    NEXT_Y
     RTS
 
 ; Changes X and Y
@@ -80,7 +152,17 @@ _DUMMY_CLOCK_WITH_DISABLED_CARD:
         LDA #%01010000
         STA VIA_FIRST_RB
     NEXT_Y
+
+    UART_PRINT_STRING SD_CMD_MSG
+    LDA _cmd
+    JSR UART_PRINT_NUMBER
+    LDA _response
+    JSR UART_PRINT_NUMBER
+    UART_PRINTLN
+
     RTS
+
+SD_CMD_MSG: STRING "SD CMD: "
 
 ; CMD 0
 ; Changes X & Y
@@ -128,9 +210,9 @@ _CMD_SEND_IF_COND:
     JSR _SEND_SD_COMMAND_AND_WAIT_R1
     PHA
     ; Read 32 bits of data
-    FOR_X 0, UP_TO, 4
+    FOR_Y 0, UP_TO, 4
         JSR _READ_BYTE_FROM_SD
-    NEXT_X
+    NEXT_Y
     JSR _DISABLE_SD_AFTER_OPERATION
     PLA
     IF_NEQ
@@ -209,12 +291,12 @@ _SEND_SD_COMMAND_AND_WAIT_R1:
     ; Enable SD card
     LDA #0
     STA VIA_FIRST_RB
-    FOR_X 0, UP_TO, $F0
+    FOR_Y 0, UP_TO, $F0
         JSR _READ_BYTE_FROM_SD
         LDA _response
         CMP #$FF
         BEQ .notBusy
-    NEXT_X
+    NEXT_Y
     LDA #_SD_BUSY_BEFORE_COMMAND
     RTS
 .notBusy
@@ -241,11 +323,11 @@ _SEND_SD_COMMAND_AND_WAIT_R1:
     RTS
 
 ; The result will be in _response
-; Changes Y
+; Changes X
 _READ_BYTE_FROM_SD:
-    FOR_Y 0, UP_TO, 8
+    FOR_X 0, UP_TO, 8
         JSR _READ_BIT_FROM_SD
-    NEXT_Y
+    NEXT_X
     RTS
 
 ; The bit will be shifted in _response
