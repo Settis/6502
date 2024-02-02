@@ -43,6 +43,9 @@ INIT_SD:
 .retryGoIdleState:
         JSR _CMD_GO_IDLE_STATE
         BEQ .sdIsIdle
+        PHA
+        JSR _WAIT
+        PLA
         TAY ; We need to save A for return
     ; Decrement counter in the stack
     TSX
@@ -60,12 +63,16 @@ INIT_SD:
     PHA
 .retryAppSendOpCond:
         JSR _CMD_APP_SEND_OP_COND
-        TAY ; We need to save A for return
         IF_ZERO
+            TAY 
             PLA
             TYA
             RTS
         END_IF
+        PHA
+        JSR _WAIT
+        PLA
+        TAY ; We need to save A for return
     ; Decrement counter in the stack
     TSX
     DEC $101,X
@@ -152,17 +159,7 @@ _DUMMY_CLOCK_WITH_DISABLED_CARD:
         LDA #%01010000
         STA VIA_FIRST_RB
     NEXT_Y
-
-    UART_PRINT_STRING SD_CMD_MSG
-    LDA _cmd
-    JSR UART_PRINT_NUMBER
-    LDA _response
-    JSR UART_PRINT_NUMBER
-    UART_PRINTLN
-
     RTS
-
-SD_CMD_MSG: STRING "SD CMD: "
 
 ; CMD 0
 ; Changes X & Y
@@ -198,6 +195,7 @@ _CMD_GO_IDLE_STATE:
     RTS
 
 ; CMD 8
+; Changes X & Y
 _CMD_SEND_IF_COND:
     LDA #[ 8 | $40 ]
     STA _cmd
@@ -209,10 +207,14 @@ _CMD_SEND_IF_COND:
     STA _crc
     JSR _SEND_SD_COMMAND_AND_WAIT_R1
     PHA
+    LDA _response
+    PHA
     ; Read 32 bits of data
     FOR_Y 0, UP_TO, 4
         JSR _READ_BYTE_FROM_SD
     NEXT_Y
+    PLA
+    STA _response
     JSR _DISABLE_SD_AFTER_OPERATION
     PLA
     IF_NEQ
@@ -288,6 +290,9 @@ _SD_BUSY_AFTER_COMMAND = $FF
 ; Changes X and Y
 _SEND_SD_COMMAND_AND_WAIT_R1:
     SUBROUTINE
+    ; Disable SD card
+    LDA #%00010000
+    STA VIA_FIRST_RB
     ; Enable SD card
     LDA #0
     STA VIA_FIRST_RB
@@ -314,7 +319,7 @@ _SEND_SD_COMMAND_AND_WAIT_R1:
     FOR_X 0, UP_TO, $F0
         JSR _READ_BIT_FROM_SD
         LDA _response
-        BMI .r1Received
+        BPL .r1Received
     NEXT_X
     LDA #_SD_BUSY_AFTER_COMMAND
     RTS
