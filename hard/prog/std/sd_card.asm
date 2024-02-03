@@ -38,7 +38,7 @@ INIT_SD:
         JSR _DUMMY_CLOCK_WITH_DISABLED_CARD
     NEXT_X
     ; Try to switch it into idle several times
-    LDA #$f0
+    LDA #4
     PHA
 .retryGoIdleState:
         JSR _CMD_GO_IDLE_STATE
@@ -334,6 +334,7 @@ _READ_BYTE_FROM_SD:
     FOR_X 0, UP_TO, 8
         JSR _READ_BIT_FROM_SD
     NEXT_X
+    JSR printReadFromSD
     RTS
 
 ; The bit will be shifted in _response
@@ -351,6 +352,7 @@ _READ_BIT_FROM_SD:
 
 ; Changes Y
 _SEND_BYTE_TO_SD:
+    JSR printWriteToSD
     FOR_Y 0, UP_TO, 8
         ROL _sendByte
         LDA #0
@@ -360,7 +362,21 @@ _SEND_BYTE_TO_SD:
         STA VIA_FIRST_RB
         ORA #%00100000
         STA VIA_FIRST_RB
-        AND #%01010000
+        AND #%01000000
         STA VIA_FIRST_RB
     NEXT_Y
+    RTS
+
+printReadFromSD:
+    UART_PRINT_CHAR "R"
+    LDA _response
+    JSR UART_PRINT_NUMBER
+    UART_PRINT_CHAR " "
+    RTS
+
+printWriteToSD:
+    UART_PRINT_CHAR "W"
+    LDA _sendByte
+    JSR UART_PRINT_NUMBER
+    UART_PRINT_CHAR " "
     RTS
