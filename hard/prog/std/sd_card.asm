@@ -151,7 +151,7 @@ _WAIT:
 _DISABLE_SD_AFTER_OPERATION:
 _DUMMY_CLOCK_WITH_DISABLED_CARD:
     ; CS = DI = HIGH
-    LDA #%0101000
+    LDA #%01010000
     STA VIA_FIRST_RB
     FOR_Y 0, UP_TO, 8
         LDA #%01110000
@@ -317,8 +317,7 @@ _SEND_SD_COMMAND_AND_WAIT_R1:
     LDA #$FF
     STA _response
     FOR_Y 0, UP_TO, $F0
-        ; JSR _READ_BIT_FROM_SD
-        JSR _READ_BYTE_FROM_SD
+        JSR _READ_BIT_FROM_SD
         LDA _response
         BPL .r1Received
     NEXT_Y
@@ -334,7 +333,6 @@ _READ_BYTE_FROM_SD:
     FOR_X 0, UP_TO, 8
         JSR _READ_BIT_FROM_SD
     NEXT_X
-    JSR printReadFromSD
     RTS
 
 ; The bit will be shifted in _response
@@ -352,7 +350,6 @@ _READ_BIT_FROM_SD:
 
 ; Changes Y
 _SEND_BYTE_TO_SD:
-    JSR printWriteToSD
     FOR_Y 0, UP_TO, 8
         ROL _sendByte
         LDA #0
@@ -362,21 +359,7 @@ _SEND_BYTE_TO_SD:
         STA VIA_FIRST_RB
         ORA #%00100000
         STA VIA_FIRST_RB
-        AND #%01000000
+        AND #%01010000
         STA VIA_FIRST_RB
     NEXT_Y
-    RTS
-
-printReadFromSD:
-    UART_PRINT_CHAR "R"
-    LDA _response
-    JSR UART_PRINT_NUMBER
-    UART_PRINT_CHAR " "
-    RTS
-
-printWriteToSD:
-    UART_PRINT_CHAR "W"
-    LDA _sendByte
-    JSR UART_PRINT_NUMBER
-    UART_PRINT_CHAR " "
     RTS
