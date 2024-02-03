@@ -34,17 +34,17 @@ INIT_SD:
     STA VIA_FIRST_RB
     ; Wait > 1ms after power up
     JSR _WAIT
-    FOR_X 0, UP_TO, 10
+    FOR_X 0, UP_TO, $10
         JSR _DUMMY_CLOCK_WITH_DISABLED_CARD
     NEXT_X
     ; Try to switch it into idle several times
-    LDA #10
+    LDA #$f0
     PHA
 .retryGoIdleState:
         JSR _CMD_GO_IDLE_STATE
         BEQ .sdIsIdle
         PHA
-        JSR _WAIT
+        ; JSR _WAIT
         PLA
         TAY ; We need to save A for return
     ; Decrement counter in the stack
@@ -59,7 +59,7 @@ INIT_SD:
     JSR _CMD_SEND_IF_COND
     RTS_IF_NE
     ; Try is several times
-    LDA #10
+    LDA #$f0
     PHA
 .retryAppSendOpCond:
         JSR _CMD_APP_SEND_OP_COND
@@ -316,11 +316,12 @@ _SEND_SD_COMMAND_AND_WAIT_R1:
     ; It starts with 0 in 7th bit
     LDA #$FF
     STA _response
-    FOR_X 0, UP_TO, $F0
-        JSR _READ_BIT_FROM_SD
+    FOR_Y 0, UP_TO, $F0
+        ; JSR _READ_BIT_FROM_SD
+        JSR _READ_BYTE_FROM_SD
         LDA _response
         BPL .r1Received
-    NEXT_X
+    NEXT_Y
     LDA #_SD_BUSY_AFTER_COMMAND
     RTS
 .r1Received

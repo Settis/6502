@@ -1,5 +1,6 @@
     include sd_card.asm
 
+_BOOT_SECTOR_SIGNATURE_OFFSET = $1FE ; 2 bytes: 55 aa
 _PARTITION_OFFSET = $1BE ; 16 bytes per record, 4 records
 _PARTITION_TYPE_OFFSET = $4 ; 1 byte
 _PARTITION_START_LBA_OFFSET = $8 ; 4 bytes
@@ -20,10 +21,12 @@ _DIR_RECORD_FILE_SIZE_OFFSET = $1c ; 4 bytes
 _DIR_RECORD_FLAGS_OFFSET = $B ; 1 byte
 
     SEG code
-BOOT_SECTOR_SIGN_MSG: STRING "Boot sector sign: "
 INIT_FAT:
+    SUBROUTINE
     JSR INIT_SD
     RTS_IF_NE
+
+    ; Read boot sector
     ; A = 0 already
     STA sdSector
     STA sdSector+1
@@ -32,12 +35,20 @@ INIT_FAT:
     JSR READ_SD_SECTOR
     RTS_IF_NE
     
-    UART_PRINT_STRING BOOT_SECTOR_SIGN_MSG
-    LDA sdPageStart + $1FE
-    JSR UART_PRINT_NUMBER
-    LDA sdPageStart + $1FF
-    JSR UART_PRINT_NUMBER
-    UART_PRINTLN
+    ; Check boot sector signature
+    LDA sdPageStart + _BOOT_SECTOR_SIGNATURE_OFFSET
+    CMP #$55
+    BNE .wrongBootSign
+    LDA sdPageStart + _BOOT_SECTOR_SIGNATURE_OFFSET+1
+    CMP #$AA
+    BEQ .goodBootSign
+.wrongBootSign:
+    LDA #IO_WRONG_BOOT_SIGNATURE
+    RTS
+.goodBootSign:
+
+    
+
     LDA #0
     RTS
     
