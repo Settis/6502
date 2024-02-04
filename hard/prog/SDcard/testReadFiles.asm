@@ -79,17 +79,22 @@ TEST_FILE_CRC:
     RTS
 
 testFile:
+    SUBROUTINE
     JSR OPEN_FILE_BY_NAME
     RTS_IF_NE
     LDA #0
     STA CRC_SUM
     BEGIN
-        FOR_Y 0, UP_TO, half_sector_size
-            LDA half_sector_pointer,Y
-            JSR CRC_A
-        NEXT_Y
         JSR READ_NEXT_HALF_SECTOR
-    UNTIL_NOT_ZERO
+    WHILE_ZERO
+        LDY #0
+.loop:
+        LDA (half_sector_pointer),Y
+        JSR CRC_A
+        INY
+        CPY half_sector_size
+        BNE .loop
+    REPEAT_
     CMP #IO_END_OF_FILE
     RTS_IF_NE
     ; Check CRC
@@ -119,9 +124,8 @@ main:
         JSR UART_PRINT_NUMBER
         JMP .end
     END_IF
-    ; TODO uncommit it
-    ; JSR TEST_FILE_NAMES
-    ; JSR TEST_FILE_CRC
+    JSR TEST_FILE_NAMES
+    JSR TEST_FILE_CRC
     JSR TEST_FILE_NOT_FOUND
     JSR PRINT_TOTAL_RESULT
 

@@ -102,14 +102,6 @@ INIT_FAT:
         RTS
     END_IF
     STA _sectorsPerCluster
-    ; Calc two cluster size for later use 
-    STA _tmpDoubledSectorsPerCluster
-    LDA #0
-    STA _tmpDoubledSectorsPerCluster + 1
-    STA _tmpDoubledSectorsPerCluster + 2
-    STA _tmpDoubledSectorsPerCluster + 3
-    ASL _tmpDoubledSectorsPerCluster
-    ROL _tmpDoubledSectorsPerCluster + 1
 
     ; Read root dir cluster
     FOR_X 0, UP_TO, 4
@@ -146,18 +138,35 @@ INIT_FAT:
     ROL _dataSector + 3
     ; Add FAT_SECTOR
     CLC
-    FOR_X 0, UP_TO, 4
-        LDA _dataSector,X
-        ADC _fatSector,X
-        STA _dataSector,X
-    NEXT_X
+    LDA _dataSector
+    ADC _fatSector
+    STA _dataSector
+    LDA _dataSector + 1
+    ADC _fatSector + 1
+    STA _dataSector + 1
+    LDA _dataSector + 2
+    ADC _fatSector + 2
+    STA _dataSector + 2
+    LDA _dataSector + 3
+    ADC _fatSector + 3
+    STA _dataSector + 3
     ; subtract two clusters for simplification
+    LDA _sectorsPerCluster
+    ASL
+    STA _tmpDoubleClusters
     SEC
-    FOR_X 0, UP_TO, 4
-        LDA _dataSector,X
-        SBC _tmpDoubledSectorsPerCluster,X
-        STA _dataSector,X
-    NEXT_X
+    LDA _dataSector
+    SBC _tmpDoubleClusters
+    STA _dataSector
+    IF_C_CLR
+        DEC _dataSector + 1
+        IF_ZERO
+            DEC _dataSector + 2
+            IF_ZERO
+                DEC _dataSector + 3
+            END_IF
+        END_IF
+    END_IF
     LDA #0
     RTS
     
@@ -172,9 +181,9 @@ _sectorsPerCluster: ds 1
 _rootDirectoryClusterNumber: ds 4
 _openedCluster: ds 4
 _openedSectorInCluster: ds 1
+_tmpDoubleClusters = _openedSectorInCluster
 _openedSector: ds 4
 _openedFileSize: ds 4
-_tmpDoubledSectorsPerCluster = _openedFileSize
 
     SEG code
 OPEN_FILE_BY_NAME:
@@ -202,9 +211,8 @@ _INNER_OPEN_FILE_BY_NAME:
     LDA #IO_INVALID_FILENAME_FORMAT
     RTS
 .opened:
-    WRITE_WORD sdPageStart, half_sector_pointer
-    LDA _openedFileSize
-    STA half_sector_size
+    LDA #$FF
+    STA half_sector_pointer + 1
     LDA #IO_OK
     RTS
 .openIt:
@@ -237,20 +245,31 @@ _OPEN_CLUSTER:
     ;   multiply
     LDA _sectorsPerCluster
     BEGIN
+        LSR
+    WHILE_C_CLR
         ASL _openedSector
         ROL _openedSector + 1
         ROL _openedSector + 2
         ROL _openedSector + 3
-        LSR
-    UNTIL_C_SET
+    REPEAT_
     ;   add pseudo data region
     CLC
-    FOR_X 0, UP_TO, 4
-        LDA _openedSector,X
-        ADC _dataSector,X
-        STA _openedSector,X
-        STA sdSector,X
-    NEXT_X
+    LDA _openedSector
+    ADC _dataSector
+    STA _openedSector
+    STA sdSector
+    LDA _openedSector + 1
+    ADC _dataSector + 1
+    STA _openedSector + 1
+    STA sdSector + 1
+    LDA _openedSector + 2
+    ADC _dataSector + 2
+    STA _openedSector + 2
+    STA sdSector + 2
+    LDA _openedSector + 3
+    ADC _dataSector + 3
+    STA _openedSector + 3
+    STA sdSector + 3
     JMP READ_SD_SECTOR
     ; end is here
 
@@ -260,6 +279,27 @@ half_sector_size: ds 1
 
     SEG code
 READ_NEXT_HALF_SECTOR:
+    SUBROUTINE
+    LDA _openedFileSize
+    BNE .proceed
+    LDA _openedFileSize+1
+    BNE .proceed
+    LDA _openedFileSize+2
+    BNE .proceed
+    LDA _openedFileSize+3
+    BNE .proceed
+    LDA #IO_END_OF_FILE
+    RTS
+.proceed:
+    LDA half_sector_pointer + 1
+    ; if can't be on upper memory, so it's first run
+    BPL .secondRun
+    WRITE_WORD sdPageStart, half_sector_pointer
+    LDA _openedFileSize
+    STA half_sector_size
+    LDA #IO_OK
+    RTS
+.secondRun:
     LDA #IO_END_OF_FILE
     RTS
 
@@ -413,7 +453,7 @@ _OPEN_CURRENT_DIR_RECORD:
     ; copy file size
     FOR_Y _DIR_RECORD_FILE_SIZE_OFFSET, UP_TO, _DIR_RECORD_FILE_SIZE_OFFSET + 4
         LDA (_dirReadPointer),Y
-        STA _openedFileSize,Y
+        STA [_openedFileSize-_DIR_RECORD_FILE_SIZE_OFFSET],Y
     NEXT_Y
     ; copy file start cluster
     LDY #_DIR_RECORD_LOW_START_CLUSTER_OFFSET

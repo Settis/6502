@@ -84,10 +84,12 @@ fat_last_allocated_cluster = get_value(fat_fs_information_sector, 0x1ec, 4)
 print("last allocated cluster: " + str(fat_last_allocated_cluster))
 
 fat_1_region_sector_number = partition_start_sector + fat_reserved_logical_sectors
+print("FAT resion sector (hex): " + hex(fat_1_region_sector_number))
 fat_2_region_sector_number = fat_1_region_sector_number + fat_logical_sectors_per_fat
 data_region_sector_number = fat_2_region_sector_number + fat_logical_sectors_per_fat
 
 print("data region start sector: " + hex(data_region_sector_number))
+print("pseudo data region start: " + hex(data_region_sector_number - 2*fat_sectors_per_cluster))
 
 def get_block_for_cluster(cluster):
     return getBlock(data_region_sector_number + (cluster - 2)*fat_sectors_per_cluster)
