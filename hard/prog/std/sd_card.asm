@@ -37,31 +37,44 @@ INIT_SD:
     FOR_X 0, UP_TO, $10
         JSR _DUMMY_CLOCK_WITH_DISABLED_CARD
     NEXT_X
+    ; ===== CMD0 with retry =====
     ; Try to switch it into idle several times
-    LDA #4
+    LDA #$f0
     PHA
-.retryGoIdleState:
+    BEGIN
         JSR _CMD_GO_IDLE_STATE
         BEQ .sdIsIdle
-        PHA
-        ; JSR _WAIT
-        PLA
         TAY ; We need to save A for return
-    ; Decrement counter in the stack
-    TSX
-    DEC $101,X
-    BNE .retryGoIdleState
+        ; Decrement counter in the stack
+        TSX
+        DEC $101,X
+    UNTIL_ZERO 
     PLA ; pull retry counter back
     TYA ; restore command exit code
     RTS
 .sdIsIdle:
     PLA ; pull retry counter back
-    JSR _CMD_SEND_IF_COND
-    RTS_IF_NE
+    ; ===== CMD8 with retry =====
+    ; It seems that I need to retry everything
+    LDA #$f0
+    PHA
+    BEGIN
+        JSR _CMD_SEND_IF_COND
+        BEQ .turnOn
+        TAY
+        TSX
+        DEC $101,X
+    UNTIL_ZERO
+    PLA ; pull retry counter back
+    TYA ; restore command exit code
+    RTS
+.turnOn:
+    PLA ; pull retry counter back
+    ; ===== ACMD41 with retry =====
     ; Try is several times
     LDA #$f0
     PHA
-.retryAppSendOpCond:
+    BEGIN
         JSR _CMD_APP_SEND_OP_COND
         IF_ZERO
             TAY 
@@ -73,10 +86,10 @@ INIT_SD:
         JSR _WAIT
         PLA
         TAY ; We need to save A for return
-    ; Decrement counter in the stack
-    TSX
-    DEC $101,X
-    BNE .retryAppSendOpCond
+        ; Decrement counter in the stack
+        TSX
+        DEC $101,X
+    UNTIL_ZERO
     PLA ; pull retry counter back
     TYA ; restore command exit code
     RTS
@@ -84,6 +97,24 @@ INIT_SD:
 ; You must have prepared sdSector
 ; Changes X and Y
 READ_SD_SECTOR:
+    LDA #$F0 ; retry everything
+    PHA
+    BEGIN
+        JSR _READ_SD_SECTOR_INSIDE_RETRY
+        TAY
+        IF_ZERO
+            PLA ; pull retry counter
+            TYA ; restore zero for return
+            RTS
+        END_IF
+        TSX
+        DEC $101,X
+    UNTIL_ZERO
+    PLA ; pull retry counter back
+    TYA ; restore command exit code
+    RTS
+
+_READ_SD_SECTOR_INSIDE_RETRY:
     LDA #[ 17 | $40 ]
     STA _cmd
     ; _arg is prepared
@@ -305,6 +336,10 @@ _SEND_SD_COMMAND_AND_WAIT_R1:
     LDA #_SD_BUSY_BEFORE_COMMAND
     RTS
 .notBusy
+    JSR _DISABLE_SD_AFTER_OPERATION
+    ; Enable SD card
+    LDA #0
+    STA VIA_FIRST_RB
     ; It's ready. Sending command, arg and crc
     ; They are sequential in RAM
     FOR_X 5, DOWN_TO, NEG_NRs

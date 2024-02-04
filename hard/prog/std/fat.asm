@@ -19,6 +19,9 @@ _DIR_RECORD_HIGH_START_CLUSTER_OFFSET = $14 ; 2 bytes
 _DIR_RECORD_LOW_START_CLUSTER_OFFSET = $1a ; 2 bytes
 _DIR_RECORD_FILE_SIZE_OFFSET = $1c ; 4 bytes
 _DIR_RECORD_FLAGS_OFFSET = $B ; 1 byte
+_DIR_RECORD_SIZE = 32
+_DIR_RECORD_REMOVED_FILE_NAME = $E5
+_DIR_RECORD_VFAT_FLAG = $0F
 
     SEG code
 INIT_FAT:
@@ -47,8 +50,114 @@ INIT_FAT:
     RTS
 .goodBootSign:
 
-    
+    ; Check partition type
+    LDA sdPageStart + _PARTITION_OFFSET + _PARTITION_TYPE_OFFSET
+    CMP #$0C
+    IF_NEQ
+        LDA #IO_WRONG_PARTITION_TYPE
+        RTS
+    END_IF
 
+    ; Read partition start
+    FOR_X 0, UP_TO, 4
+        LDA [sdPageStart + _PARTITION_OFFSET + _PARTITION_START_LBA_OFFSET],X
+        STA sdSector,X
+        STA _fatSector,X
+    NEXT_X
+    JSR READ_SD_SECTOR
+    RTS_IF_NE
+    
+    ; Read FAT first sector
+    ; Read bytes per logical sector
+    LDA sdPageStart + _FAT_FIRST_SECTOR_BYTES_PER_LOGICAL_SECTOR_OFFEST
+    BNE .wrongBytesPerLogicalSector
+    LDA sdPageStart + _FAT_FIRST_SECTOR_BYTES_PER_LOGICAL_SECTOR_OFFEST + 1
+    CMP #2
+    BEQ .proceed
+.wrongBytesPerLogicalSector:
+    LDA #IO_WRONG_BYTES_PER_LOGICAL_SECTOR
+    RTS
+.proceed:
+
+    ; Check number of FATs
+    LDA sdPageStart + _FAT_FIRST_SECTOR_NUBMER_OF_FATs_OFFSET
+    CMP #2
+    IF_NEQ
+        LDA #IO_WRONG_FATS_NUMBER
+        RTS
+    END_IF
+
+    ; Check media descriptor
+    LDA sdPageStart + _FAT_FIRST_SECTOR_MEDIA_DESCRIPTOR_OFFSET
+    CMP #$F8
+    IF_NEQ
+        LDA #IO_WRONG_FAT_MEDIA_DESCRIPTOR
+        RTS
+    END_IF
+
+    ; Read sectors per cluster
+    LDA sdPageStart + _FAT_FIRST_SECTOR_SECTORS_PER_CLUSTER_OFFEST
+    IF_ZERO
+        LDA #IO_ZERO_SECTORS_PER_CLUSTER
+        RTS
+    END_IF
+    STA _sectorsPerCluster
+    ; Calc two cluster size for later use 
+    STA _tmpDoubledSectorsPerCluster
+    LDA #0
+    STA _tmpDoubledSectorsPerCluster + 1
+    STA _tmpDoubledSectorsPerCluster + 2
+    STA _tmpDoubledSectorsPerCluster + 3
+    ASL _tmpDoubledSectorsPerCluster
+    ROL _tmpDoubledSectorsPerCluster + 1
+
+    ; Read root dir cluster
+    FOR_X 0, UP_TO, 4
+        LDA [sdPageStart + _FAT_FIRST_SECTOR_ROOT_DIRECTORY_CLUSTER_NUMBER_OFFSET],X
+        STA _rootDirectoryClusterNumber,X
+    NEXT_X
+
+    ; Calc FAT #1 region sector
+    ; It is partition start sector (already in FAT_SECTOR_#) + fat reserved logical sectors
+    CLC
+    LDA sdPageStart + _FAT_FIRST_SECTOR_RESERVED_LOGICAL_SECTORS_OFFSET
+    ADC _fatSector
+    STA _fatSector
+    LDA sdPageStart + _FAT_FIRST_SECTOR_RESERVED_LOGICAL_SECTORS_OFFSET + 1
+    ADC _fatSector + 1
+    STA _fatSector + 1
+    IF_C_SET
+        INC _fatSector + 2
+        IF_ZERO
+            INC _fatSector + 3
+        END_IF
+    END_IF
+
+    ; Calc DATA region sector
+    ; It is FAT_SECTOR + SECTORS_PER_FAT * NUMBER_OF_FATs (expected as 2)
+    FOR_X 0, UP_TO, 4
+        LDA [sdPageStart + _FAT_FIRST_SECTOR_LOGICAL_SECTORS_PER_FAT_OFFSET],X
+        STA _dataSector,X
+    NEXT_X
+    ; multiply it by 2
+    ASL _dataSector
+    ROL _dataSector + 1
+    ROL _dataSector + 2
+    ROL _dataSector + 3
+    ; Add FAT_SECTOR
+    CLC
+    FOR_X 0, UP_TO, 4
+        LDA _dataSector,X
+        ADC _fatSector,X
+        STA _dataSector,X
+    NEXT_X
+    ; subtract two clusters for simplification
+    SEC
+    FOR_X 0, UP_TO, 4
+        LDA _dataSector,X
+        SBC _tmpDoubledSectorsPerCluster,X
+        STA _dataSector,X
+    NEXT_X
     LDA #0
     RTS
     
@@ -59,17 +168,91 @@ _fatSector: ds 4
 ; = real data region - 2 * sectors per cluster
 ; for easy cluster address calculation
 _dataSector: ds 4
-_fatSectorsPerCluster: ds 1
+_sectorsPerCluster: ds 1
 _rootDirectoryClusterNumber: ds 4
 _openedCluster: ds 4
 _openedSectorInCluster: ds 1
 _openedSector: ds 4
 _openedFileSize: ds 4
+_tmpDoubledSectorsPerCluster = _openedFileSize
 
     SEG code
 OPEN_FILE_BY_NAME:
+    TXA
+    PHA
+    TYA
+    PHA
+    JSR _INNER_OPEN_FILE_BY_NAME
+    STA _crc ; I hope it will be OK
+    PLA
+    TAY
+    PLA
+    TAX
+    LDA _crc
+    RTS
+
+_INNER_OPEN_FILE_BY_NAME:
+    SUBROUTINE
+    JSR _OPEN_ROOT
+    RTS_IF_NE
+.loop:
+    JSR _EXTRACT_NEXT_NAME
+    BEQ .openIt
+    BMI .opened
+    LDA #IO_INVALID_FILENAME_FORMAT
+    RTS
+.opened:
+    WRITE_WORD sdPageStart, half_sector_pointer
+    LDA _openedFileSize
+    STA half_sector_size
     LDA #IO_OK
     RTS
+.openIt:
+    JSR _OPEN_FILE_IN_FOLDER
+    BEQ .loop
+    RTS
+
+; Changes X & Y
+_OPEN_ROOT:
+    FOR_X 0, UP_TO, 4
+        LDA _rootDirectoryClusterNumber,X
+        STA _openedCluster,X
+    NEXT_X
+    JMP _OPEN_CLUSTER
+    ; end is here
+
+; expects _openedCluster
+; sets opened sector and reads it
+; sets sector in cluster to 0
+; Changes X & Y
+_OPEN_CLUSTER:
+    LDA #0
+    STA _openedSectorInCluster
+    ; openedSector = openedCluster*sectorsPerCluster + pseudoDataRegion
+    ;   copy 
+    FOR_X 0, UP_TO, 4
+        LDA _openedCluster,X
+        STA _openedSector,X
+    NEXT_X
+    ;   multiply
+    LDA _sectorsPerCluster
+    BEGIN
+        ASL _openedSector
+        ROL _openedSector + 1
+        ROL _openedSector + 2
+        ROL _openedSector + 3
+        LSR
+    UNTIL_C_SET
+    ;   add pseudo data region
+    CLC
+    FOR_X 0, UP_TO, 4
+        LDA _openedSector,X
+        ADC _dataSector,X
+        STA _openedSector,X
+        STA sdSector,X
+    NEXT_X
+    JMP READ_SD_SECTOR
+    ; end is here
 
     SEG.U zpVars
 half_sector_pointer: ds 2
@@ -86,7 +269,7 @@ _fatFilename: ds 11
     SEG code
 _EXTRACT_NEXT_NAME_OK = 0
 _EXTRACT_NEXT_NAME_INVALID = 1
-_EXTRACT_NEXT_NAME_END = 2
+_EXTRACT_NEXT_NAME_END = $FF
 _EXTRACT_NEXT_NAME:
     SUBROUTINE
     TYA
@@ -183,3 +366,67 @@ _SHIFT_FILENAME_POINTER_BY_Y:
         INC filenamePointer+1
     END_IF  
     RTS
+
+    SEG.U zpVars
+_dirReadPointer: ds 2
+
+    SEG code
+_OPEN_FILE_IN_FOLDER:
+    SUBROUTINE
+    WRITE_WORD sdPageStart, _dirReadPointer
+    ; it can be 16 dir records on the page
+    FOR_X 0, UP_TO, 16
+        LDY #0
+        LDA (_dirReadPointer),Y
+        ; check if it is the end of folder
+        BEQ .notFound
+        ; check if the file is removed
+        CMP #_DIR_RECORD_REMOVED_FILE_NAME
+        BEQ .nextRecord
+        ; check if the record is VFAT name
+        LDY #_DIR_RECORD_FLAGS_OFFSET
+        LDA (_dirReadPointer),Y
+        CMP #_DIR_RECORD_VFAT_FLAG
+        BEQ .nextRecord
+        ; check the name
+        FOR_Y 0, UP_TO, 11
+            LDA (_dirReadPointer),Y
+            CMP _fatFilename,Y
+            BNE .nextRecord
+        NEXT_Y
+        ; it's needed file
+        JMP _OPEN_CURRENT_DIR_RECORD
+.nextRecord:
+        CLC
+        LDA _dirReadPointer
+        ADC #_DIR_RECORD_SIZE
+        STA _dirReadPointer
+        IF_C_SET
+            INC _dirReadPointer + 1
+        END_IF
+    NEXT_X
+.notFound
+    LDA #IO_FILE_NOT_FOUND
+    RTS
+
+_OPEN_CURRENT_DIR_RECORD:
+    ; copy file size
+    FOR_Y _DIR_RECORD_FILE_SIZE_OFFSET, UP_TO, _DIR_RECORD_FILE_SIZE_OFFSET + 4
+        LDA (_dirReadPointer),Y
+        STA _openedFileSize,Y
+    NEXT_Y
+    ; copy file start cluster
+    LDY #_DIR_RECORD_LOW_START_CLUSTER_OFFSET
+    LDA (_dirReadPointer),Y
+    STA _openedCluster
+    INY
+    LDA (_dirReadPointer),Y
+    STA _openedCluster + 1
+    LDY #_DIR_RECORD_HIGH_START_CLUSTER_OFFSET
+    LDA (_dirReadPointer),Y
+    STA _openedCluster + 2
+    INY
+    LDA (_dirReadPointer),Y
+    STA _openedCluster + 3
+    JMP _OPEN_CLUSTER
+    ; the end here
