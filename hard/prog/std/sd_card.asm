@@ -27,7 +27,7 @@ INIT_SD:
     ; LDA #$7F
     ; STA VIA_FIRST_IER
     ; Setup output pins
-    LDA #%01111000
+    LDA #%01110000
     STA VIA_FIRST_DDRB
     ; Disable SD
     LDA #%00010000
@@ -352,11 +352,6 @@ _SEND_SD_COMMAND_AND_WAIT_R1:
         JSR _READ_BYTE_SD
         LDA _response
         BPL .r1Received
-        CMP #$FF
-        BEQ .next
-        LDA #%01001000
-        STA VIA_FIRST_RB
-.next:
     NEXT_Y
     LDA #_SD_BUSY_AFTER_COMMAND
     RTS
