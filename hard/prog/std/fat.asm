@@ -226,7 +226,7 @@ _OPEN_ROOT:
         LDA _rootDirectoryClusterNumber,X
         STA _openedCluster,X
     NEXT_X
-    JMP _OPEN_CLUSTER
+    ; JMP _OPEN_CLUSTER ; not needed, the _OPEN_CLUSTER goes next
     ; end is here
 
 ; expects _openedCluster

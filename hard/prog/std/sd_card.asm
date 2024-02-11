@@ -8,7 +8,7 @@
 
     SEG.U zpVars
 _response: ds 1
-_sendByte = _response
+_sendByte: ds 1
 ; They must be sequential from CRC to CMD
 _crc: ds 1
 _arg: ds 4
@@ -27,16 +27,16 @@ INIT_SD:
     ; LDA #$7F
     ; STA VIA_FIRST_IER
     ; Setup output pins
-    LDA #%01110000
+    LDA #%01111000
     STA VIA_FIRST_DDRB
     ; Disable SD
     LDA #%00010000
     STA VIA_FIRST_RB
     ; Wait > 1ms after power up
     JSR _WAIT
-    FOR_X 0, UP_TO, $10
+    FOR_Y 0, UP_TO, $10
         JSR _DUMMY_CLOCK_WITH_DISABLED_CARD
-    NEXT_X
+    NEXT_Y
     ; ===== CMD0 with retry =====
     ; Try to switch it into idle several times
     LDA #$f0
@@ -140,7 +140,7 @@ _READ_SD_SECTOR_INSIDE_RETRY:
     ; Wait for data token
     SUBROUTINE
     FOR_Y 0, UP_TO, $F0
-        JSR _READ_BYTE_FROM_SD
+        JSR _READ_BYTE_SD
         LDA _response
         CMP #$FE ; Data token for CMD 17/18/24
         BEQ .dataTokenReceived
@@ -154,8 +154,8 @@ _READ_SD_SECTOR_INSIDE_RETRY:
     INC _sdHalfPageStart+1
     JSR _READ_A_PAGE_FROM_SD
     ; reading CRC
-    JSR _READ_BYTE_FROM_SD
-    JSR _READ_BYTE_FROM_SD
+    JSR _READ_BYTE_SD
+    JSR _READ_BYTE_SD
 
     JSR _DISABLE_SD_AFTER_OPERATION
     LDA #IO_OK
@@ -163,7 +163,7 @@ _READ_SD_SECTOR_INSIDE_RETRY:
 
 _READ_A_PAGE_FROM_SD:
     FOR_Y 0, UP_TO, 0
-        JSR _READ_BYTE_FROM_SD
+        JSR _READ_BYTE_SD
         LDA _response
         STA (_sdHalfPageStart),Y
     NEXT_Y
@@ -181,15 +181,14 @@ _WAIT:
 ; Changes Y
 _DISABLE_SD_AFTER_OPERATION:
 _DUMMY_CLOCK_WITH_DISABLED_CARD:
+    LDA _response
+    PHA
     ; CS = DI = HIGH
     LDA #%01010000
     STA VIA_FIRST_RB
-    FOR_Y 0, UP_TO, 8
-        LDA #%01110000
-        STA VIA_FIRST_RB
-        LDA #%01010000
-        STA VIA_FIRST_RB
-    NEXT_Y
+    JSR _READ_BYTE_SD
+    PLA
+    STA _response
     RTS
 
 ; CMD 0
@@ -242,7 +241,7 @@ _CMD_SEND_IF_COND:
     PHA
     ; Read 32 bits of data
     FOR_Y 0, UP_TO, 4
-        JSR _READ_BYTE_FROM_SD
+        JSR _READ_BYTE_SD
     NEXT_Y
     PLA
     STA _response
@@ -328,7 +327,7 @@ _SEND_SD_COMMAND_AND_WAIT_R1:
     LDA #0
     STA VIA_FIRST_RB
     FOR_Y 0, UP_TO, $F0
-        JSR _READ_BYTE_FROM_SD
+        JSR _READ_BYTE_SD
         LDA _response
         CMP #$FF
         BEQ .notBusy
@@ -342,19 +341,22 @@ _SEND_SD_COMMAND_AND_WAIT_R1:
     STA VIA_FIRST_RB
     ; It's ready. Sending command, arg and crc
     ; They are sequential in RAM
-    FOR_X 5, DOWN_TO, NEG_NRs
-        LDA _crc,X
+    FOR_Y 5, DOWN_TO, NEG_NRs
+        LDA _crc,Y
         STA _sendByte
-        JSR _SEND_BYTE_TO_SD
-    NEXT_X
+        JSR _RW_BYTE_SD
+    NEXT_Y
     ; We need to wait for R1 response
     ; It starts with 0 in 7th bit
-    LDA #$FF
-    STA _response
     FOR_Y 0, UP_TO, $F0
-        JSR _READ_BIT_FROM_SD
+        JSR _READ_BYTE_SD
         LDA _response
         BPL .r1Received
+        CMP #$FF
+        BEQ .next
+        LDA #%01001000
+        STA VIA_FIRST_RB
+.next:
     NEXT_Y
     LDA #_SD_BUSY_AFTER_COMMAND
     RTS
@@ -362,39 +364,42 @@ _SEND_SD_COMMAND_AND_WAIT_R1:
     LDA #_SD_OK
     RTS
 
-; The result will be in _response
+; Even reading also sends data, so we need to fill it with FF
 ; Changes X
-_READ_BYTE_FROM_SD:
-    FOR_X 0, UP_TO, 8
-        JSR _READ_BIT_FROM_SD
-    NEXT_X
-    RTS
+_READ_BYTE_SD:
+    LDA #$FF
+    STA _sendByte
+    ; it must proceed with _RW_BYTE_SD
 
-; The bit will be shifted in _response
-_READ_BIT_FROM_SD:
-    LDA #%01000000
-    STA VIA_FIRST_RB
-    LDA #%01100000
-    STA VIA_FIRST_RB
-    LDA VIA_FIRST_RB
-    ROL
-    ROL _response
-    LDA #%01000000
-    STA VIA_FIRST_RB
-    RTS
+; Sends _sendByte
+; The result will be in _response
+; CS is untouched
+; Changes X
+_RW_BYTE_SD:
+    SUBROUTINE
+    LDX #8 ; Use Y here instead
+    LDA VIA_FIRST_RB ; For read CS
+.loop:
+    STA VIA_FIRST_RB           ; T4 
+    ; =======  Clock down
+    ; Prepare a bit for output
+    ASL                        ; T2
+    ASL                        ; T2
+    ROL _sendByte              ; T5
+    ROR                        ; T2
+    LSR                        ; T2
+    STA VIA_FIRST_RB           ; T4 ; it can be STA VIA_FIRST_RB,Y for 5 cycles
+    ORA #%00100000             ; T2
+    STA VIA_FIRST_RB           ; T4 
+    ; =======  Clock up
+    LDA VIA_FIRST_RB           ; T4
+    ASL                        ; T2
+    ROL _response              ; T5
+    LSR                        ; T2
+    AND #%01010000             ; T2
+    DEX                        ; T2
+    BNE .loop                  ; T3
 
-; Changes Y
-_SEND_BYTE_TO_SD:
-    FOR_Y 0, UP_TO, 8
-        ROL _sendByte
-        LDA #0
-        ROR
-        LSR
-        ; Pulse the clock
-        STA VIA_FIRST_RB
-        ORA #%00100000
-        STA VIA_FIRST_RB
-        AND #%01010000
-        STA VIA_FIRST_RB
-    NEXT_Y
+    STA VIA_FIRST_RB ; after the loop
+
     RTS
