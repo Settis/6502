@@ -412,8 +412,21 @@ _dirReadPointer: ds 2
 
     SEG code
 _OPEN_FILE_IN_FOLDER:
+    BEGIN
+        WRITE_WORD sdPageStart, _dirReadPointer
+        JSR _OPEN_FILE_IN_THE_PAGE
+        RTS_IF_PLUS
+        JSR _READ_NEXT_SECTOR
+    UNTIL_ZERO
+    CMP #IO_FAT_END_OF_CLUSTERS
+    BEQ .jumpOver
+    LDA #IO_FILE_NOT_FOUND
+.jumpOver:
+    RTS
+
+; uses X & Y
+_OPEN_FILE_IN_THE_PAGE:
     SUBROUTINE
-    WRITE_WORD sdPageStart, _dirReadPointer
     ; it can be 16 dir records on the page
     FOR_X 0, UP_TO, 16
         LDY #0
@@ -446,7 +459,7 @@ _OPEN_FILE_IN_FOLDER:
         END_IF
     NEXT_X
 .notFound
-    LDA #IO_FILE_NOT_FOUND
+    LDA #$FF ; it's negative so I can recognize it easy
     RTS
 
 _OPEN_CURRENT_DIR_RECORD:
@@ -470,3 +483,32 @@ _OPEN_CURRENT_DIR_RECORD:
     STA _openedCluster + 3
     JMP _OPEN_CLUSTER
     ; the end here
+
+; After the cluster is opened this routine either read the next page inside the cluster or figures out via FAT
+; where the next cluster is and reads it
+_READ_NEXT_SECTOR:
+    SUBROUTINE
+    ; Increase the current opened sector and see if it still fit in the cluster
+    INC _openedSectorInCluster
+    LDA _sectorsPerCluster
+    CMP _openedSectorInCluster
+    BEQ .nextCluster
+    ; Increase opened sector number
+    INC _openedSector
+    IF_ZERO
+        INC _openedSector+1
+        IF_ZERO
+            INC _openedSector+2
+            IF_ZERO
+                INC _openedSector+3
+            END_IF
+        END_IF
+    END_IF
+    FOR_X 0, UP_TO, 4
+        LDA _openedSector,X
+        STA sdSector,X
+    NEXT_X
+    JMP READ_SD_SECTOR
+.nextCluster
+    LDA #IO_FAT_END_OF_CLUSTERS
+    RTS
