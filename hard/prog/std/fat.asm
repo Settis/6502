@@ -278,7 +278,66 @@ half_sector_pointer: ds 2
 half_sector_size: ds 1
 
     SEG code
+; The method called from the beggining of reading the file and for each next sub-sector
 READ_NEXT_HALF_SECTOR:
+    JSR _CHECK_ZERO_SIZE
+    RTS_IF_NE
+    
+; first run:
+;   if file_size > FF
+;       half_sector_size = FF
+;   else 
+;       half_sector_size = file_size
+; not first run:
+;   file_size -= 100 && check borrow bit to return END of file
+;   update_half_sector_size
+;   update pointer to next half of sector in memory
+;   or read next sector
+
+    LDA half_sector_pointer + 1
+    ; if can't be on upper memory, so it's first run
+    BPL .secondRun
+    WRITE_WORD sdPageStart, half_sector_pointer
+    JSR _UPDATE_HALF_SECTOR_SIZE
+    LDA #IO_OK
+    RTS
+.secondRun:
+;   file_size -= 100 && check borrow bit to return END of file
+    LDA _openedFileSize+1
+    SEC
+    SBC #1
+    STA _openedFileSize+1
+    IF_C_CLR
+        LDA _openedFileSize+2
+        SEC
+        SBC #1
+        STA _openedFileSize+2
+        IF_C_CLR
+            LDA _openedFileSize+3
+            SEC
+            SBC #1
+            STA _openedFileSize+3
+            IF_C_CLR
+                LDA #IO_END_OF_FILE
+                RTS
+            END_IF
+        END_IF
+    END_IF
+    JSR _CHECK_ZERO_SIZE
+    RTS_IF_NE
+    JSR _UPDATE_HALF_SECTOR_SIZE
+    LDA half_sector_pointer + 1
+    CMP #>sdPageStart
+    BNE .readNextSector
+    INC half_sector_pointer + 1
+    LDA #IO_OK
+    RTS
+.readNextSector:
+    DEC half_sector_pointer + 1
+    JMP _READ_NEXT_SECTOR
+    ; end of subroutine
+
+_CHECK_ZERO_SIZE:
     SUBROUTINE
     LDA _openedFileSize
     BNE .proceed
@@ -291,16 +350,23 @@ READ_NEXT_HALF_SECTOR:
     LDA #IO_END_OF_FILE
     RTS
 .proceed:
-    LDA half_sector_pointer + 1
-    ; if can't be on upper memory, so it's first run
-    BPL .secondRun
-    WRITE_WORD sdPageStart, half_sector_pointer
-    LDA _openedFileSize
-    STA half_sector_size
-    LDA #IO_OK
+    LDA #0
     RTS
-.secondRun:
-    LDA #IO_END_OF_FILE
+
+_UPDATE_HALF_SECTOR_SIZE:
+    SUBROUTINE
+    LDA _openedFileSize+1
+    BNE .fullPage
+    LDA _openedFileSize+2
+    BNE .fullPage
+    LDA _openedFileSize+3
+    BNE .fullPage
+    LDA _openedFileSize ; must not be a 0
+    BNE .end ; instead of JMP
+.fullPage:
+    LDA #0
+.end:
+    STA half_sector_size
     RTS
 
     SEG.U zpVars
