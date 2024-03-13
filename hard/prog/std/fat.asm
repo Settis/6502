@@ -484,10 +484,7 @@ _OPEN_FILE_IN_FOLDER:
         RTS_IF_PLUS
         JSR _READ_NEXT_SECTOR
     UNTIL_NOT_ZERO
-    CMP #IO_FAT_END_OF_CLUSTERS
-    BEQ .jumpOver
     LDA #IO_FILE_NOT_FOUND
-.jumpOver:
     RTS
 
 ; uses X & Y
