@@ -1,5 +1,8 @@
-    ALLOC DELAY_X
-    ALLOC DELAY_Y
+    SEG.U zpVars
+DELAY_X: ds 1
+DELAY_Y: ds 1
+
+    SEG code
 
 ; Delay 
 ; {1} - X
