@@ -87,6 +87,7 @@ INIT_DISPLAY:
     JSR delay_10
     JSR delay_10
 
+INIT_DISPLAY_NOW:
     LDX #$0
     LDA #$F3
     STA (DISPLAY_DDR,X)

@@ -6,16 +6,19 @@
 ;  Also with ability to work in ROM and runned via UART
 ;  Hardware:
 ;       Keyboard connected to VIA1 port A
-;       Display connected to VIA1 port B
+;       Display connected to VIA1 port B, as well as VIA2 port A&B.
 ;
 ;-------------------------------------------------------------------------
 
-RAM = 0
+RAM = 1
     IF RAM = 0
-        ORG $F900
-    else
-        ORG $0300
+CODE_START = $F900
     endif
+
+UPPER_RAM_START = $7EFF ; for buffers
+
+    INCLUDE "../std/std.asm"
+    INCLUDE "display.asm"
 
                 ; .CR     6502
                 ; .OR     $FF00
@@ -25,40 +28,47 @@ RAM = 0
 ;  Memory declaration
 ;-------------------------------------------------------------------------
 
+	SEG.U zpVars
 ;XAML            =     $24            ; Last "opened" location Low
-    ALLOC XAML
+XAML: ds 1
 ;XAMH            =     $25            ; Last "opened" location High
-    ALLOC XAMH
+XAMH: ds 1
 ;STL             =     $26            ; Store address Low
-    ALLOC STL
+STL: ds 1
 ;STH             =     $27            ; Store address High
-    ALLOC STH
+STH: ds 1
 ;L               =     $28            ; Hex value parsing Low
-    ALLOC L
+L: ds 1
 ;H               =     $29            ; Hex value parsing High
-    ALLOC H
+H: ds 1
 ;YSAV            =     $2A            ; Used to see if hex value is given
-    ALLOC YSAV
+YSAV: ds 1
 ;MODE            =     $2B            ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
-    ALLOC MODE
+MODE: ds 1
 
-IN              =     $0200 ;,$027F    ; Input buffer
+	SEG.U upperRam
+; IN              =     $0200 ;,$027F    ; Input buffer
+IN: ds $7f
 
 ; KBD             =     $D010          ; PIA.A keyboard input
 ; KBDCR           =     $D011          ; PIA.A keyboard control register
 ; DSP             =     $D012          ; PIA.B display output register
 ; DSPCR           =     $D013          ; PIA.B display control register
 
-    ALLOC buf_write_ind
-    ALLOC buf_read_ind
-    ALLOC release_button
-    ALLOC shift_pressed
+	SEG.U zpVars
+buf_write_ind: ds 1
+buf_read_ind: ds 1
+release_button: ds 1
+shift_pressed: ds 1
 
-buf_start = $0280 ; Size $0F up to $028F
+	SEG.U upperRam
+; buf_start = $0280 ; Size $0F up to $028F
+buf_start: ds $0F
 
     ; For steam locomotive
-	ALLOC_2 FRAME_CHAR_START
-	ALLOC POSITION
+	SEG.U zpVars
+FRAME_CHAR_START: ds 2
+POSITION: ds 1
 
 ; KBD b7..b0 are inputs, b6..b0 is ASCII input, b7 is constant high
 ;     Programmed to respond to low to high KBD strobe
@@ -77,6 +87,8 @@ NEXT_LINE       =     $8E
 ESC             =     $9B            ; ESC key
 PROMPT          =     ">"            ; Prompt character
 
+	SEG code
+
 keymap:
     .byte "????????????? `?" ; 00-0F
     .byte "?????q1???zsaw2?" ; 10-1F
@@ -94,10 +106,6 @@ keymap:
     .byte "??'?{+?????}?|??" ; D0-DF
     .byte "?????????!?$&???" ; E0-EF
     .byte ")>@%^*???+#_*(??" ; F0-FF
-
-    INCDIR "std"
-    INCLUDE "std.asm"
-    INCLUDE "display.asm"
 
 read_kb: ; Interrupt handler for read from Keyboard
     PHA
