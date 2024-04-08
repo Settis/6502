@@ -1,3 +1,10 @@
+; Work with Hitachi character displays by 4 bit interface
+; You have to setup: 
+; - DISPLAY_ADDR
+; - DISPLAY_DDR (for init and reading) 
+; - DISPLAY_PCR (for clock control)
+; - DISPLAY_PCR_MASK (it differs for A and B ports, for clock control)   
+
     SEG.U zpVars
 DISPLAY_ADDR: ds 2
 DISPLAY_STRING_ADDR: ds 2
