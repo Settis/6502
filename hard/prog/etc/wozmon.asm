@@ -12,7 +12,7 @@
 
 RAM = 1
     IF RAM = 0
-CODE_START = $F900
+CODE_START = $F800
     endif
 
 UPPER_RAM_START = $7EFF ; for buffers
@@ -85,6 +85,7 @@ BS              =     $DF            ; Backspace key, arrow left key
 CR              =     $8D            ; Carriage Return
 NEXT_LINE       =     $8E
 ESC             =     $9B            ; ESC key
+TAB				=     $9D			 ; Not real scan code, but just in case
 PROMPT          =     ">"            ; Prompt character
 
 	SEG code
@@ -199,6 +200,8 @@ check_key_pressed:
     BEQ arrow_right_pressed
     CMP #$66
     BEQ backspace_pressed
+	CMP #$0D
+	BEQ tab_pressed
     ; Here is an ASCII convert and return it
     JMP convert_key
 
@@ -252,6 +255,10 @@ backspace_pressed:
     LDA #BS
     RTS
 
+tab_pressed:
+	LDA #TAB
+	RTS
+
 convert_key:
     LDX #0
     CPX shift_pressed
@@ -289,14 +296,19 @@ RESET           CLD                  ;   Clear decimal arithmetic mode
     ; Disable all interrupts
     LDA #$7F
     STA VIA_FIRST_IER
+	STA VIA_SECOND_IER
 
 ; Setup port directions
     ; LDA #$F3
     ; STA VIA_FIRST_DDRB
 
 ; Setup handshakes
+	; for display and keyboard
     LDA #%11000001
     STA VIA_FIRST_PCR
+	; for two displays
+	LDA #%11001100
+    STA VIA_SECOND_PCR
 
     ; Enable CA1 interrupt
     LDA #$82
@@ -305,6 +317,7 @@ RESET           CLD                  ;   Clear decimal arithmetic mode
 ; Disable latch
     LDA #$00
     STA VIA_FIRST_ACR
+	STA VIA_SECOND_ACR
 
 ; CA1 interrupts on positive edge
     ; LDA #$01
@@ -319,13 +332,20 @@ RESET           CLD                  ;   Clear decimal arithmetic mode
 
     CLI
 
-; Init display 2
-    WRITE_WORD VIA_FIRST_PCR, DISPLAY_PCR
-    WRITE_WORD VIA_FIRST_RB, DISPLAY_ADDR
-    WRITE_WORD VIA_FIRST_DDRB, DISPLAY_DDR
-    LDA #%00100000
-    STA DISPLAY_PCR_MASK
+; Init displays
+; Start with 1, then 2, then overflows to 0 and stay with it
+	LDA #1
+	STA CURRENT_DISPLAY_NO
+	JSR UPDATE_DISPLAY_PORT
     JSR INIT_DISPLAY
+	
+	INC CURRENT_DISPLAY_NO
+	JSR UPDATE_DISPLAY_PORT
+	JSR INIT_DISPLAY_NOW ; we don't need to wait the second time
+
+	INC CURRENT_DISPLAY_NO
+	JSR UPDATE_DISPLAY_PORT
+	JSR INIT_DISPLAY_NOW
 
     ; ; Set display mode shift at the time during writing operation.
     ; LDA #%00000111
@@ -352,7 +372,8 @@ NOTCR           CMP     #BS            ; Backspace key?
                 BPL     NEXTCHAR       ; Auto ESC if line longer than 127
 
 ESCAPE          
-    JSR CLEAR_DISPLAY
+    JSR CLEAR_ALL_DISPLAYS
+	JSR ENABLE_CURSOR
                 LDA     #PROMPT        ; Print prompt character
                 JSR     ECHO           ; Output it.
 ; GETLINE: 
@@ -565,8 +586,16 @@ ECHO:
             IF_NOT_ZERO
                 TXA
                 PHA
-                JSR wait_for_key_press
-                JSR CLEAR_DISPLAY
+
+				LDA CURRENT_DISPLAY_NO
+				CMP #2
+				IF_NEQ
+					INC CURRENT_DISPLAY_NO
+					JSR UPDATE_DISPLAY_PORT
+				ELSE_
+                	JSR wait_for_key_press
+					JSR CLEAR_ALL_DISPLAYS
+				END_IF
                 PLA
                 TAX
                 LDA #%10000000
@@ -575,6 +604,13 @@ ECHO:
             END_IF
             JSR SEND_DISPLAY_COMMAND
         END_OF
+		CASE_OF TAB
+			JSR DISABLE_CURSOR
+			INC CURRENT_DISPLAY_NO
+			JSR UPDATE_DISPLAY_PORT
+			JSR ENABLE_CURSOR
+			; JMP ESCAPE ; it's good idea, but let's try another thing
+		END_OF
         if RAM = 1
             CASE_OF ESC
                 ; Disable interrupts from keyboard
@@ -596,6 +632,20 @@ ECHO:
     PLA
     RTS
 
+CLEAR_ALL_DISPLAYS:
+	SUBROUTINE
+	LDA #1
+	STA CURRENT_DISPLAY_NO
+	JSR .clear_the_display
+	INC CURRENT_DISPLAY_NO
+	JSR .clear_the_display
+	INC CURRENT_DISPLAY_NO
+.clear_the_display:
+	JSR UPDATE_DISPLAY_PORT
+	JSR CLEAR_DISPLAY
+	JSR DISABLE_CURSOR
+	RTS
+
 SL_LINE:
     DC "s","l",CR
 
@@ -608,10 +658,54 @@ TEST_FOR_SL:
         END_IF
     NEXT_X
 
-STEAM_LOCOMOTIVE:
-    ; Disable cursor
+	SEG.U zpVars
+CURRENT_DISPLAY_NO: ds 1
+
+	SEG code
+; Set needed variables for talking to particular display
+; If the display number is greater than 2 it will be set to 0
+UPDATE_DISPLAY_PORT:
+	LDA CURRENT_DISPLAY_NO
+	CASE ACCUM
+		CASE_OF 2
+			WRITE_WORD VIA_FIRST_PCR, DISPLAY_PCR
+			WRITE_WORD VIA_FIRST_RB, DISPLAY_ADDR
+			WRITE_WORD VIA_FIRST_DDRB, DISPLAY_DDR
+			LDA #%00100000
+			STA DISPLAY_PCR_MASK
+		END_OF
+		CASE_OF 1
+			WRITE_WORD VIA_SECOND_PCR, DISPLAY_PCR
+			WRITE_WORD VIA_SECOND_RA, DISPLAY_ADDR
+			WRITE_WORD VIA_SECOND_DDRA, DISPLAY_DDR
+			LDA #%00000010
+			STA DISPLAY_PCR_MASK
+		END_OF
+		CASE_OF 0
+			WRITE_WORD VIA_SECOND_PCR, DISPLAY_PCR
+			WRITE_WORD VIA_SECOND_RB, DISPLAY_ADDR
+			WRITE_WORD VIA_SECOND_DDRB, DISPLAY_DDR
+			LDA #%00100000
+			STA DISPLAY_PCR_MASK
+		END_OF
+		LDA #0
+		STA CURRENT_DISPLAY_NO
+		JMP UPDATE_DISPLAY_PORT
+	END_CASE
+	RTS
+
+ENABLE_CURSOR:
+	LDA #%00001111
+	JSR SEND_DISPLAY_COMMAND
+	RTS
+
+DISABLE_CURSOR:
 	LDA #%00001100
 	JSR SEND_DISPLAY_COMMAND
+	RTS
+
+STEAM_LOCOMOTIVE:
+    JSR DISABLE_CURSOR
 
 S_L_LOOP:
     LDA #%00000001
