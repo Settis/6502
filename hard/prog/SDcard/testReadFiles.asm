@@ -44,6 +44,8 @@ expectedCrc: DS 1
 TEST_FILE_CRC:
     WRITE_WORD FILES_AND_CRC, testFilesPointer
     FOR_X 0, UP_TO, FILES_SIZE
+        TXA
+        PHA
         COPY_2 testFilesPointer, uartStringPointer
         JSR UART_PRINT_STRING_FROM_POINTER
         UART_PRINT_CHAR " "
@@ -75,6 +77,8 @@ TEST_FILE_CRC:
         END_IF
         JSR UART_PRINT_NUMBER
         UART_PRINTLN
+        PLA
+        TAX
     NEXT_X
     RTS
 
