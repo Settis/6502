@@ -30,5 +30,13 @@ def run_run(dev, addr):
                 print()
             return
         has_logs = True
-        print(byte.decode('utf-8'), end='', flush=True)
+        print(byte_to_string(byte), end='', flush=True)
         last_byte = byte[0]
+
+
+def byte_to_string(byte):
+    if byte[0] < 127:
+        char = byte.decode('ascii')
+        if char.isprintable() or char == '\n':
+            return char
+    return f"↧{byte[0]:02x}"
