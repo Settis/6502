@@ -3,6 +3,7 @@ import sys
 from .consts import COMMAND_READ
 from .serialPort import get_port
 from .utils import convert_word_number_to_bytes, crc, construct_chunks
+from .timer import timer
 
 
 def register_read(subparsers):
@@ -13,6 +14,7 @@ def register_read(subparsers):
     read_parser.add_argument('-r', '--raw', action='store_true', help='Return raw data to output')
 
 
+@timer("Read")
 def run_read_cmd(args):
     dev = args.dev
     offset = int(args.offset, 16)

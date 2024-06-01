@@ -8,6 +8,7 @@ import sys
 from .readCommand import run_read
 from .runCommand import run_run
 from .writeCommand import run_write_chunk
+from .timer import timer
 
 OFFSET = 0x0A00
 PROG = [0xa9, 0xb5, 0x8d, 0x00, 0x0a, 0x60]
@@ -18,6 +19,7 @@ def register_test(subparsers):
     test_parser.set_defaults(func=run_test)
 
 
+@timer("Test")
 def run_test(args):
     dev = args.dev
     run_ping(dev)

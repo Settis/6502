@@ -20,6 +20,7 @@ def create_parser():
     parser = argparse.ArgumentParser(prog='uart6502', description='Sends commands to 6502 via UART.')
     parser.add_argument('--dev', default='/dev/ttyUSB0', help='UART device')
     parser.add_argument('--trace', action='store_true', help='Print exceptions stack traces')
+    parser.add_argument('--time', action='store_true', help='Print execution time')
     parser.set_defaults(func=no_command)
     subparsers = parser.add_subparsers(title='subcommands')
     register_ping(subparsers)

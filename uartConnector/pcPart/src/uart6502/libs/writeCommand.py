@@ -3,6 +3,7 @@ import sys
 from .consts import COMMAND_WRITE
 from .serialPort import get_port
 from .utils import convert_word_number_to_bytes, convert_word_bytes_to_number, crc, construct_chunks
+from .timer import timer
 
 
 def register_write(subparsers):
@@ -12,6 +13,7 @@ def register_write(subparsers):
                               help='The binary file with two initial bytes for offset')
 
 
+@timer("Write")
 def run_write_cmd(args):
     data = Data(args)
     run_write(args.dev, data.offset, data.content)

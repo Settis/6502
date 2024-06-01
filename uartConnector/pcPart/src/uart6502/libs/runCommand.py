@@ -1,6 +1,7 @@
 from .consts import COMMAND_RUN
 from .serialPort import get_port
 from .utils import convert_word_number_to_bytes
+from .timer import timer
 
 
 def register_run(subparsers):
@@ -9,6 +10,7 @@ def register_run(subparsers):
     run_parser.add_argument('addr', help='The subroutine address')
 
 
+@timer("Run")
 def run_run_cmd(args):
     addr = int(args.addr, 16)
     run_run(args.dev, addr)

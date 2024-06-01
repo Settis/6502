@@ -3,6 +3,7 @@ import sys
 
 from .consts import COMMAND_PING
 from .serialPort import get_port
+from .timer import timer
 
 
 def register_ping(subparsers):
@@ -10,6 +11,7 @@ def register_ping(subparsers):
     ping_parser.set_defaults(func=run_ping_cmd)
 
 
+@timer("Ping")
 def run_ping_cmd(args):
     run_ping(args.dev)
 
