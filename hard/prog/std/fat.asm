@@ -549,6 +549,7 @@ _OPEN_CURRENT_DIR_RECORD:
 
 ; After the cluster is opened this routine either read the next page inside the cluster or figures out via FAT
 ; where the next cluster is and reads it
+; Changes X & Y
 _READ_NEXT_SECTOR:
     SUBROUTINE
     ; Increase the current opened sector and see if it still fit in the cluster
@@ -573,5 +574,76 @@ _READ_NEXT_SECTOR:
     NEXT_X
     JMP READ_SD_SECTOR
 .nextCluster
+    ; Read sd sector _fatSector + ( _openedCluster * 4 ) / sectorSize
+    ;   = 3rd, 2 and 1st bytes shifted left
+    LDA _openedCluster+1
+    STA sdSector
+    LDA _openedCluster+2
+    STA sdSector+1
+    LDA _openedCluster+3
+    STA sdSector+2
+    LDA #0
+    STA sdSector+3
+    LDA _openedCluster
+    ASL
+    ROL sdSector+1
+    ROL sdSector+2
+    ROL sdSector+3
+    ; carry = 0
+    ; we can add _fatSector
+    LDA sdSector
+    ADC _fatSector
+    STA sdSector
+    LDA sdSector+1
+    ADC _fatSector+1
+    STA sdSector+1
+    LDA sdSector+2
+    ADC _fatSector+2
+    STA sdSector+2
+    LDA sdSector+3
+    ADC _fatSector+3
+    STA sdSector+3
+
+    JSR READ_SD_SECTOR
+    RTS_IF_NE
+    
+    ; And read 4 bytes of the next fat cluster by offset ( _openedCluster * 4 ) % sectorSize
+    ; 0x?FFFFFF8 - 0x?FFFFFFF is the end-of-chain marker
+
+    LDA #<sdPageStart
+    STA _sdHalfPageStart
+    ASL _openedCluster
+    ASL _openedCluster
+    ; Bit in carry shows what half of the page to use
+    LDA #>sdPageStart
+    ADC #0 ; Adds the carry here
+    STA _sdHalfPageStart+1
+
+    ; Write next cluster to _openedCluster
+    LDA _openedCluster
+    TAY
+    FOR_X 0, UP_TO, 4
+        LDA (_sdHalfPageStart),Y
+        STA _openedCluster,X
+        INY
+    NEXT_X
+
+    ; Check if it is the end-of-chain
+    LDA _openedCluster+1
+    CMP #$FF
+    BNE .notEOC
+    LDA _openedCluster+2
+    CMP #$FF
+    BNE .notEOC
+    LDA _openedCluster
+    AND #$F8
+    CMP #$F8
+    BNE .notEOC
+    LDA _openedCluster+3
+    AND #$F
+    CMP #$F
+    BNE .notEOC
     LDA #IO_FAT_END_OF_CLUSTERS
     RTS
+.notEOC:
+    JMP _OPEN_CLUSTER
