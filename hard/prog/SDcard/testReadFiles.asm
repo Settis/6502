@@ -38,59 +38,71 @@ FILES_AND_CRC:
     SEG.U zpVars
 failedTests: DS 1
 testFilesPointer: DS 2
+expectedCrc: DS 1
 
     SEG code
 TEST_FILE_CRC:
     WRITE_WORD FILES_AND_CRC, testFilesPointer
     FOR_X 0, UP_TO, FILES_SIZE
+        TXA
+        PHA
         COPY_2 testFilesPointer, uartStringPointer
         JSR UART_PRINT_STRING_FROM_POINTER
         UART_PRINT_CHAR " "
+        COPY_2 testFilesPointer, filenamePointer
+        ; Skip the filename
+        LDY #0
+        BEGIN
+            INY
+            LDA (testFilesPointer),Y
+        UNTIL_ZERO
+        ; Load CRC after the file name
+        INY
+        LDA (testFilesPointer),Y
+        STA expectedCrc
+        ; Update pointer to next test case
+        INY
+        CLC
+        TYA
+        ADC testFilesPointer
+        STA testFilesPointer
+        IF_C_SET
+            INC testFilesPointer+1
+        END_IF
+        ; Pointer updated
+
         JSR testFile
         IF_NOT_ZERO
             JSR INCREMENT_FAILED_TESTS
         END_IF
         JSR UART_PRINT_NUMBER
         UART_PRINTLN
+        PLA
+        TAX
     NEXT_X
     RTS
 
 testFile:
-    COPY_2 testFilesPointer, filenamePointer
+    SUBROUTINE
     JSR OPEN_FILE_BY_NAME
     RTS_IF_NE
     LDA #0
     STA CRC_SUM
     BEGIN
-        FOR_Y 0, UP_TO, half_sector_size
-            LDA half_sector_pointer,Y
-            JSR CRC_A
-        NEXT_Y
         JSR READ_NEXT_HALF_SECTOR
-    UNTIL_NOT_ZERO
+    WHILE_ZERO
+        LDY #0
+.loop:
+        LDA (half_sector_pointer),Y
+        JSR CRC_A
+        INY
+        CPY half_sector_size
+        BNE .loop
+    REPEAT_
     CMP #IO_END_OF_FILE
     RTS_IF_NE
-    ; Skip the filename
-    LDY #0
-    BEGIN
-        INY
-        LDA (testFilesPointer),Y
-    UNTIL_ZERO
-    ; Load CRC after the file name
-    INY
-    LDA (testFilesPointer),Y
-    PHA
-    ; Update pointer to next test case
-    INY
-    CLC
-    TYA
-    ADC testFilesPointer
-    STA testFilesPointer
-    IF_C_SET
-        INC testFilesPointer+1
-    END_IF
     ; Check CRC
-    PLA
+    LDA expectedCrc
     CMP CRC_SUM
     IF_EQ
         LDA #0
