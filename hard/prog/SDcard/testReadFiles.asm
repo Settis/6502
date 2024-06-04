@@ -1,3 +1,5 @@
+; Initial implementation with bit-banging works for 14.4 seconds
+
 UPPER_RAM_START = $7D00
     INCLUDE "../std/std.asm"
     INCLUDE "fat.asm"
