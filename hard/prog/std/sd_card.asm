@@ -39,7 +39,7 @@ INIT_SD:
     LDA #%11100000
     STA VIA_FIRST_RB
     ; Set CLOCK divider it's ~ 24
-    LDA #20
+    LDA #24
     STA VIA_FIRST_T2C_L
     ; Wait > 1ms after power up
     JSR _WAIT
@@ -148,7 +148,7 @@ _READ_SD_SECTOR_INSIDE_RETRY:
     END_IF
     ; Wait for data token
     SUBROUTINE
-    FOR_X 0, UP_TO, $F0
+    FOR_X 0, UP_TO, $20
         TXA
         PHA
         FOR_Y 0, UP_TO, $F0
@@ -297,7 +297,7 @@ _CMD_APP_SEND_OP_COND:
     STA _crc
     JSR _SEND_SD_COMMAND_AND_WAIT_R1
     PHA
-    ; JSR _DISABLE_SD_AFTER_OPERATION
+    JSR _DISABLE_SD_AFTER_OPERATION
     PLA
     IF_NEQ
         IF_NEG
@@ -348,7 +348,7 @@ _SEND_SD_COMMAND_AND_WAIT_R1:
     LDA #_SD_BUSY_BEFORE_COMMAND
     RTS
 .notBusy
-    ; JSR _DISABLE_SD_AFTER_OPERATION
+    JSR _DISABLE_SD_AFTER_OPERATION
     ; It's ready. Sending command, arg and crc
     ; They are sequential in RAM
     FOR_Y 5, DOWN_TO, NEG_NRs
@@ -401,6 +401,6 @@ _RW_BYTE_SD:
     STA VIA_FIRST_SR
 
 _WAIT_FOR_SHIFTING:
-    FOR_X 0, UP_TO, 80
+    FOR_X 0, UP_TO, 200
     NEXT_X
     RTS
