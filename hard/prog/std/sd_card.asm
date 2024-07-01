@@ -180,6 +180,14 @@ _WAIT:
 
 ; Changes Y
 _DISABLE_SD_AFTER_OPERATION:
+    LDA _response
+    PHA
+    JSR _READ_BYTE_SD
+    PLA
+    STA _response
+    ; proceed with dummy clock
+
+; Changes Y
 _DUMMY_CLOCK_WITH_DISABLED_CARD:
     LDA _response
     PHA
@@ -320,24 +328,8 @@ _SD_BUSY_AFTER_COMMAND = $FF
 ; Changes X and Y
 _SEND_SD_COMMAND_AND_WAIT_R1:
     SUBROUTINE
-    ; Disable SD card
-    LDA #%00010000
-    STA VIA_FIRST_RB
     ; Enable SD card
-    LDA #0
-    STA VIA_FIRST_RB
-    FOR_Y 0, UP_TO, $F0
-        JSR _READ_BYTE_SD
-        LDA _response
-        CMP #$FF
-        BEQ .notBusy
-    NEXT_Y
-    LDA #_SD_BUSY_BEFORE_COMMAND
-    RTS
-.notBusy
-    JSR _DISABLE_SD_AFTER_OPERATION
-    ; Enable SD card
-    LDA #0
+    LDA #%01000000
     STA VIA_FIRST_RB
     ; It's ready. Sending command, arg and crc
     ; They are sequential in RAM
