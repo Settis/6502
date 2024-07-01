@@ -1,16 +1,10 @@
     INCLUDE "io_errors.asm"
 
 ; SD conntected to port B
-; CS   - P7
-; SCK  - CB1 / controlled by shift register
-;   IO - CB2 / controlled by shift register 
-; MOSI - P7 = 0 / to SD
-; MISO - P6 = 0 / from SD$A0
-
-    ; 111XXXXX - disable SD
-    ; 0XXXXXXX - enable SD
-    ; X01XXXXX - read from SD
-    ; X10XXXXX - write to SD
+; CS   - P4
+; MOSI - P6 / to SD
+; SCK  - P5
+; MISO - P7 / from SD
 
     SEG.U zpVars
 _response: ds 1
@@ -33,14 +27,11 @@ INIT_SD:
     ; LDA #$7F
     ; STA VIA_FIRST_IER
     ; Setup output pins
-    LDA #%11100000
+    LDA #%01110000
     STA VIA_FIRST_DDRB
     ; Disable SD
-    LDA #%11100000
+    LDA #%00010000
     STA VIA_FIRST_RB
-    ; Set CLOCK divider it's ~ 24
-    LDA #20
-    STA VIA_FIRST_T2C_L
     ; Wait > 1ms after power up
     JSR _WAIT
     FOR_Y 0, UP_TO, $10
@@ -148,23 +139,16 @@ _READ_SD_SECTOR_INSIDE_RETRY:
     END_IF
     ; Wait for data token
     SUBROUTINE
-    FOR_X 0, UP_TO, $F0
-        TXA
-        PHA
-        FOR_Y 0, UP_TO, $F0
-            JSR _READ_BYTE_SD
-            LDA _response
-            CMP #$FE ; Data token for CMD 17/18/24
-            BEQ .dataTokenReceived
-        NEXT_Y
-        PLA
-        TAX
-    NEXT_X
+    FOR_Y 0, UP_TO, $F0
+        JSR _READ_BYTE_SD
+        LDA _response
+        CMP #$FE ; Data token for CMD 17/18/24
+        BEQ .dataTokenReceived
+    NEXT_Y
     JSR _DISABLE_SD_AFTER_OPERATION
     LDA #IO_SD_DATA_TOKEN_DID_NOT_RECEIVED_AFTER_READ_SECTOR
     RTS
 .dataTokenReceived
-    PLA ; pull the stored X
     WRITE_WORD sdPageStart, _sdHalfPageStart
     JSR _READ_A_PAGE_FROM_SD
     INC _sdHalfPageStart+1
@@ -194,18 +178,15 @@ _WAIT:
     NEXT_X
     RTS
 
-; Changes X
+; Changes Y
 _DISABLE_SD_AFTER_OPERATION:
 _DUMMY_CLOCK_WITH_DISABLED_CARD:
     LDA _response
     PHA
     ; CS = DI = HIGH
-    LDA #%11100000
+    LDA #%01010000
     STA VIA_FIRST_RB
-    LDA #%00000100
-    STA VIA_FIRST_ACR
-    LDA VIA_FIRST_SR ; trigger shifting
-    JSR _WAIT_FOR_SHIFTING
+    JSR _READ_BYTE_SD
     PLA
     STA _response
     RTS
@@ -297,7 +278,7 @@ _CMD_APP_SEND_OP_COND:
     STA _crc
     JSR _SEND_SD_COMMAND_AND_WAIT_R1
     PHA
-    ; JSR _DISABLE_SD_AFTER_OPERATION
+    JSR _DISABLE_SD_AFTER_OPERATION
     PLA
     IF_NEQ
         IF_NEG
@@ -339,6 +320,12 @@ _SD_BUSY_AFTER_COMMAND = $FF
 ; Changes X and Y
 _SEND_SD_COMMAND_AND_WAIT_R1:
     SUBROUTINE
+    ; Disable SD card
+    LDA #%00010000
+    STA VIA_FIRST_RB
+    ; Enable SD card
+    LDA #0
+    STA VIA_FIRST_RB
     FOR_Y 0, UP_TO, $F0
         JSR _READ_BYTE_SD
         LDA _response
@@ -348,7 +335,10 @@ _SEND_SD_COMMAND_AND_WAIT_R1:
     LDA #_SD_BUSY_BEFORE_COMMAND
     RTS
 .notBusy
-    ; JSR _DISABLE_SD_AFTER_OPERATION
+    JSR _DISABLE_SD_AFTER_OPERATION
+    ; Enable SD card
+    LDA #0
+    STA VIA_FIRST_RB
     ; It's ready. Sending command, arg and crc
     ; They are sequential in RAM
     FOR_Y 5, DOWN_TO, NEG_NRs
@@ -369,38 +359,42 @@ _SEND_SD_COMMAND_AND_WAIT_R1:
     LDA #_SD_OK
     RTS
 
+; Even reading also sends data, so we need to fill it with FF
 ; Changes X
 _READ_BYTE_SD:
-    LDA #%00000100
-    STA VIA_FIRST_ACR
-    LDA #%00100000
-    STA VIA_FIRST_RB
-
-    LDA VIA_FIRST_SR ; read SR to trigger shift in
-    JSR _WAIT_FOR_SHIFTING
-
-    ; disabling shift register
-    LDA #%00000000
-    STA VIA_FIRST_ACR 
-
-    LDA VIA_FIRST_SR ; now I can read it without triggering shifting
-    STA _response
-    RTS
+    LDA #$FF
+    STA _sendByte
+    ; it must proceed with _RW_BYTE_SD
 
 ; Sends _sendByte
 ; The result will be in _response
 ; CS is untouched
 ; Changes X
 _RW_BYTE_SD:
-    LDA #%00010100
-    STA VIA_FIRST_ACR
-    LDA #%01000000
-    STA VIA_FIRST_RB
+    SUBROUTINE
+    LDX #8 ; Use Y here instead
+    LDA VIA_FIRST_RB ; For read CS
+.loop:
+    STA VIA_FIRST_RB           ; T4 
+    ; =======  Clock down
+    ; Prepare a bit for output
+    ASL                        ; T2
+    ASL                        ; T2
+    ROL _sendByte              ; T5
+    ROR                        ; T2
+    LSR                        ; T2
+    STA VIA_FIRST_RB           ; T4 ; it can be STA VIA_FIRST_RB,Y for 5 cycles
+    ORA #%00100000             ; T2
+    STA VIA_FIRST_RB           ; T4 
+    ; =======  Clock up
+    LDA VIA_FIRST_RB           ; T4
+    ASL                        ; T2
+    ROL _response              ; T5
+    LSR                        ; T2
+    AND #%01010000             ; T2
+    DEX                        ; T2
+    BNE .loop                  ; T3
 
-    LDA _sendByte
-    STA VIA_FIRST_SR
+    STA VIA_FIRST_RB ; after the loop
 
-_WAIT_FOR_SHIFTING:
-    FOR_X 0, UP_TO, 80
-    NEXT_X
     RTS
