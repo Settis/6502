@@ -4574,6 +4574,18 @@
 		)
 		(uuid "d28e9918-eae2-49fa-abcc-91c0eba88799")
 	)
+	(label "A[0..15]"
+		(at 110.49 121.92 90)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+				(bold yes)
+			)
+			(justify left bottom)
+		)
+		(uuid "d3018e97-17e6-46fd-b82a-550a88058825")
+	)
 	(label "A12"
 		(at 72.39 60.96 0)
 		(fields_autoplaced yes)
@@ -4683,6 +4695,18 @@
 			(justify left bottom)
 		)
 		(uuid "f4ac6a48-99d6-4553-9089-d0630de06f7f")
+	)
+	(label "D[0..7]"
+		(at 133.35 120.65 90)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+				(bold yes)
+			)
+			(justify left bottom)
+		)
+		(uuid "f4bb53ab-8e43-4161-8b75-d167deab4c8f")
 	)
 	(label "A9"
 		(at 102.87 68.58 0)

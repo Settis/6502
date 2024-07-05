@@ -2363,7 +2363,7 @@
 			)
 		)
 	)
-	(symbol "SD_adapter"
+	(symbol "SDconnector"
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
@@ -2410,7 +2410,7 @@
 				(hide yes)
 			)
 		)
-		(symbol "SD_adapter_1_1"
+		(symbol "SDconnector_1_1"
 			(rectangle
 				(start -5.08 11.43)
 				(end 5.08 -11.43)
@@ -2422,7 +2422,7 @@
 					(type background)
 				)
 			)
-			(pin power_out line
+			(pin power_in line
 				(at -7.62 -6.35 0)
 				(length 2.54)
 				(name "+3.3"
