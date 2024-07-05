@@ -1,4 +1,0 @@
-(sym_lib_table
-  (lib (name 6502)(type Legacy)(uri /home/stk/projects/8-bit/6502/hard/secondVersion/lib/6502.lib)(options "")(descr ""))
-  (lib (name RAM-rescue)(type Legacy)(uri ${KIPRJMOD}/RAM-rescue.lib)(options "")(descr ""))
-)

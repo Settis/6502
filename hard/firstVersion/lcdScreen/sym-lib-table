@@ -1,4 +1,0 @@
-(sym_lib_table
-  (lib (name "wdc")(type "Legacy")(uri "/home/stk/projects/8-bit/6502/hard/firstVersion/wdc.lib")(options "")(descr ""))
-  (lib (name "lcdScreen-rescue")(type "Legacy")(uri "${KIPRJMOD}/lcdScreen-rescue.lib")(options "")(descr ""))
-)

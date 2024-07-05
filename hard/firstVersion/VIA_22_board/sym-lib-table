@@ -1,3 +1,0 @@
-(sym_lib_table
-  (lib (name myLib)(type Legacy)(uri /home/stk/projects/8-bit/6502/hard/firstVersion/wdc.lib)(options "")(descr ""))
-)

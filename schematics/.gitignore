@@ -1,0 +1,4 @@
+markus-backups
+*.bak
+~markus.kicad_sch.lck
+_autosave*
