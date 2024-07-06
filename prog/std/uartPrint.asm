@@ -53,8 +53,8 @@ INIT_UART_PRINT:
     STA _BUFFER_WRITE_IND
     STA _BUFFER_FLAG
     WRITE_WORD _UART_PRINT_INTERRUPT, _INTERRUPT_INDIRECT
-    ; Enable VIA T2 interrupt
-    LDA #$A0
+    ; Enable VIA T1 interrupt
+    LDA #%11000000
     STA VIA_FIRST_IER
     LDA #$0
     STA VIA_FIRST_ACR
@@ -158,7 +158,7 @@ _UART_PRINT_INTERRUPT:
     JSR _set_timer
     JMP .interrupt_end
 .buffer_end:
-    LDA VIA_FIRST_T2C_L
+    LDA VIA_FIRST_T1C_L
     LDA #0
     STA _BUFFER_FLAG
 .interrupt_end
@@ -212,7 +212,7 @@ _write_to_buffer:
 _set_timer:
     ; 6M / 9600 * 11 = $1ADB
     LDA #$DB
-    STA VIA_FIRST_T2C_L
+    STA VIA_FIRST_T1C_L
     LDA #$1A
-    STA VIA_FIRST_T2C_H
+    STA VIA_FIRST_T1C_H
     RTS
