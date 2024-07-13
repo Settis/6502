@@ -347,6 +347,58 @@ PUSH_FALSE_TO_S:
     STA STACK_TMP+1
     JMP PUSH_TO_S
 
+CREATE_DICTIONARY_HEADER_WITH_CFA: ; ( CFA -- ) reads the next word for a name
+    JSR COPY_WORD_FROM_TEXT
+    LDY #0
+    LDA (DP_ADDR),Y
+    TAX
+    ORA #$80
+    STA (DP_ADDR),Y
+    TXA
+    TAY
+    LDA (DP_ADDR),Y
+    ORA #$80
+    STA (DP_ADDR),Y   ; Set high bits for NFA
+
+    INY
+    LDA CONTEXT_VALUE
+    STA (DP_ADDR),Y
+    INY
+    LDA CONTEXT_VALUE+1
+    STA (DP_ADDR),Y   ; LFA set
+    COPY_WORD_TO DP_ADDR, CONTEXT_VALUE ; Update context value
+
+    INY
+    CLC
+    TYA
+    ADC DP_ADDR
+    STA DP_ADDR
+    LDA DP_ADDR+1
+    ADC #0
+    STA DP_ADDR+1   ; Update dictionary pointer
+
+    JSR F_WORD_COMMA_CODE ; CFA set
+
+    RTS
+
+F_WORD_COMMA_CODE: ; ( n -- )
+    JSR PULL_FROM_S
+    LDY #0
+    LDA STACK_TMP
+    STA (DP_ADDR),Y
+    INY
+    LDA STACK_TMP+1
+    STA (DP_ADDR),Y
+
+    CLC
+    LDA DP_ADDR
+    ADC #2
+    STA DP_ADDR
+    LDA DP_ADDR+1
+    ADC #0
+    STA DP_ADDR+1   ; Update dictionary pointer
+    RTS
+
 ;  ======= Forth words ========    
 F_WORD_TO_RETURN_STACK: ; >R
     DC 2  | $80
@@ -491,53 +543,12 @@ LAST_F_WORD:
     DC.W F_WORD_EXECUTE
     DC.W F_WORD_CONSTANT_CODE
 F_WORD_CONSTANT_CODE:
-    JSR COPY_WORD_FROM_TEXT
-    LDY #0
-    LDA (DP_ADDR),Y
-    TAX
-    ORA #$80
-    STA (DP_ADDR),Y
-    TXA
-    TAY
-    LDA (DP_ADDR),Y
-    ORA #$80
-    STA (DP_ADDR),Y   ; Set high bits for NFA
-    INY
-    LDA CONTEXT_VALUE
-    STA (DP_ADDR),Y
-    INY
-    LDA CONTEXT_VALUE+1
-    STA (DP_ADDR),Y   ; LFA set
-    COPY_WORD_TO DP_ADDR, CONTEXT_VALUE ; Update context value
-    INY
-    LDA #<F_WORD_CONSTANT_RUNTIME
-    STA (DP_ADDR),Y
-    INY
-    LDA #>F_WORD_CONSTANT_RUNTIME
-    STA (DP_ADDR),Y   ; CFA set
+    WRITE_WORD_TO F_WORD_CONSTANT_RUNTIME, STACK_TMP
+    JSR PUSH_TO_S ; push CFA to stack
+    
+    JSR CREATE_DICTIONARY_HEADER_WITH_CFA
 
-    ; set the constant
-    TYA
-    PHA
-    JSR PULL_FROM_S
-    PLA
-    TAY
-    INY
-    LDA STACK_TMP
-    STA (DP_ADDR),Y
-    INY
-    LDA STACK_TMP+1
-    STA (DP_ADDR),Y
-
-    INY
-    CLC
-    TYA
-    ADC DP_ADDR
-    STA DP_ADDR
-    LDA DP_ADDR+1
-    ADC #0
-    STA DP_ADDR+1   ; Update dictionary pointer
-
+    JSR F_WORD_COMMA_CODE ; store constant
     RTS
 F_WORD_CONSTANT_RUNTIME:
     COPY_WORD_TO W_ADDR, STACK_TMP
@@ -549,7 +560,7 @@ IRQ:
     RTI
 
 TEXT:
-    dc "1111 CONSTANT FOO FF FOO 12 21 + "
+    dc "1111 CONSTANT FOO 2222 CONSTANT BAR FOO BAR "
     dc 0
 
 
