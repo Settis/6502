@@ -71,6 +71,7 @@ IP_ADDR: ds 2 ; [internal] interpretive pointer for call executor
 W_ADDR:  ds 2 ; [internal] current word pointer for call executor
 TEXT_ADDR: ds 2 ; [internal] pointer for initial text interpreter
 CONTEXT_VALUE: ds 2
+STATE_VALUE: ds 2 
 
     seg CODE
     org $C000
@@ -95,6 +96,7 @@ START:
     WRITE_WORD_TO TIB_CONST, IN_ADDR
     WRITE_WORD_TO R0_CONST, RP_ADDR
     WRITE_WORD_TO LAST_F_WORD, CONTEXT_VALUE
+    WRITE_WORD_TO 0, STATE_VALUE
 
     WRITE_WORD_TO TEXT, TEXT_ADDR
 TEXT_LOOP:
@@ -562,7 +564,6 @@ F_WORD_CONSTANT_RUNTIME:
     RTS
 
 F_WORD_VARIABLE: ; VARIABLE
-LAST_F_WORD:
     DC 8  | $80
     DC "VARIABL"
     DC 'E | $80
@@ -584,11 +585,28 @@ F_WORD_VARIABLE_RUNTIME:
     JSR PUSH_TO_S
     RTS
 
+F_WORD_DP:
+    DC 2  | $80
+    DC 'D
+    DC 'P | $80
+    DC.W F_WORD_VARIABLE
+    DC.W F_WORD_CONSTANT_RUNTIME
+    DC.W DP_ADDR
+    
+F_WORD_STATE:
+LAST_F_WORD:
+    DC 5  | $80
+    DC "STAT"
+    DC 'E | $80
+    DC.W F_WORD_DP
+    DC.W F_WORD_CONSTANT_RUNTIME
+    DC.W STATE_VALUE
+
 IRQ:
     RTI
 
 TEXT:
-    dc "1111 CONSTANT FOO VARIABLE BAR BAR @ FOO 1234 BAR ! "
+    dc "DP @ 1111 CONSTANT FOO VARIABLE BAR BAR @ FOO 1234 BAR ! DP @ STATE @ "
     dc 0
 
 
