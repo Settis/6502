@@ -177,6 +177,10 @@ FIND_IN_DICTIONARY: ; (FIND) primitive ( NAME_ADDR DICTIONARY_RECORD_ADDR -- PFA
 .checkName:
     LDY #0
     LDA (INTERNAL_TMP),Y
+    TAX
+    AND #$20  ; check smudge flag
+    BNE .nextRecord
+    TXA
     AND #$1F  ; to extract only size
     CMP TMP_LENGTH
     BNE .nextRecord
@@ -449,7 +453,6 @@ F_WORD_NAND_CODE:
     JMP PUSH_TO_S
 
 F_WORD_EQUALS_0: ; 0=
-LAST_F_WORD:
     DC 2  | $80
     DC '0
     DC '= | $80
@@ -466,11 +469,87 @@ F_WORD_EQUALS_0_CODE:
 .notZero:
     JMP PUSH_FALSE_TO_S
 
+F_WORD_FIND_INT: ; (FIND)
+    DC 6  | $80
+    DC "(FIND"
+    DC ') | $80
+    DC.W F_WORD_EQUALS_0
+    DC.W FIND_IN_DICTIONARY
+
+F_WORD_EXECUTE: ; EXECUTE
+    DC 7  | $80
+    DC "EXECUT"
+    DC 'E | $80
+    DC.W F_WORD_FIND_INT
+    DC.W EXECUTE
+
+F_WORD_CONSTANT: ; CONSTANT
+LAST_F_WORD:
+    DC 8  | $80
+    DC "CONSTAN"
+    DC 'T | $80
+    DC.W F_WORD_EXECUTE
+    DC.W F_WORD_CONSTANT_CODE
+F_WORD_CONSTANT_CODE:
+    JSR COPY_WORD_FROM_TEXT
+    LDY #0
+    LDA (DP_ADDR),Y
+    TAX
+    ORA #$80
+    STA (DP_ADDR),Y
+    TXA
+    TAY
+    LDA (DP_ADDR),Y
+    ORA #$80
+    STA (DP_ADDR),Y   ; Set high bits for NFA
+    INY
+    LDA CONTEXT_VALUE
+    STA (DP_ADDR),Y
+    INY
+    LDA CONTEXT_VALUE+1
+    STA (DP_ADDR),Y   ; LFA set
+    COPY_WORD_TO DP_ADDR, CONTEXT_VALUE ; Update context value
+    INY
+    LDA #<F_WORD_CONSTANT_RUNTIME
+    STA (DP_ADDR),Y
+    INY
+    LDA #>F_WORD_CONSTANT_RUNTIME
+    STA (DP_ADDR),Y   ; CFA set
+
+    ; set the constant
+    TYA
+    PHA
+    JSR PULL_FROM_S
+    PLA
+    TAY
+    INY
+    LDA STACK_TMP
+    STA (DP_ADDR),Y
+    INY
+    LDA STACK_TMP+1
+    STA (DP_ADDR),Y
+
+    INY
+    CLC
+    TYA
+    ADC DP_ADDR
+    STA DP_ADDR
+    LDA DP_ADDR+1
+    ADC #0
+    STA DP_ADDR+1   ; Update dictionary pointer
+
+    RTS
+F_WORD_CONSTANT_RUNTIME:
+    COPY_WORD_TO W_ADDR, STACK_TMP
+    JSR PUSH_TO_S
+    JSR F_WORD_READ_FROM_ADDR_CODE
+    RTS
+
 IRQ:
     RTI
 
 TEXT:
-    dc "1 1 0= 0 0 0= "
+    dc "1111 CONSTANT FOO FF FOO 12 21 + "
     dc 0
 
 
