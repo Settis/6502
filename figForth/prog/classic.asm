@@ -112,7 +112,12 @@ TEXT_LOOP:
     LDA STACK_TMP
     BEQ .parseNumber
 
-    JSR PULL_FROM_S ; throw size
+    JSR PULL_FROM_S 
+    COPY_WORD_TO STACK_TMP, INTERNAL_TMP ; name size in internal tmp
+    CLC 
+    LDA INTERNAL_TMP
+    ADC #3
+    STA INTERNAL_TMP  ; name size + LFA size + 1 for the first byte in NFA
     JSR PULL_FROM_S ; pull PFA
     SEC
     LDA STACK_TMP
@@ -123,14 +128,30 @@ TEXT_LOOP:
     STA STACK_TMP+1
     JSR PUSH_TO_S  ; convert PFA to CFA
 
+    SEC
+    LDA STACK_TMP
+    SBC INTERNAL_TMP
+    STA INTERNAL_TMP
+    LDA STACK_TMP+1
+    SBC INTERNAL_TMP+1
+    STA INTERNAL_TMP+1 ; INTERNAL_TMP contains pointer to NFA
+
+    LDX #0
+    LDA (INTERNAL_TMP,X)
+    CMP STATE_VALUE  ; check if we need to run or compile this word
+    BCS .executeWord
+.compileWord:
+    JSR F_WORD_COMMA_CODE
+    JMP .endTextLoop
+.executeWord:
     WRITE_WORD_TO [JMP_END_TEXT_LOOP+1], IP_ADDR
     JSR EXECUTE
 JMP_END_TEXT_LOOP:
-    JMP endTextLoop
+    JMP .endTextLoop
 
 .parseNumber:
     JSR READ_NUMBER
-endTextLoop:
+.endTextLoop:
     ; check if it's end of the text
     LDY #0
     LDA (TEXT_ADDR),Y
@@ -654,7 +675,7 @@ F_WORD_COLON_CODE:
 
 F_WORD_SEMICOLON:
 LAST_F_WORD:
-    DC 1  | $80
+    DC 1  | $80 | $40
     DC '; | $80
     DC.W F_WORD_COLON
     DC.W F_WORD_SEMICOLON_CODE
@@ -670,7 +691,7 @@ IRQ:
     RTI
 
 TEXT:
-    dc "123 : plus ; plus 4343 "
+    dc "3 120 2000 : plus + ; : combo plus plus ; combo "
     dc 0
 
 
