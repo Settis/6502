@@ -123,12 +123,14 @@ TEXT_LOOP:
     STA STACK_TMP+1
     JSR PUSH_TO_S  ; convert PFA to CFA
 
+    WRITE_WORD_TO [JMP_END_TEXT_LOOP+1], IP_ADDR
     JSR EXECUTE
-    JMP .endTextLoop
+JMP_END_TEXT_LOOP:
+    JMP endTextLoop
 
 .parseNumber:
     JSR READ_NUMBER
-.endTextLoop:
+endTextLoop:
     ; check if it's end of the text
     LDY #0
     LDA (TEXT_ADDR),Y
@@ -383,7 +385,7 @@ CREATE_DICTIONARY_HEADER_WITH_CFA: ; ( CFA -- ) reads the next word for a name
 
     RTS
 
-F_WORD_COMMA_CODE: ; ( n -- )
+F_WORD_COMMA_CODE: ; , ( n -- )
     JSR PULL_FROM_S
     LDY #0
     LDA STACK_TMP
@@ -399,6 +401,34 @@ F_WORD_COMMA_CODE: ; ( n -- )
     LDA DP_ADDR+1
     ADC #0
     STA DP_ADDR+1   ; Update dictionary pointer
+    RTS
+
+DOCOL:
+    COPY_WORD_TO IP_ADDR, STACK_TMP
+    JSR PUSH_TO_R
+    COPY_WORD_TO W_ADDR, IP_ADDR
+    JSR NEXT
+    RTS
+
+NEXT:
+    COPY_WORD_TO IP_ADDR, STACK_TMP
+    JSR PUSH_TO_S
+    JSR F_WORD_READ_FROM_ADDR_CODE
+    CLC
+    LDA IP_ADDR
+    ADC #2
+    STA IP_ADDR
+    LDA IP_ADDR+1
+    ADC #0
+    STA IP_ADDR+1
+    COPY_WORD_TO IP_ADDR, W_ADDR
+    JSR PULL_FROM_S
+    JMP (STACK_TMP)
+
+DOSEMICOL:
+    JSR PULL_FROM_R
+    COPY_WORD_TO STACK_TMP, IP_ADDR
+    JSR NEXT
     RTS
 
 ;  ======= Forth words ========    
@@ -592,21 +622,55 @@ F_WORD_DP:
     DC.W F_WORD_VARIABLE
     DC.W F_WORD_CONSTANT_RUNTIME
     DC.W DP_ADDR
+
+F_WORD_SP:
+    DC 2  | $80
+    DC 'S
+    DC 'P | $80
+    DC.W F_WORD_DP
+    DC.W F_WORD_CONSTANT_RUNTIME
+    DC.W SP_ADDR
     
 F_WORD_STATE:
-LAST_F_WORD:
     DC 5  | $80
     DC "STAT"
     DC 'E | $80
-    DC.W F_WORD_DP
+    DC.W F_WORD_SP
     DC.W F_WORD_CONSTANT_RUNTIME
     DC.W STATE_VALUE
+
+F_WORD_COLON:
+    DC 1  | $80
+    DC ': | $80
+    DC.W F_WORD_STATE
+    DC.W F_WORD_COLON_CODE
+F_WORD_COLON_CODE:
+    WRITE_WORD_TO DOCOL, STACK_TMP
+    JSR PUSH_TO_S
+    JSR CREATE_DICTIONARY_HEADER_WITH_CFA
+    LDA #$C0
+    STA STATE_VALUE
+    RTS
+
+F_WORD_SEMICOLON:
+LAST_F_WORD:
+    DC 1  | $80
+    DC '; | $80
+    DC.W F_WORD_COLON
+    DC.W F_WORD_SEMICOLON_CODE
+F_WORD_SEMICOLON_CODE:
+    WRITE_WORD_TO DOSEMICOL, STACK_TMP
+    JSR PUSH_TO_S
+    JSR F_WORD_COMMA_CODE
+    LDA #0
+    STA STATE_VALUE
+    RTS
 
 IRQ:
     RTI
 
 TEXT:
-    dc "DP @ 1111 CONSTANT FOO VARIABLE BAR BAR @ FOO 1234 BAR ! DP @ STATE @ "
+    dc "123 : plus ; plus 4343 "
     dc 0
 
 
