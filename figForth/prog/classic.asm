@@ -71,7 +71,8 @@ IP_ADDR: ds 2 ; [internal] interpretive pointer for call executor
 W_ADDR:  ds 2 ; [internal] current word pointer for call executor
 TEXT_ADDR: ds 2 ; [internal] pointer for initial text interpreter
 CONTEXT_VALUE: ds 2
-STATE_VALUE: ds 2 
+STATE_VALUE: ds 2
+UART_PRINT_STRING_ADDR: ds 2 ; [for debug]
 
     seg CODE
     org $C000
@@ -90,6 +91,8 @@ STATE_VALUE: ds 2
     ENDM
 
 START:
+    JSR INIT_UART
+
     ; init
     WRITE_WORD_TO $0200, DP_ADDR
     WRITE_WORD_TO S0_CONST, SP_ADDR
@@ -144,10 +147,15 @@ TEXT_LOOP:
     JSR F_WORD_COMMA_CODE
     JMP .endTextLoop
 .executeWord:
-    WRITE_WORD_TO [JMP_END_TEXT_LOOP+1], IP_ADDR
+    WRITE_WORD_TO JMP_END_TEXT_LOOP_WORDS, IP_ADDR
     JSR EXECUTE
-JMP_END_TEXT_LOOP:
     JMP .endTextLoop
+
+JMP_END_TEXT_LOOP_WORDS:
+    DC.W JMP_END_TEXT_LOOP_ADDR
+    DC.W JMP_END_TEXT_LOOP_ADDR
+JMP_END_TEXT_LOOP_ADDR:
+    DC.W .endTextLoop
 
 .parseNumber:
     JSR READ_NUMBER
@@ -157,6 +165,8 @@ JMP_END_TEXT_LOOP:
     LDA (TEXT_ADDR),Y
     BNE TEXT_LOOP
 
+    PRINT_STRING "Stack:"
+    JSR PRINT_NEW_LINE
     JSR PRINT_STACK
     BRK
 
@@ -286,10 +296,18 @@ READ_NUMBER:
     BNE .digitLoop
     JMP PUSH_TO_S
 
+DEBUG_EXECUTE = 1
 EXECUTE:  ; FORTH ( CFA -- )
     SUBROUTINE
     JSR PULL_FROM_S
     JSR PUSH_TO_S
+    IF DEBUG_EXECUTE
+        PRINT_STRING "EXECUTE CFA:"
+        LDA STACK_TMP+1
+        JSR PRINT_BYTE_HEX
+        LDA STACK_TMP
+        JSR PRINT_BYTE_HEX
+    ENDIF
     CLC
     LDA STACK_TMP
     ADC #2
@@ -297,8 +315,23 @@ EXECUTE:  ; FORTH ( CFA -- )
     LDA STACK_TMP+1
     ADC #0
     STA W_ADDR+1
+    IF DEBUG_EXECUTE
+        PRINT_STRING " W:"
+        LDA W_ADDR+1
+        JSR PRINT_BYTE_HEX
+        LDA W_ADDR
+        JSR PRINT_BYTE_HEX
+    ENDIF
     JSR F_WORD_READ_FROM_ADDR_CODE
     JSR PULL_FROM_S
+    IF DEBUG_EXECUTE
+        PRINT_STRING " jump:"
+        LDA STACK_TMP+1
+        JSR PRINT_BYTE_HEX
+        LDA STACK_TMP
+        JSR PRINT_BYTE_HEX
+        JSR PRINT_NEW_LINE
+    ENDIF
     JMP (STACK_TMP)
 
 ; Transfering data between stacks goes via TMP 
@@ -424,13 +457,27 @@ F_WORD_COMMA_CODE: ; , ( n -- )
     STA DP_ADDR+1   ; Update dictionary pointer
     RTS
 
+DEBUG_DOCOL = 1
 DOCOL:
     COPY_WORD_TO IP_ADDR, STACK_TMP
     JSR PUSH_TO_R
     COPY_WORD_TO W_ADDR, IP_ADDR
+    IF DEBUG_DOCOL
+        PRINT_STRING "DOCOL OLD_IP:"
+        LDA STACK_TMP+1
+        JSR PRINT_BYTE_HEX
+        LDA STACK_TMP
+        JSR PRINT_BYTE_HEX
+        PRINT_STRING " W=IP="
+        LDA IP_ADDR+1
+        JSR PRINT_BYTE_HEX
+        LDA IP_ADDR
+        JSR PRINT_BYTE_HEX
+    ENDIF
     JSR NEXT
     RTS
 
+DEBUG_NEXT = 1 
 NEXT:
     COPY_WORD_TO IP_ADDR, STACK_TMP
     JSR PUSH_TO_S
@@ -442,13 +489,50 @@ NEXT:
     LDA IP_ADDR+1
     ADC #0
     STA IP_ADDR+1
-    COPY_WORD_TO IP_ADDR, W_ADDR
     JSR PULL_FROM_S
+    JSR PUSH_TO_S
+    CLC 
+    LDA STACK_TMP
+    ADC #2
+    STA W_ADDR
+    LDA STACK_TMP+1
+    ADC #0
+    STA W_ADDR+1
+    JSR F_WORD_READ_FROM_ADDR_CODE
+    JSR PULL_FROM_S
+    IF DEBUG_NEXT
+        PRINT_STRING " Next IP:"
+        LDA IP_ADDR+1
+        JSR PRINT_BYTE_HEX
+        LDA IP_ADDR
+        JSR PRINT_BYTE_HEX
+        PRINT_STRING " W:"
+        LDA W_ADDR+1
+        JSR PRINT_BYTE_HEX
+        LDA W_ADDR
+        JSR PRINT_BYTE_HEX
+        PRINT_STRING " jump:"
+        LDA STACK_TMP+1
+        JSR PRINT_BYTE_HEX
+        LDA STACK_TMP
+        JSR PRINT_BYTE_HEX
+        JSR PRINT_NEW_LINE
+    ENDIF
     JMP (STACK_TMP)
 
+DOSEMICOL_ADDR:
+    DC.W DOSEMICOL
+DEBUG_DOSEMICOL = 1
 DOSEMICOL:
     JSR PULL_FROM_R
     COPY_WORD_TO STACK_TMP, IP_ADDR
+    IF DEBUG_DOSEMICOL
+        PRINT_STRING "DOSEMICOL IP:"
+        LDA IP_ADDR+1
+        JSR PRINT_BYTE_HEX
+        LDA IP_ADDR
+        JSR PRINT_BYTE_HEX
+    ENDIF
     JSR NEXT
     RTS
 
@@ -523,7 +607,8 @@ F_WORD_PLUS_CODE:
     LDA INTERNAL_TMP+1
     ADC STACK_TMP+1
     STA STACK_TMP+1
-    JMP PUSH_TO_S
+    JSR PUSH_TO_S
+    JMP NEXT
 
 F_WORD_MUL_BY_2: ; 2*
     DC 2  | $80
@@ -680,7 +765,7 @@ LAST_F_WORD:
     DC.W F_WORD_COLON
     DC.W F_WORD_SEMICOLON_CODE
 F_WORD_SEMICOLON_CODE:
-    WRITE_WORD_TO DOSEMICOL, STACK_TMP
+    WRITE_WORD_TO DOSEMICOL_ADDR, STACK_TMP
     JSR PUSH_TO_S
     JSR F_WORD_COMMA_CODE
     LDA #0
@@ -701,13 +786,39 @@ IOSTATUS = IOBASE + 1
 IOCMD    = IOBASE + 2
 IOCTRL   = IOBASE + 3
 
-PRINT_STACK:
-    SUBROUTINE
+INIT_UART:
     LDA #$09
     STA IOCMD      ; Set command status
     LDA #$1A
     STA IOCTRL     ; 0 stop bits, 8 bit word, 2400 baud
+    RTS
 
+tmp set 0
+    MAC PRINT_STRING
+tmp set .string
+    WRITE_WORD_TO tmp, UART_PRINT_STRING_ADDR
+    JSR PRINT_STRING_ROUTINE
+    JMP .endString
+.string:
+    DC {1}
+    DC 0
+.endString:
+    ENDM
+
+PRINT_STRING_ROUTINE:
+    SUBROUTINE
+    LDY #0
+.loop:
+    LDA (UART_PRINT_STRING_ADDR),Y
+    BNE .print
+    RTS
+.print:
+    JSR PRINT_CHAR
+    INY
+    JMP .loop
+
+PRINT_STACK:
+    SUBROUTINE
 .loop:
     LDA SP_ADDR
     CMP #<S0_CONST
@@ -717,33 +828,32 @@ PRINT_STACK:
     BEQ .halt
 .print:
     JSR PULL_FROM_S
-    JSR PRINT_NUMBER
+    LDA STACK_TMP+1
+    JSR PRINT_BYTE_HEX
+    LDA STACK_TMP
+    JSR PRINT_BYTE_HEX
+    JSR PRINT_NEW_LINE
     JMP .loop
 
 .halt:
-    BRK
-
-PRINT_NUMBER:
-    SUBROUTINE
-    LDX #4
-.loop:
-    LDY #4
-.shiftLoop:
-    ASL STACK_TMP
-    ROL STACK_TMP+1
-    ROL INTERNAL_TMP
-    DEY
-    BNE .shiftLoop
-    JSR PRINT_DIGIT
-    DEX
-    BNE .loop
-    LDA #$0D
-    JSR PRINT_CHAR
     RTS
+
+PRINT_NEW_LINE:
+    LDA #$0D
+    JMP PRINT_CHAR
+
+PRINT_BYTE_HEX:
+    PHA
+    LSR
+    LSR
+    LSR
+    LSR
+    JSR PRINT_DIGIT
+    PLA
+    ; JSR PRINT_DIGIT
 
 PRINT_DIGIT:
     SUBROUTINE
-    LDA INTERNAL_TMP
     AND #$0F
     CLC
     CMP #10
@@ -751,9 +861,9 @@ PRINT_DIGIT:
     ADC #6
 .lower:
     ADC #'0
-    STA $F4
-    JSR PRINT_CHAR
-    RTS
+    ; It is the next subroutine
+    ; JSR PRINT_CHAR
+    ; RTS
 
 PRINT_CHAR:
     SUBROUTINE
