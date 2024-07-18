@@ -115,6 +115,39 @@ TEXT_LOOP:
     LDA STACK_TMP
     BEQ .parseNumber
 
+    JSR PREPARE_CFA_NFA
+
+    LDX #0
+    LDA (INTERNAL_TMP,X)
+    CMP STATE_VALUE  ; check if we need to run or compile this word
+    BCS .executeWord
+.compileWord:
+    JSR F_WORD_COMMA_SUBROUTINE
+    JMP .endTextLoop
+.executeWord:
+    WRITE_WORD_TO JMP_END_TEXT_LOOP_WORDS, IP_ADDR
+    JMP EXECUTE
+
+.parseNumber:
+    JSR READ_NUMBER
+    LDA STATE_VALUE
+    BEQ .endTextLoop
+    WRITE_WORD_TO F_LIT_ADDR, STACK_TMP
+    JSR PUSH_TO_S
+    JSR F_WORD_COMMA_SUBROUTINE
+    JSR F_WORD_COMMA_SUBROUTINE
+.endTextLoop:
+    ; check if it's end of the text
+    LDY #0
+    LDA (TEXT_ADDR),Y
+    BNE TEXT_LOOP
+
+    PRINT_STRING "Stack:"
+    JSR PRINT_NEW_LINE
+    JSR PRINT_STACK
+    BRK
+
+PREPARE_CFA_NFA:
     JSR PULL_FROM_S 
     COPY_WORD_TO STACK_TMP, INTERNAL_TMP ; name size in internal tmp
     CLC 
@@ -138,37 +171,13 @@ TEXT_LOOP:
     LDA STACK_TMP+1
     SBC INTERNAL_TMP+1
     STA INTERNAL_TMP+1 ; INTERNAL_TMP contains pointer to NFA
-
-    LDX #0
-    LDA (INTERNAL_TMP,X)
-    CMP STATE_VALUE  ; check if we need to run or compile this word
-    BCS .executeWord
-.compileWord:
-    JSR F_WORD_COMMA_SUBROUTINE
-    JMP .endTextLoop
-.executeWord:
-    WRITE_WORD_TO JMP_END_TEXT_LOOP_WORDS, IP_ADDR
-    JSR EXECUTE ; TODO: jmp to it
-    JMP .endTextLoop
+    RTS
 
 JMP_END_TEXT_LOOP_WORDS:
     DC.W JMP_END_TEXT_LOOP_ADDR
     DC.W JMP_END_TEXT_LOOP_ADDR
 JMP_END_TEXT_LOOP_ADDR:
     DC.W .endTextLoop
-
-.parseNumber:
-    JSR READ_NUMBER
-.endTextLoop:
-    ; check if it's end of the text
-    LDY #0
-    LDA (TEXT_ADDR),Y
-    BNE TEXT_LOOP
-
-    PRINT_STRING "Stack:"
-    JSR PRINT_NEW_LINE
-    JSR PRINT_STACK
-    BRK
 
 COPY_WORD_FROM_TEXT:
     SUBROUTINE
@@ -457,7 +466,7 @@ F_WORD_COMMA_SUBROUTINE: ; , ( n -- )
     STA DP_ADDR+1   ; Update dictionary pointer
     RTS
 
-DEBUG_DOCOL = 0
+DEBUG_DOCOL = 1
 DOCOL:
     COPY_WORD_TO IP_ADDR, STACK_TMP
     JSR PUSH_TO_R
@@ -476,7 +485,7 @@ DOCOL:
     ENDIF
     JMP NEXT
 
-DEBUG_NEXT = 0 
+DEBUG_NEXT = 1 
 NEXT:
     COPY_WORD_TO IP_ADDR, STACK_TMP
     JSR PUSH_TO_S
@@ -521,7 +530,7 @@ NEXT:
 
 DOSEMICOL_ADDR:
     DC.W DOSEMICOL
-DEBUG_DOSEMICOL = 0
+DEBUG_DOSEMICOL = 1
 DOSEMICOL:
     JSR PULL_FROM_R
     COPY_WORD_TO STACK_TMP, IP_ADDR
@@ -532,6 +541,21 @@ DOSEMICOL:
         LDA IP_ADDR
         JSR PRINT_BYTE_HEX
     ENDIF
+    JMP NEXT
+
+F_LIT_ADDR:
+    DC.W F_LIT
+F_LIT:
+    COPY_WORD_TO IP_ADDR, STACK_TMP
+    JSR PUSH_TO_S
+    JSR F_WORD_READ_FROM_ADDR_SUBROUTINE
+    CLC 
+    LDA IP_ADDR
+    ADC #2
+    STA IP_ADDR
+    LDA IP_ADDR+1
+    ADC #0
+    STA IP_ADDR+1
     JMP NEXT
 
 ;  ======= Forth words ========    
@@ -790,7 +814,7 @@ IRQ:
     RTI
 
 TEXT:
-    dc "3 120 2000 : plus + ; : combo plus plus ; combo "
+    dc "3 : 1+ 1 + ; 1+ 7 1+ "
     dc 0
 
 
