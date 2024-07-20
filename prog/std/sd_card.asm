@@ -92,6 +92,9 @@ INIT_SD:
         JSR _CMD_APP_SEND_OP_COND
         IF_ZERO
             TAY 
+            ; It's initialized. I can speed up
+            LDA #0
+            STA VIA_FIRST_T2C_L
             PLA
             TYA
             RTS
