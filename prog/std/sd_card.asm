@@ -35,6 +35,11 @@ INIT_SD:
     ; Setup output pins
     LDA #%11100000
     STA VIA_FIRST_DDRB
+
+    ; enable shift interrups
+    LDA #%10000100
+    STA VIA_FIRST_IER
+
     ; Disable SD
     LDA #%11100000
     STA VIA_FIRST_RB
@@ -212,7 +217,11 @@ _DUMMY_CLOCK_WITH_DISABLED_CARD:
     STA VIA_FIRST_RB
     LDA #%00000100
     STA VIA_FIRST_ACR
+    SEI
     LDA VIA_FIRST_SR ; trigger shifting
+    LDA #1
+    STA _SHIFTING_FLAG
+    CLI
     JSR _WAIT_FOR_SHIFTING
     PLA
     STA _response
@@ -377,6 +386,10 @@ _SEND_SD_COMMAND_AND_WAIT_R1:
     LDA #_SD_OK
     RTS
 
+    SEG.U zpVars
+_SHIFTING_FLAG: ds 1
+
+    SEG code
 ; Changes X
 _READ_BYTE_SD:
     LDA #%00000100
@@ -384,16 +397,12 @@ _READ_BYTE_SD:
     LDA #%00100000
     STA VIA_FIRST_RB
 
+    SEI
     LDA VIA_FIRST_SR ; read SR to trigger shift in
-    JSR _WAIT_FOR_SHIFTING
-
-    ; disabling shift register
-    LDA #%00000000
-    STA VIA_FIRST_ACR 
-
-    LDA VIA_FIRST_SR ; now I can read it without triggering shifting
-    STA _response
-    RTS
+    LDA #1
+    STA _SHIFTING_FLAG
+    CLI
+    JMP _WAIT_FOR_SHIFTING
 
 ; Sends _sendByte
 ; The result will be in _response
@@ -405,10 +414,36 @@ _RW_BYTE_SD:
     LDA #%01000000
     STA VIA_FIRST_RB
 
+    SEI
     LDA _sendByte
     STA VIA_FIRST_SR
+    LDA #1
+    STA _SHIFTING_FLAG
+    CLI
 
 _WAIT_FOR_SHIFTING:
-    FOR_X 0, UP_TO, 80
-    NEXT_X
+    SUBROUTINE
+.loop:
+    LDA _SHIFTING_FLAG
+    BNE .loop
     RTS
+
+    MAC check_shift_register_interrupt
+        LDA #%00000100
+        AND VIA_FIRST_IFR
+        BEQ .end
+        JMP _shift_register_interrup_handler
+.end:
+    ENDM
+
+_shift_register_interrup_handler:
+    ; disabling shift register
+    LDA #%00000000
+    STA VIA_FIRST_ACR 
+
+    LDA VIA_FIRST_SR ; now I can read it without triggering shifting
+    STA _response
+    LDA #0
+    STA _SHIFTING_FLAG
+    PLA
+    RTI

@@ -139,6 +139,42 @@ _uart_print_half_humber:
     JSR _write_to_uart
     RTS
 
+    ; I expecting that A is pushed already
+    MAC check_uart_print_interrupt
+        LDA #%01000000
+        AND VIA_FIRST_IFR
+        BEQ .end
+        JMP _UART_PRINT_INTERRUPT_V2
+.end:
+    ENDM
+
+_UART_PRINT_INTERRUPT_V2:
+    subroutine
+    TXA
+    PHA
+
+    LDX _BUFFER_READ_IND
+    CPX _BUFFER_WRITE_IND
+    BEQ .buffer_end
+    LDA _OUTPUT_BUFFER,X
+    STA UART_DATA_REG
+    INX
+    TXA
+    AND #_OUTPUT_BUFFER_AND_MASK
+    STA _BUFFER_READ_IND
+    
+    JSR _set_timer
+    JMP .interrupt_end
+.buffer_end:
+    LDA VIA_FIRST_T1C_L
+    LDA #0
+    STA _BUFFER_FLAG
+.interrupt_end
+    PLA
+    TAX
+    PLA ; restoring A pushed initially
+    RTI
+
 _UART_PRINT_INTERRUPT:
     subroutine
     PHA
