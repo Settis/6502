@@ -155,6 +155,7 @@ _READ_SD_SECTOR_INSIDE_RETRY:
         RTS
     END_IF
     ; Wait for data token
+    JSR _READ_BYTE_SD ; I have to trigger shift reading
     SUBROUTINE
     FOR_X 0, UP_TO, $F0
         TXA
@@ -378,6 +379,7 @@ _SEND_SD_COMMAND_AND_WAIT_R1:
     NEXT_Y
     ; We need to wait for R1 response
     ; It starts with 0 in 7th bit
+    JSR _READ_BYTE_SD ; to trigger shift in
     FOR_Y 0, UP_TO, $F0
         JSR _READ_BYTE_SD
         LDA _response
@@ -402,6 +404,7 @@ _READ_BYTE_SD:
 
     SEI
     LDA VIA_FIRST_SR ; read SR to trigger shift in
+    STA _response
     LDA #1
     STA _SHIFTING_FLAG
     CLI
@@ -440,12 +443,8 @@ _WAIT_FOR_SHIFTING:
     ENDM
 
 _shift_register_interrup_handler:
-    ; disabling shift register
-    LDA #%00000000
-    STA VIA_FIRST_ACR 
-
-    LDA VIA_FIRST_SR ; now I can read it without triggering shifting
-    STA _response
+    LDA #%00000100
+    STA VIA_FIRST_IFR
     LDA #0
     STA _SHIFTING_FLAG
     PLA
