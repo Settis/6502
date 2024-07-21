@@ -14,11 +14,13 @@ _UPPER_RAM_END = .
         ERR
     ENDIF
 
-    ECHO "Free RAM: ", UPPER_RAM_START - _CODE_END
+    IF CODE_START < UPPER_RAM_START
+        ECHO "Free RAM: ", UPPER_RAM_START - _CODE_END
 
-    IF _CODE_END > UPPER_RAM_START
-        ECHO "Code is overlaps with upper ram reserved"
-        ERR
+        IF _CODE_END > UPPER_RAM_START
+            ECHO "Code is overlaps with upper ram reserved"
+            ERR
+        ENDIF
     ENDIF
 
     ECHO "Free reserved upper RAM: ", $8000 - _UPPER_RAM_END

@@ -1,0 +1,419 @@
+--- Symbol List (sorted by symbol)
+0.sdIsIdle               f933              (R )
+0.turnOn                 f946              (R )
+10.tmp                   f937              (R )
+101.loop                 fbc7              (R )
+102.tmp                  fbe8              (R )
+104.tmp                  fbe8              (R )
+108.loop                 fbea              (R )
+109.tmp                  fc2d              (R )
+111.tmp                  fc2d              (R )
+113.tmp                  fc2d              (R )
+117.loop                 fc46              (R )
+117.opened               fc50              (R )
+117.openIt               fc57              (R )
+117.readNextSector       fcf5              (R )
+117.secondRun            fcc3              (R )
+118.tmp                  fc46              (R )
+120.loop                 fc5f              (R )
+122.loop                 fc6e              (R )
+125.tmp                  fc87              (R )
+126.tmp                  fc79              (R )
+127.tmp                  fcb1              (R )
+129.tmp                  fce1              (R )
+13.tmp                   f958              (R )
+130.tmp                  fce1              (R )
+131.tmp                  fce1              (R )
+135.tmp                  fce7              (R )
+136.proceed              fd0d              (R )
+137.end                  fd22              (R )
+137.fullPage             fd20              (R )
+138.end                  fd97              (R )
+138.extractNextNameInvalid fd9f              (R )
+138.nameCopied           fd73              (R )
+140.tmp                  fd32              (R )
+142.tmp                  fd39              (R )
+144.tmp                  fd3f              (R )
+147.loop                 fd43              (R )
+149.loop                 fd4d              (R )
+151.loop                 fd79              (R )
+153.tmp                  fdab              (R )
+155.tmp                  fdb6              (R )
+159.tmp                  fdc5              (R )
+16.tmp                   f94a              (R )
+161.tmp                  fdb7              (R )
+162.nextRecord           fdf2              (R )
+162.notFound             fe02              (R )
+165.loop                 fde3              (R )
+166.tmp                  fdfd              (R )
+168.loop                 fdcf              (R )
+170.loop                 fe07              (R )
+171.nextCluster          fe4e              (R )
+171.notEOC               fec1              (R )
+173.tmp                  fe40              (R )
+175.tmp                  fe40              (R )
+177.tmp                  fe40              (R )
+182.loop                 fe42              (R )
+183.tmp                  fe85              (R )
+185.loop                 fe98              (R )
+188.loop                 ff09              (R )
+188.skipUpper            ff13              (R )
+189.tmp                  fef7              (R )
+19.tmp                   f973              (R )
+192.tmp                  ff22              (R )
+193.tmp                  ff09              (R )
+194.tmp                  ff27              (R )
+195.end                  ff35              (R )
+22.tmp                   f96a              (R )
+23.tmp                   f994              (R )
+25.tmp                   f991              (R )
+26.tmp                   f993              (R )
+29.tmp                   f99e              (R )
+31.dataTokenReceived     f9c2              (R )
+34.loop                  f9a7              (R )
+35.loop                  f9a3              (R )
+38.loop                  f9e1              (R )
+4.loop                   f919              (R )
+41.loop                  f9f0              (R )
+42.loop                  f9ee              (R )
+43.tmp                   fa47              (R )
+45.tmp                   fa44              (R )
+46.tmp                   fa46              (R )
+49.tmp                   fa52              (R )
+50.tmp                   fa54              (R )
+53.loop                  fa6e              (R )
+54.tmp                   fa89              (R )
+56.tmp                   fa86              (R )
+57.tmp                   fa88              (R )
+60.tmp                   fa94              (R )
+61.tmp                   fa96              (R )
+63.tmp                   faba              (R )
+65.tmp                   fab7              (R )
+66.tmp                   fab9              (R )
+69.tmp                   fada              (R )
+7.tmp                    f924              (R )
+71.tmp                   fad7              (R )
+72.tmp                   fad9              (R )
+75.tmp                   fae0              (R )
+77.notBusy               faf4              (R )
+77.r1Received            fb15              (R )
+79.loop                  fae3              (R )
+81.loop                  faf6              (R )
+83.loop                  fb06              (R )
+84.loop                  fb45              (R )
+85.goodBootSign          fb7a              (R )
+85.proceed               fba7              (R )
+85.wrongBootSign         fb77              (R )
+85.wrongBytesPerLogicalSector fba4              (R )
+86.tmp                   fb5b              (R )
+87.tmp                   fb69              (R )
+88.tmp                   fb84              (R )
+91.loop                  fb86              (R )
+92.tmp                   fb98              (R )
+93.tmp                   fbb1              (R )
+95.tmp                   fbbb              (R )
+98.tmp                   fbc3              (R )
+_arg                     0003              (R )
+_BOOT_SECTOR_SIGNATURE_OFFSET 01fe              (R )
+_CHECK_ZERO_SIZE         fcfa              (R )
+_cmd                     0007              (R )
+_CMD_APP_SEND_OP_COND    fa97              (R )
+_CMD_GO_IDLE_STATE       fa21              (R )
+_CMD_SEND_IF_COND        fa55              (R )
+_CODE_END                10000                  
+_crc                     0002              (R )
+_dataSector              000f              (R )
+_DIR_RECORD_FILE_SIZE_OFFSET 001c              (R )
+_DIR_RECORD_FLAGS_OFFSET 000b              (R )
+_DIR_RECORD_HIGH_START_CLUSTER_OFFSET 0014              (R )
+_DIR_RECORD_LOW_START_CLUSTER_OFFSET 001a              (R )
+_DIR_RECORD_REMOVED_FILE_NAME 00e5              (R )
+_DIR_RECORD_SIZE         0020              (R )
+_DIR_RECORD_VFAT_FLAG    000f              (R )
+_dirReadPointer          0033              (R )
+_DISABLE_SD_AFTER_OPERATION f9fb              (R )
+_DUMMY_CLOCK_WITH_DISABLED_CARD fa04              (R )
+_EXTRACT_NEXT_NAME       fd25              (R )
+_EXTRACT_NEXT_NAME_END   00ff              (R )
+_EXTRACT_NEXT_NAME_INVALID 0001              (R )
+_EXTRACT_NEXT_NAME_OK    0000              (R )
+_FAT_FIRST_SECTOR_BYTES_PER_LOGICAL_SECTOR_OFFEST 000b              (R )
+_FAT_FIRST_SECTOR_LOGICAL_SECTORS_PER_FAT_OFFSET 0024              (R )
+_FAT_FIRST_SECTOR_MEDIA_DESCRIPTOR_OFFSET 0015              (R )
+_FAT_FIRST_SECTOR_NUBMER_OF_FATs_OFFSET 0010              (R )
+_FAT_FIRST_SECTOR_RESERVED_LOGICAL_SECTORS_OFFSET 000e              (R )
+_FAT_FIRST_SECTOR_ROOT_DIRECTORY_CLUSTER_NUMBER_OFFSET 002c              (R )
+_FAT_FIRST_SECTOR_SECTORS_PER_CLUSTER_OFFEST 000d              (R )
+_FAT_FIRST_SECTOR_TOTAL_LOGICAL_SECTORS_OFFSET 0020                  
+_FAT_FRIST_SECTOR_FS_INFORMATION_SECTOR_NUMBER_OFFSET 0030                  
+_fatFilename             0028              (R )
+_fatSector               000b              (R )
+_INNER_OPEN_FILE_BY_NAME fc40              (R )
+_OPEN_CLUSTER            fc68              (R )
+_OPEN_CURRENT_DIR_RECORD fe05              (R )
+_OPEN_FILE_IN_FOLDER     fdb7              (R )
+_OPEN_FILE_IN_THE_PAGE   fdcd              (R )
+_OPEN_ROOT               fc5d              (R )
+_openedCluster           0018              (R )
+_openedFileSize          0021              (R )
+_openedSector            001d              (R )
+_openedSectorInCluster   001c              (R )
+_PARTITION_OFFSET        01be              (R )
+_PARTITION_START_LBA_OFFSET 0008              (R )
+_PARTITION_TYPE_OFFSET   0004              (R )
+_READ_A_PAGE_FROM_SD     f9df              (R )
+_READ_BYTE_SD            fb18              (R )
+_READ_NEXT_SECTOR        fe2a              (R )
+_READ_SD_SECTOR_INSIDE_RETRY f97c              (R )
+_response                0000              (R )
+_rootDirectoryClusterNumber 0014              (R )
+_RW_BYTE_SD              fb30              (R )
+_SD_BUSY_AFTER_COMMAND   00ff              (R )
+_SD_BUSY_BEFORE_COMMAND  0001              (R )
+_SD_OK                   0000              (R )
+_sdHalfPageStart         0003              (R )
+_sectorsPerCluster       0013              (R )
+_SEND_SD_COMMAND_AND_WAIT_R1 fae1              (R )
+_sendByte                0001              (R )
+_SHIFT_FILENAME_POINTER_BY_Y fdac              (R )
+_shift_register_interrup_handler fb4a              (R )
+_SHIFTING_FLAG           0008              (R )
+_STK_LVL_1               0000                  
+_STK_LVL_10              0000                  
+_STK_LVL_11              0000                  
+_STK_LVL_12              0000                  
+_STK_LVL_13              0000                  
+_STK_LVL_14              0000                  
+_STK_LVL_15              0000                  
+_STK_LVL_16              0000                  
+_STK_LVL_17              0000                  
+_STK_LVL_18              0000                  
+_STK_LVL_19              0000              (R )
+_STK_LVL_2               0000                  
+_STK_LVL_20              0000              (R )
+_STK_LVL_3               0000                  
+_STK_LVL_4               0000                  
+_STK_LVL_5               0000                  
+_STK_LVL_6               0000                  
+_STK_LVL_7               0000                  
+_STK_LVL_8               0000                  
+_STK_LVL_9               0000                  
+_STRUC_MAC_I             004d                  
+_STRUCT_MAC_LABEL_1      f919              (R )
+_STRUCT_MAC_LABEL_10     f993              (R )
+_STRUCT_MAC_LABEL_11     f99e              (R )
+_STRUCT_MAC_LABEL_12     f9a3              (R )
+_STRUCT_MAC_LABEL_13     f9a7              (R )
+_STRUCT_MAC_LABEL_14     f9e1              (R )
+_STRUCT_MAC_LABEL_15     f9ee              (R )
+_STRUCT_MAC_LABEL_16     f9f0              (R )
+_STRUCT_MAC_LABEL_17     fa47              (R )
+_STRUCT_MAC_LABEL_18     fa44              (R )
+_STRUCT_MAC_LABEL_19     fa46              (R )
+_STRUCT_MAC_LABEL_2      f924              (R )
+_STRUCT_MAC_LABEL_20     fa52              (R )
+_STRUCT_MAC_LABEL_21     fa54              (R )
+_STRUCT_MAC_LABEL_22     fa6e              (R )
+_STRUCT_MAC_LABEL_23     fa89              (R )
+_STRUCT_MAC_LABEL_24     fa86              (R )
+_STRUCT_MAC_LABEL_25     fa88              (R )
+_STRUCT_MAC_LABEL_26     fa94              (R )
+_STRUCT_MAC_LABEL_27     fa96              (R )
+_STRUCT_MAC_LABEL_28     faba              (R )
+_STRUCT_MAC_LABEL_29     fab7              (R )
+_STRUCT_MAC_LABEL_3      f937              (R )
+_STRUCT_MAC_LABEL_30     fab9              (R )
+_STRUCT_MAC_LABEL_31     fada              (R )
+_STRUCT_MAC_LABEL_32     fad7              (R )
+_STRUCT_MAC_LABEL_33     fad9              (R )
+_STRUCT_MAC_LABEL_34     fae0              (R )
+_STRUCT_MAC_LABEL_35     fae3              (R )
+_STRUCT_MAC_LABEL_36     faf6              (R )
+_STRUCT_MAC_LABEL_37     fb06              (R )
+_STRUCT_MAC_LABEL_38     fb84              (R )
+_STRUCT_MAC_LABEL_39     fb86              (R )
+_STRUCT_MAC_LABEL_4      f94a              (R )
+_STRUCT_MAC_LABEL_40     fbb1              (R )
+_STRUCT_MAC_LABEL_41     fbbb              (R )
+_STRUCT_MAC_LABEL_42     fbc3              (R )
+_STRUCT_MAC_LABEL_43     fbc7              (R )
+_STRUCT_MAC_LABEL_44     fbe8              (R )
+_STRUCT_MAC_LABEL_45     fbe8              (R )
+_STRUCT_MAC_LABEL_46     fbea              (R )
+_STRUCT_MAC_LABEL_47     fc2d              (R )
+_STRUCT_MAC_LABEL_48     fc2d              (R )
+_STRUCT_MAC_LABEL_49     fc2d              (R )
+_STRUCT_MAC_LABEL_5      f958              (R )
+_STRUCT_MAC_LABEL_50     fc5f              (R )
+_STRUCT_MAC_LABEL_51     fc6e              (R )
+_STRUCT_MAC_LABEL_52     fc79              (R )
+_STRUCT_MAC_LABEL_53     fc87              (R )
+_STRUCT_MAC_LABEL_54     fce1              (R )
+_STRUCT_MAC_LABEL_55     fce1              (R )
+_STRUCT_MAC_LABEL_56     fce1              (R )
+_STRUCT_MAC_LABEL_57     fd32              (R )
+_STRUCT_MAC_LABEL_58     fd39              (R )
+_STRUCT_MAC_LABEL_59     fd3f              (R )
+_STRUCT_MAC_LABEL_6      f96a              (R )
+_STRUCT_MAC_LABEL_60     fd43              (R )
+_STRUCT_MAC_LABEL_61     fd4d              (R )
+_STRUCT_MAC_LABEL_62     fd79              (R )
+_STRUCT_MAC_LABEL_63     fdab              (R )
+_STRUCT_MAC_LABEL_64     fdb6              (R )
+_STRUCT_MAC_LABEL_65     fdb7              (R )
+_STRUCT_MAC_LABEL_66     fdcf              (R )
+_STRUCT_MAC_LABEL_67     fde3              (R )
+_STRUCT_MAC_LABEL_68     fdfd              (R )
+_STRUCT_MAC_LABEL_69     fe07              (R )
+_STRUCT_MAC_LABEL_7      f973              (R )
+_STRUCT_MAC_LABEL_70     fe40              (R )
+_STRUCT_MAC_LABEL_71     fe40              (R )
+_STRUCT_MAC_LABEL_72     fe40              (R )
+_STRUCT_MAC_LABEL_73     fe42              (R )
+_STRUCT_MAC_LABEL_74     fe98              (R )
+_STRUCT_MAC_LABEL_75     ff09              (R )
+_STRUCT_MAC_LABEL_76     ff22              (R )
+_STRUCT_MAC_LABEL_8      f994              (R )
+_STRUCT_MAC_LABEL_9      f991              (R )
+_tmpDoubleClusters       001c                  
+_TO_PUSH_1               004c              (R )
+_TO_PUSH_2               0003              (R )
+_TO_PUSH_3               0004              (R )
+_TO_UPPER_CASE           fda4              (R )
+_UPDATE_HALF_SECTOR_SIZE fd10              (R )
+_UPPER_RAM_END           8000              (R )
+_WAIT                    f9ec              (R )
+_WAIT_FOR_SHIFTING       fb45              (R )
+_ZP_VARS_END             003a              (R )
+ACCUM                    0104              (R )
+CODE_START               f900              (R )
+codePointer              0037              (R )
+codeStart                0035              (R )
+COPY_FILE                fef1              (R )
+DOWN_TO                  0004              (R )
+emptyLoop                fee4              (R )
+fail                     fee2              (R )
+fatStatus                0039              (R )
+filenamePointer          0009              (R )
+half_sector_pointer      0025              (R )
+half_sector_size         0027              (R )
+hardware.asm             0000 ????         (R )
+INIT_FAT                 fb55              (R )
+INIT_FILE_NAME           fee7              (R )
+INIT_SD                  f900              (R )
+initSegments.asm         0000 ????         (R )
+INTERRUPT_INDIRECT       00fe                  
+interruptHandler         ff2a              (R )
+IO_END_OF_FILE           0001              (R )
+IO_FAT_END_OF_CLUSTERS   0019              (R )
+IO_FILE_NOT_FOUND        0002              (R )
+IO_INVALID_FILENAME_FORMAT 0003              (R )
+IO_OK                    0000              (R )
+IO_SD_BUSY_AFTER_APP_CMD 000b              (R )
+IO_SD_BUSY_AFTER_APP_SEND_OP_COND 000d              (R )
+IO_SD_BUSY_AFTER_GO_IDLE_STATE 0005              (R )
+IO_SD_BUSY_AFTER_READ_SECTOR 0010              (R )
+IO_SD_BUSY_AFTER_SEND_IF_COND 0008              (R )
+IO_SD_BUSY_BEFORE_APP_CMD 000a              (R )
+IO_SD_BUSY_BEFORE_APP_SEND_OP_COND 000c              (R )
+IO_SD_BUSY_BEFORE_GO_IDLE_STATE 0004              (R )
+IO_SD_BUSY_BEFORE_READ_SECTOR 000f              (R )
+IO_SD_BUSY_BEFORE_SEND_IF_COND 0007              (R )
+IO_SD_DATA_TOKEN_DID_NOT_RECEIVED_AFTER_READ_SECTOR 0012              (R )
+IO_SD_ERROR_AFTER_APP_SEND_OP_COND 000e              (R )
+IO_SD_ERROR_AFTER_READ_SECTOR 0011              (R )
+IO_SD_NOT_IDLE_AFTER_GO_IDLE_STATE 0006              (R )
+IO_SD_NOT_IDLE_AFTER_SEND_IF_COND 0009              (R )
+IO_WRONG_BOOT_SIGNATURE  0013              (R )
+IO_WRONG_BYTES_PER_LOGICAL_SECTOR 0015              (R )
+IO_WRONG_FAT_MEDIA_DESCRIPTOR 0017              (R )
+IO_WRONG_FATS_NUMBER     0016              (R )
+IO_WRONG_PARTITION_TYPE  0014              (R )
+IO_ZERO_SECTORS_PER_CLUSTER 0018              (R )
+IS_0                     0007                  
+IS_CLEAR                 0002                  
+IS_HIGH                  0001                  
+IS_LOW                   0002                  
+IS_NEG                   0006                  
+IS_NON_0                 0008                  
+IS_POS                   0005                  
+IS_SET                   0001                  
+macroses.asm             0000 ????         (R )
+main                     fec4              (R )
+NEG_NRs                  0101              (R )
+OPEN_FILE_BY_NAME        fc30              (R )
+POS_NRs                  0102              (R )
+READ_NEXT_HALF_SECTOR    fcab              (R )
+READ_SD_SECTOR           f967              (R )
+sd_card.asm              0000 ????         (R )
+sdPageStart              7e00              (R )
+sdSector                 0003              (R )
+STRUCMAC.ASM             0000 ????         (R )
+UART_ADDR                8020              (R )
+UART_COMMAND_DATA_TERMINAL_NOT_READY 0000                  
+UART_COMMAND_DATA_TERMINAL_READY 0001                  
+UART_COMMAND_PARITY_MOD_DISABLED 0000                  
+UART_COMMAND_PARITY_MOD_ENABLED 0020                  
+UART_COMMAND_RECEIVER_ECHO_MOD 0010                  
+UART_COMMAND_RECEIVER_EVEN_PARITY_CHECKED 0040                  
+UART_COMMAND_RECEIVER_INTERRUPT_REQUEST_DISABLED 0002                  
+UART_COMMAND_RECEIVER_INTERRUPT_REQUEST_ENABLED 0000                  
+UART_COMMAND_RECEIVER_NOMRAL_MOD 0000                  
+UART_COMMAND_RECEIVER_ODD_PARITY_CHECKED 0000                  
+UART_COMMAND_RECEIVER_PARITY_CHECK_DISABLED 00c0                  
+UART_COMMAND_REG         8022                  
+UART_COMMAND_TRANSMIT_INTERRUPT_DISABLED 0008                  
+UART_COMMAND_TRANSMIT_INTERRUPT_DISABLED_BREAK_ON_TXD 000c                  
+UART_COMMAND_TRANSMIT_INTERRUPT_DISABLED_FOR_ECHO 0000                  
+UART_COMMAND_TRANSMIT_INTERRUPT_ENABLED 0004                  
+UART_CONTROL_DEFAULT     009e                  
+UART_CONTROL_REG         8023                  
+UART_DATA_REG            8020                  
+UART_STATUS_DATA_CARRIER_DETECT 0020                  
+UART_STATUS_DATA_SET_READY 0040                  
+UART_STATUS_FRAMING_ERROR 0002                  
+UART_STATUS_INTERRUPT    0080                  
+UART_STATUS_OVERRUN      0004                  
+UART_STATUS_PARITY_ERROR 0001                  
+UART_STATUS_RECEIVER_DATA_REGISTER_FULL 0008                  
+UART_STATUS_REG          8021                  
+UART_STATUS_TRANSMITTER_DATA_REGISTER_EMPTY 0010                  
+uartChip.asm             0000 ????         (R )
+UP_TO                    0003              (R )
+UPPER_RAM_START          7e00              (R )
+VIA_FIRST_ACR            801b              (R )
+VIA_FIRST_DDRA           8013                  
+VIA_FIRST_DDRB           8012              (R )
+VIA_FIRST_IER            801e              (R )
+VIA_FIRST_IFR            801d              (R )
+VIA_FIRST_ORA            801f                  
+VIA_FIRST_PCR            801c                  
+VIA_FIRST_RA             8011                  
+VIA_FIRST_RB             8010              (R )
+VIA_FIRST_SR             801a              (R )
+VIA_FIRST_T1C_H          8015                  
+VIA_FIRST_T1C_L          8014                  
+VIA_FIRST_T1L_H          8017                  
+VIA_FIRST_T1L_L          8016                  
+VIA_FIRST_T2C_H          8019                  
+VIA_FIRST_T2C_L          8018              (R )
+VIA_SECOND_ACR           804b                  
+VIA_SECOND_DDRA          8043                  
+VIA_SECOND_DDRB          8042                  
+VIA_SECOND_IER           804e                  
+VIA_SECOND_IFR           804d                  
+VIA_SECOND_ORA           804f                  
+VIA_SECOND_PCR           804c                  
+VIA_SECOND_RA            8041                  
+VIA_SECOND_RB            8040                  
+VIA_SECOND_SR            804a                  
+VIA_SECOND_T1C_H         8045                  
+VIA_SECOND_T1C_L         8044                  
+VIA_SECOND_T1L_H         8047                  
+VIA_SECOND_T1L_L         8046                  
+VIA_SECOND_T2C_H         8049                  
+VIA_SECOND_T2C_L         8048                  
+viaMacro.asm             0000 ????         (R )
+X_REG                    0105              (R )
+Y_REG                    0103              (R )
+--- End of Symbol List.

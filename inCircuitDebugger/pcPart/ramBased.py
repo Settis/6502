@@ -172,7 +172,7 @@ class Emulator:
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         if sys.argv[1].lower() == 'rom':
-            Emulator().write_rom()
+            Emulator().write_prog_to_rom(sys.argv[2])
             sys.exit(0)
         if sys.argv[1].lower().startswith("w"):
             Emulator().write_default()
