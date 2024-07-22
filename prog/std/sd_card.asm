@@ -223,10 +223,7 @@ _DUMMY_CLOCK_WITH_DISABLED_CARD:
     STA VIA_FIRST_ACR
     SEI
     LDA VIA_FIRST_SR ; trigger shifting
-    LDA #1
-    STA _SHIFTING_FLAG
-    CLI
-    JSR _WAIT_FOR_SHIFTING
+    JSR _WAIT_FOR_SHIFT_FLAG
     PLA
     STA _response
     RTS
@@ -405,10 +402,7 @@ _READ_BYTE_SD:
     SEI
     LDA VIA_FIRST_SR ; read SR to trigger shift in
     STA _response
-    LDA #1
-    STA _SHIFTING_FLAG
-    CLI
-    JMP _WAIT_FOR_SHIFTING
+    JMP _WAIT_FOR_SHIFT_FLAG
 
 ; Sends _sendByte
 ; The result will be in _response
@@ -423,9 +417,7 @@ _RW_BYTE_SD:
     SEI
     LDA _sendByte
     STA VIA_FIRST_SR
-    LDA #1
-    STA _SHIFTING_FLAG
-    CLI
+    JMP _WAIT_FOR_SHIFT_FLAG
 
 _WAIT_FOR_SHIFTING:
     SUBROUTINE
@@ -449,3 +441,39 @@ _shift_register_interrup_handler:
     STA _SHIFTING_FLAG
     PLA
     RTI
+
+_SET_WRITE_TO_SD:
+    LDA #%00010100
+    STA VIA_FIRST_ACR
+    LDA #%01000000
+    STA VIA_FIRST_RB
+    RTS
+
+_SET_READ_FROM_SD:
+    LDA #%00000100
+    STA VIA_FIRST_ACR
+    LDA #%00100000
+    STA VIA_FIRST_RB
+    RTS
+
+_WRITE_TO_SD:
+    SEI
+    LDA _sendByte
+    STA VIA_FIRST_SR
+    JMP _WAIT_FOR_SHIFT_FLAG
+
+_READ_FROM_SD:
+    SEI
+    LDA VIA_FIRST_SR ; read SR to trigger shift in
+    STA _response
+    ; JMP _WAIT_FOR_SHIFT_FLAG
+
+_WAIT_FOR_SHIFT_FLAG:
+    SUBROUTINE
+    LDA #%00000100
+.loop:
+    BIT VIA_FIRST_IFR
+    BEQ .loop
+    STA VIA_FIRST_IFR
+    CLI
+    RTS
