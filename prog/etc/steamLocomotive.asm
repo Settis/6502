@@ -1,4 +1,8 @@
     INCLUDE "../std/std.asm"
+
+	SEG code
+	JMP main
+
     INCLUDE "display.asm"
 
 	SEG.U zpVars
