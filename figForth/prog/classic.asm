@@ -54,6 +54,12 @@ S0_CONST = $7DFE
 TIB_CONST = $7E00
 R0_CONST = $7EFE
 
+; Debug output
+DEBUG_EXECUTE = 0
+DEBUG_DOCOL = 0
+DEBUG_NEXT = 0
+DEBUG_DOSEMICOL = 0
+
     seg.u UserArea
     org $7F00
     ; It's empty for now
@@ -298,6 +304,9 @@ READ_NUMBER:
     BCC .digitChar
     ; carry is set already
     SBC #['A-'9-1]
+    CMP #$10
+    BCC .digitChar
+    JMP PRINT_NAN
 .digitChar:
     ORA STACK_TMP
     STA STACK_TMP
@@ -305,7 +314,6 @@ READ_NUMBER:
     BNE .digitLoop
     JMP PUSH_TO_S
 
-DEBUG_EXECUTE = 0
 EXECUTE:  ; FORTH ( CFA -- )
     SUBROUTINE
     JSR PULL_FROM_S
@@ -466,7 +474,6 @@ F_WORD_COMMA_SUBROUTINE: ; , ( n -- )
     STA DP_ADDR+1   ; Update dictionary pointer
     RTS
 
-DEBUG_DOCOL = 1
 DOCOL:
     COPY_WORD_TO IP_ADDR, STACK_TMP
     JSR PUSH_TO_R
@@ -485,7 +492,6 @@ DOCOL:
     ENDIF
     JMP NEXT
 
-DEBUG_NEXT = 1 
 NEXT:
     COPY_WORD_TO IP_ADDR, STACK_TMP
     JSR PUSH_TO_S
@@ -530,7 +536,6 @@ NEXT:
 
 DOSEMICOL_ADDR:
     DC.W DOSEMICOL
-DEBUG_DOSEMICOL = 1
 DOSEMICOL:
     JSR PULL_FROM_R
     COPY_WORD_TO STACK_TMP, IP_ADDR
@@ -814,9 +819,9 @@ IRQ:
     RTI
 
 TEXT:
-    dc "3 : 1+ 1 + ; 1+ 7 1+ "
+    INCBIN "stripped.txt"
+    dc " "
     dc 0
-
 
 
 IOBASE   = $8800
@@ -918,6 +923,19 @@ PRINT_CHAR:
         JMP .ECHO1
 .END:    RTS             ; and return
 
+PRINT_NAN:
+    PRINT_STRING "NaN: "
+    SUBROUTINE
+    LDY #0
+    LDA (DP_ADDR),Y
+    STA TMP_LENGTH ; Store size here
+.loop:
+    INY
+    LDA (DP_ADDR),Y
+    JSR PRINT_CHAR
+    CPY TMP_LENGTH
+    BNE .loop
+    BRK
 
 ; system vectors
 
