@@ -155,13 +155,14 @@ _READ_SD_SECTOR_INSIDE_RETRY:
         RTS
     END_IF
     ; Wait for data token
-    JSR _READ_BYTE_SD ; I have to trigger shift reading
+    JSR _SET_READ_FROM_SD
+    JSR _READ_FROM_SD ; I have to trigger shift reading
     SUBROUTINE
     FOR_X 0, UP_TO, $F0
         TXA
         PHA
         FOR_Y 0, UP_TO, $F0
-            JSR _READ_BYTE_SD
+            JSR _READ_FROM_SD
             LDA _response
             CMP #$FE ; Data token for CMD 17/18/24
             BEQ .dataTokenReceived
@@ -179,8 +180,8 @@ _READ_SD_SECTOR_INSIDE_RETRY:
     INC _sdHalfPageStart+1
     JSR _READ_A_PAGE_FROM_SD
     ; reading CRC
-    JSR _READ_BYTE_SD
-    JSR _READ_BYTE_SD
+    JSR _READ_FROM_SD
+    JSR _READ_FROM_SD
 
     JSR _DISABLE_SD_AFTER_OPERATION
     LDA #IO_OK
@@ -188,7 +189,7 @@ _READ_SD_SECTOR_INSIDE_RETRY:
 
 _READ_A_PAGE_FROM_SD:
     FOR_Y 0, UP_TO, 0
-        JSR _READ_BYTE_SD
+        JSR _READ_FROM_SD
         LDA _response
         STA (_sdHalfPageStart),Y
     NEXT_Y
@@ -207,7 +208,7 @@ _WAIT:
 _DISABLE_SD_AFTER_OPERATION:
     LDA _response
     PHA
-    JSR _READ_BYTE_SD
+    JSR _READ_FROM_SD
     PLA
     STA _response
     ; proceed with dummy clock
@@ -223,10 +224,7 @@ _DUMMY_CLOCK_WITH_DISABLED_CARD:
     STA VIA_FIRST_ACR
     SEI
     LDA VIA_FIRST_SR ; trigger shifting
-    LDA #1
-    STA _SHIFTING_FLAG
-    CLI
-    JSR _WAIT_FOR_SHIFTING
+    JSR _WAIT_FOR_SHIFT_FLAG
     PLA
     STA _response
     RTS
@@ -280,8 +278,9 @@ _CMD_SEND_IF_COND:
     LDA _response
     PHA
     ; Read 32 bits of data
+    JSR _SET_READ_FROM_SD
     FOR_Y 0, UP_TO, 4
-        JSR _READ_BYTE_SD
+        JSR _READ_FROM_SD
     NEXT_Y
     PLA
     STA _response
@@ -360,8 +359,9 @@ _SD_BUSY_AFTER_COMMAND = $FF
 ; Changes X and Y
 _SEND_SD_COMMAND_AND_WAIT_R1:
     SUBROUTINE
+    JSR _SET_READ_FROM_SD
     FOR_Y 0, UP_TO, $F0
-        JSR _READ_BYTE_SD
+        JSR _READ_FROM_SD
         LDA _response
         CMP #$FF
         BEQ .notBusy
@@ -372,16 +372,17 @@ _SEND_SD_COMMAND_AND_WAIT_R1:
     ; JSR _DISABLE_SD_AFTER_OPERATION
     ; It's ready. Sending command, arg and crc
     ; They are sequential in RAM
+    JSR _SET_WRITE_TO_SD
     FOR_Y 5, DOWN_TO, NEG_NRs
         LDA _crc,Y
-        STA _sendByte
-        JSR _RW_BYTE_SD
+        JSR _WRITE_TO_SD
     NEXT_Y
     ; We need to wait for R1 response
     ; It starts with 0 in 7th bit
-    JSR _READ_BYTE_SD ; to trigger shift in
+    JSR _SET_READ_FROM_SD
+    JSR _READ_FROM_SD ; to trigger shift in
     FOR_Y 0, UP_TO, $F0
-        JSR _READ_BYTE_SD
+        JSR _READ_FROM_SD
         LDA _response
         BPL .r1Received
     NEXT_Y
@@ -405,10 +406,7 @@ _READ_BYTE_SD:
     SEI
     LDA VIA_FIRST_SR ; read SR to trigger shift in
     STA _response
-    LDA #1
-    STA _SHIFTING_FLAG
-    CLI
-    JMP _WAIT_FOR_SHIFTING
+    JMP _WAIT_FOR_SHIFT_FLAG
 
 ; Sends _sendByte
 ; The result will be in _response
@@ -423,9 +421,7 @@ _RW_BYTE_SD:
     SEI
     LDA _sendByte
     STA VIA_FIRST_SR
-    LDA #1
-    STA _SHIFTING_FLAG
-    CLI
+    JMP _WAIT_FOR_SHIFT_FLAG
 
 _WAIT_FOR_SHIFTING:
     SUBROUTINE
@@ -449,3 +445,39 @@ _shift_register_interrup_handler:
     STA _SHIFTING_FLAG
     PLA
     RTI
+
+_SET_WRITE_TO_SD:
+    LDA #%00010100
+    STA VIA_FIRST_ACR
+    LDA #%01000000
+    STA VIA_FIRST_RB
+    RTS
+
+_SET_READ_FROM_SD:
+    LDA #%00000100
+    STA VIA_FIRST_ACR
+    LDA #%00100000
+    STA VIA_FIRST_RB
+    RTS
+
+; Write A to SD card
+_WRITE_TO_SD:
+    SEI
+    STA VIA_FIRST_SR
+    JMP _WAIT_FOR_SHIFT_FLAG
+
+_READ_FROM_SD:
+    SEI
+    LDA VIA_FIRST_SR ; read SR to trigger shift in
+    STA _response
+    ; JMP _WAIT_FOR_SHIFT_FLAG
+
+_WAIT_FOR_SHIFT_FLAG:
+    SUBROUTINE
+    LDA #%00000100
+.loop:
+    BIT VIA_FIRST_IFR
+    BEQ .loop
+    STA VIA_FIRST_IFR
+    CLI
+    RTS
