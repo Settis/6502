@@ -392,60 +392,6 @@ _SEND_SD_COMMAND_AND_WAIT_R1:
     LDA #_SD_OK
     RTS
 
-    SEG.U zpVars
-_SHIFTING_FLAG: ds 1
-
-    SEG code
-; Changes X
-_READ_BYTE_SD:
-    LDA #%00000100
-    STA VIA_FIRST_ACR
-    LDA #%00100000
-    STA VIA_FIRST_RB
-
-    SEI
-    LDA VIA_FIRST_SR ; read SR to trigger shift in
-    STA _response
-    JMP _WAIT_FOR_SHIFT_FLAG
-
-; Sends _sendByte
-; The result will be in _response
-; CS is untouched
-; Changes X
-_RW_BYTE_SD:
-    LDA #%00010100
-    STA VIA_FIRST_ACR
-    LDA #%01000000
-    STA VIA_FIRST_RB
-
-    SEI
-    LDA _sendByte
-    STA VIA_FIRST_SR
-    JMP _WAIT_FOR_SHIFT_FLAG
-
-_WAIT_FOR_SHIFTING:
-    SUBROUTINE
-.loop:
-    LDA _SHIFTING_FLAG
-    BNE .loop
-    RTS
-
-    MAC check_shift_register_interrupt
-        LDA #%00000100
-        AND VIA_FIRST_IFR
-        BEQ .end
-        JMP _shift_register_interrup_handler
-.end:
-    ENDM
-
-_shift_register_interrup_handler:
-    LDA #%00000100
-    STA VIA_FIRST_IFR
-    LDA #0
-    STA _SHIFTING_FLAG
-    PLA
-    RTI
-
 _SET_WRITE_TO_SD:
     LDA #%00010100
     STA VIA_FIRST_ACR

@@ -117,7 +117,6 @@ INIT_FAIL_MSG: STRING "FAT init failed: "
 main:
     SUBROUTINE
     JSR INIT_UART_PRINT
-    WRITE_WORD _INTERRUPT_SHIFT_UART_HANDLER, _INTERRUPT_INDIRECT ; because now I need to handle timer for uart and shift register
     LDA #0
     STA failedTests
     JSR INIT_FAT
@@ -312,9 +311,4 @@ PRINT_TOTAL_RESULT:
     END_IF
     RTS
 
-_INTERRUPT_SHIFT_UART_HANDLER:
-    PHA
-    CHECK_SHIFT_REGISTER_INTERRUPT
-    CHECK_UART_PRINT_INTERRUPT
-    
     INCLUDE "checkSegments.asm"

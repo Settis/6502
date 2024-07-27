@@ -1,4 +1,4 @@
-    PROCESSOR 6502
+ZP_VARS_START = $C5
 CODE_START = $F900
 UPPER_RAM_START = $7E00
     INCLUDE "../std/std.asm"
@@ -68,11 +68,13 @@ COPY_FILE:
     RTS
 
 interruptHandler: 
-    PHA
-    CHECK_SHIFT_REGISTER_INTERRUPT
     JMP ($FE)
 
     RESET_VECTOR main, interruptHandler, interruptHandler
 
     INCLUDE "checkSegments.asm"
+    IF _ZP_VARS_END > $FE
+        ECHO "ZP vars uses interrup indirect jump"
+        ERR
+    ENDIF
     
