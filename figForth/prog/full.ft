@@ -1,2 +1,168 @@
-\ just for test
-23 100 +
+VARIABLE TMP
+
+: DROP ( n -- )
+    TMP !
+;
+
+: DUP ( n -- n n )
+    TMP !
+    TMP @
+    TMP @
+;
+
+: SWAP ( a b -- b a )
+    TMP !
+    >R
+    TMP @
+    R>
+;
+
+: OVER ( a b -- a b a )
+    >R
+    TMP !
+    TMP @
+    R>
+    TMP @
+;
+
+: ROT ( a b c -- b c a )
+    >R
+    >R
+    TMP !
+    R>
+    R>
+    TMP @
+;
+
+: NOT ( n -- n )
+    DUP
+    NAND
+;
+
+: OR ( n n -- n )
+    NOT
+    >R
+    NOT
+    R>
+    NAND
+;
+
+: AND ( n n -- n )
+    NAND
+    NOT
+;
+
+: XOR ( n n -- n )
+    \ (NOT X OR NOT Y) AND (X OR Y)
+    OVER NOT
+    OVER NOT
+    OR
+    >R
+    OR
+    R>
+    AND
+;
+
+: C@ ( a -- c )
+    @
+    FF AND
+;
+
+: C! ( c a -- )
+    SWAP
+    FF AND
+    OVER @ FF00 AND
+    OR
+    SWAP 
+    !
+;
+
+: IMMEDIATE ( -- )
+    CONTEXT @ C@
+    40 OR
+    CONTEXT @ C!
+;
+
+: 1+ ( n -- n ) 1 + ;
+: 2+ ( n -- n ) 2 + ;
+
+: COMPILE ( -- )
+    \ ?COMP   \ Error if not compiling
+    R>        \ Top of return stack is pointing to the next word following
+    DUP 2+ >R \ Increment this pointer by 2 to point to the second word following
+              \ COMPILE , which will be the next word to be executed. The word
+              \ immediately following COMPILE should be compiled, not executed.
+    @ ,       \ Do the compilation at run-time.
+;
+
+: HERE ( -- a )
+    DP @
+;
+
+: MINUS ( n -- -n) \ change sign
+    NOT 1+
+;
+
+: - ( n n -- n ) \ subtract
+    MINUS +
+;
+
+: -FIND
+    (WORD)
+    HERE
+    CONTEXT @ @
+    (FIND)
+;
+
+: CFA ( pfa -- cfa ) 2 - ;
+
+: [COMPILE] ( -- )
+    -FIND       \ Accept next text string and search dictionary for a match.
+    DROP \ skip the check
+\    0= 0 ?ERROR \ No matching entry was found. Issue an error message.
+    DROP        \ Discard the length byte of the found name.
+    CFA ,       \ Convert the name field address to code field address and compile it into
+                \ the dictionary.
+; IMMEDIATE
+
+: IF ( f -- ) \ at run-time
+     ( -- addr n ) \ at compile time
+    COMPILE 0BRANCH \ Compile the code field address of the run-time routine 0BRANCH into the
+                    \ dictionary when IF is executed.
+    HERE            \ Push dictionary address on stack to be used by ELSE or ENDIF to calculate
+                    \ branching offset.
+    0 ,             \ Compile a dummy zero here, later it is to be replaced by an offset value
+                    \ used by 0BRANCH to compute the next word address.
+\   2               \ Error checking number.
+; IMMEDIATE         \ IF in a colon definition must be executed, not compiled.
+
+: ENDIF ( addr n -- ) \ at compile time
+\    ?COMP          \ Issue an error message if not compiling.
+\    2 ?PAIRS ENDIF \ must be paired with IF or ELSE . If n is not 2, the structure was
+                   \ disturbed or improperly nested. Issue an error message.
+    HERE           \ Push the current dictionary address to stack.
+    OVER -         \ HERE-addr is the forward branching offset.
+    SWAP !         \ Store the offset in addr , thus completing the IF-ENDIF or IF-ELSE-ENDIF
+                   \ construct.
+; IMMEDIATE
+
+: ELSE ( addr1 n1 -- addr2 n2 ) \ at compile time
+\    2 ?PAIRS        \ Error checking for proper nesting.
+    COMPILE BRANCH  \ Compile BRANCH at run-time when ELSE is executed.
+    HERE            \ Push HERE on stack as addr2 .
+    0 ,             \ Dummy zero reserving a cell for branching to ENDIF .
+    SWAP            \ Move addr1 to top of stack.
+\    [COMPILE] ENDIF \ Call ENDIF to work on the offset for forward branching. ENDIF is an
+                    \ immediate word. To compile it the word [COMPILE] must be used.
+\    2               \ Leave n2 on stack for error checking.
+; IMMEDIATE
+
+HERE
+
+: SOME
+    IF 
+      6
+    ENDIF
+;
+
+(WORD) SOMER
