@@ -107,10 +107,13 @@ VARIABLE TMP
     MINUS +
 ;
 
+\ creating BRK for debug
+\ 0 CONSTANT BRK HERE 2 - HERE 4 - !
+
 : -FIND
     (WORD)
     HERE
-    CONTEXT @ @
+    CONTEXT @
     (FIND)
 ;
 
@@ -152,17 +155,18 @@ VARIABLE TMP
     HERE            \ Push HERE on stack as addr2 .
     0 ,             \ Dummy zero reserving a cell for branching to ENDIF .
     SWAP            \ Move addr1 to top of stack.
-\    [COMPILE] ENDIF \ Call ENDIF to work on the offset for forward branching. ENDIF is an
+    [COMPILE] ENDIF \ Call ENDIF to work on the offset for forward branching. ENDIF is an
                     \ immediate word. To compile it the word [COMPILE] must be used.
 \    2               \ Leave n2 on stack for error checking.
 ; IMMEDIATE
 
-HERE
-
 : SOME
-    IF 
-      6
+    IF
+      623
+    ELSE
+      900
     ENDIF
 ;
 
-(WORD) SOMER
+1 SOME
+

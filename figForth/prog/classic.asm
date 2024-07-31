@@ -277,8 +277,7 @@ FIND_IN_DICTIONARY: ; (FIND) primitive ( NAME_ADDR DICTIONARY_RECORD_ADDR -- PFA
     STA INTERNAL_TMP
     JMP .checkName
 .notFound:
-    JSR PUSH_FALSE_TO_S
-    RTS
+    JMP PUSH_FALSE_TO_S
 
 READ_NUMBER:
     SUBROUTINE
@@ -883,6 +882,8 @@ IRQ:
 TEXT:
     INCBIN "stripped.txt"
     dc " "
+    ; dc "STATE @ : SOME 123 ; (WORD) SOME "
+    ; dc ": F (WORD) DP @ CONTEXT @ (FIND) ; F DP DP 23 "
     dc 0
 
 
