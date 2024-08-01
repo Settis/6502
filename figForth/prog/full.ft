@@ -86,13 +86,12 @@ VARIABLE TMP
 : 1+ ( n -- n ) 1 + ;
 : 2+ ( n -- n ) 2 + ;
 
-: COMPILE ( -- )
-    \ ?COMP   \ Error if not compiling
-    R>        \ Top of return stack is pointing to the next word following
-    DUP 2+ >R \ Increment this pointer by 2 to point to the second word following
-              \ COMPILE , which will be the next word to be executed. The word
-              \ immediately following COMPILE should be compiled, not executed.
-    @ ,       \ Do the compilation at run-time.
+: [
+    0 STATE !
+; IMMEDIATE
+
+: ]
+    C0 STATE !
 ;
 
 : HERE ( -- a )
@@ -107,8 +106,39 @@ VARIABLE TMP
     MINUS +
 ;
 
+VARIABLE (ERROR)
+
+: ?ERROR ( f n -- )
+    SWAP
+    ( IF ) 0BRANCH [ HERE 0 , ] 
+        (ERROR) @ EXECUTE
+    ( ELSE ) BRANCH [ HERE 0 , SWAP ] [ HERE OVER - SWAP ! ]
+        DROP
+    ( ENDIF ) [ HERE OVER - SWAP ! ]
+;
+
+: ?COMP
+    STATE @
+    0=
+    11 ?ERROR
+;
+
+: ?PAIRS ( n n -- )
+    -
+    13 ?ERROR
+;
+
+: COMPILE ( -- )
+    ?COMP     \ Error if not compiling
+    R>        \ Top of return stack is pointing to the next word following
+    DUP 2+ >R \ Increment this pointer by 2 to point to the second word following
+              \ COMPILE , which will be the next word to be executed. The word
+              \ immediately following COMPILE should be compiled, not executed.
+    @ ,       \ Do the compilation at run-time.
+;
+
 \ creating BRK for debug
-\ 0 CONSTANT BRK HERE 2 - HERE 4 - !
+0 CONSTANT BRK HERE 2 - HERE 4 - !
 
 : -FIND
     (WORD)
@@ -121,8 +151,7 @@ VARIABLE TMP
 
 : [COMPILE] ( -- )
     -FIND       \ Accept next text string and search dictionary for a match.
-    DROP \ skip the check
-\    0= 0 ?ERROR \ No matching entry was found. Issue an error message.
+    0= 0 ?ERROR \ No matching entry was found. Issue an error message.
     DROP        \ Discard the length byte of the found name.
     CFA ,       \ Convert the name field address to code field address and compile it into
                 \ the dictionary.
@@ -136,12 +165,12 @@ VARIABLE TMP
                     \ branching offset.
     0 ,             \ Compile a dummy zero here, later it is to be replaced by an offset value
                     \ used by 0BRANCH to compute the next word address.
-\   2               \ Error checking number.
+    2               \ Error checking number.
 ; IMMEDIATE         \ IF in a colon definition must be executed, not compiled.
 
 : ENDIF ( addr n -- ) \ at compile time
-\    ?COMP          \ Issue an error message if not compiling.
-\    2 ?PAIRS ENDIF \ must be paired with IF or ELSE . If n is not 2, the structure was
+    ?COMP          \ Issue an error message if not compiling.
+    2 ?PAIRS       \ ENDIF must be paired with IF or ELSE . If n is not 2, the structure was
                    \ disturbed or improperly nested. Issue an error message.
     HERE           \ Push the current dictionary address to stack.
     OVER -         \ HERE-addr is the forward branching offset.
@@ -150,15 +179,26 @@ VARIABLE TMP
 ; IMMEDIATE
 
 : ELSE ( addr1 n1 -- addr2 n2 ) \ at compile time
-\    2 ?PAIRS        \ Error checking for proper nesting.
+    2 ?PAIRS        \ Error checking for proper nesting.
     COMPILE BRANCH  \ Compile BRANCH at run-time when ELSE is executed.
     HERE            \ Push HERE on stack as addr2 .
     0 ,             \ Dummy zero reserving a cell for branching to ENDIF .
     SWAP            \ Move addr1 to top of stack.
+    2               \ I need to put 2 here for check inside ENDIF
     [COMPILE] ENDIF \ Call ENDIF to work on the offset for forward branching. ENDIF is an
                     \ immediate word. To compile it the word [COMPILE] must be used.
-\    2               \ Leave n2 on stack for error checking.
+    2               \ Leave n2 on stack for error checking.
 ; IMMEDIATE
+
+: ERR ( n -- )
+    F0EF F0 !
+    F0   F2 !
+         F4 !
+    BRK
+;
+
+\ put ERR link to (ERROR)
+-FIND ERR DROP DROP CFA (ERROR) !
 
 : SOME
     IF
@@ -167,6 +207,3 @@ VARIABLE TMP
       900
     ENDIF
 ;
-
-1 SOME
-
