@@ -190,6 +190,41 @@ VARIABLE (ERROR)
     2               \ Leave n2 on stack for error checking.
 ; IMMEDIATE
 
+: BEGIN ( -- addr n ) \ at compile time
+    ?COMP \ Issue an error message if not compiling.
+    HERE  \ Push dictionary pointer on stack to be used to compute backward branching offset.
+    1     \ Error checking number.
+; IMMEDIATE
+
+: BACK ( addr -- )
+    HERE - , \ Compile addr-HERE, the backward branching offset.
+;
+
+: UNTIL ( addr n -- ) \ at compile time
+    1 ?PAIRS        \ If n is not 1, issue an error message.
+    COMPILE 0BRANCH \ Compile 0BRANCH at run-time.
+    BACK            \ Compute backward branching offset and compile the offset.
+; IMMEDIATE
+
+: AGAIN ( addr n -- ) \ at compile time
+    1 ?PAIRS       \ Error checking.
+    COMPILE BRANCH \ Compile BRANCH and an offset to BEGIN .
+    BACK
+; IMMEDIATE
+
+: WHILE ( addr1 n1 -- addr1 n1 addr2 n2 n3 ) \ at compile time
+    [COMPILE] IF \ Call IF to compile 0BRANCH and the offset.
+    4            \ Leave 4 as n2 to be checked by REPEAT.
+; IMMEDIATE
+
+: REPEAT ( addr1 n1 addr2 n2 n3 -- ) \ at compile time
+    4 ?PAIRS        \ Error checking for WHILE
+    >R >R           \ Get addr2 and n2 out of the way.
+    [COMPILE] AGAIN \ Let AGAIN do the dirty work of compiling an unconditional branch back to BEGIN .
+    R> R>           \  Restore addr2 and n2 .
+    [COMPILE] ENDIF \  Use ENDIF to resolve the forward branching needed by WHILE .
+; IMMEDIATE
+
 : ERR ( n -- )
     F0EF F0 !
     F0   F2 !
@@ -201,9 +236,16 @@ VARIABLE (ERROR)
 -FIND ERR DROP DROP CFA (ERROR) !
 
 : SOME
-    IF
-      623
-    ELSE
-      900
-    ENDIF
+    3
+    BEGIN
+        456 SWAP
+        1 -
+        DUP 
+        WHILE
+        AAAA SWAP
+    REPEAT
+    DROP
+    FFFF
 ;
+
+SOME
