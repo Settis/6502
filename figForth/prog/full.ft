@@ -281,6 +281,21 @@ VARIABLE _R
     _R @ >R \ put back return address
 ;
 
+: (+LOOP)
+    R> _R !  \ return address
+
+    R> + R>
+    DUP >R
+    SWAP DUP >R
+
+    > NOT DUP
+    IF
+        R> DROP
+        R> DROP
+    ENDIF
+    _R @ >R \ put back return address
+;
+
 : (LOOP)
     R> _R !  \ return address
 
@@ -305,7 +320,12 @@ VARIABLE _R
     BACK
 ; IMMEDIATE
 
-: +LOOP
+: +LOOP 
+    3 ?PAIRS \ Check the number left by DO . If it is not 3, issue an error message.
+             \ The loop is not properly nested.
+    COMPILE (+LOOP)
+    COMPILE 0BRANCH
+    BACK 
 ; IMMEDIATE
 
 : ERR ( n -- )
@@ -329,7 +349,8 @@ VARIABLE _R
         3 = IF
             LEAVE
         ENDIF
-    LOOP
+    2
+    +LOOP
     \ e print
     45 EMIT CR
     1111
