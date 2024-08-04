@@ -225,6 +225,89 @@ VARIABLE (ERROR)
     [COMPILE] ENDIF \  Use ENDIF to resolve the forward branching needed by WHILE .
 ; IMMEDIATE
 
+: = ( n n -- f )
+    - 0=
+;
+
+: 0< ( n -- f )
+    8000 AND 0= NOT
+;
+
+: < ( n n -- f )
+    - 0<
+;
+
+: > ( n n -- f )
+    SWAP <
+;
+
+: CR 
+    D EMIT
+;
+
+: SPACE
+    20 EMIT
+;
+
+VARIABLE _R
+
+: (DO) ( n1 n2 -- )
+    R> _R !  \ return address
+    SWAP
+    >R >R
+    _R @ >R \ put back return address
+;
+
+: DO ( n1 n2 -- ) \ at runtime
+     ( -- addr n ) \ at compile time
+    COMPILE (DO) \ Compile the run-time routine address of (DO) into dictionary.
+    HERE         \ Address addr for backward branching from LOOP or +LOOP.
+    3            \ Number for error checking.
+; IMMEDIATE
+
+: I ( -- I )
+    R> _R !  \ return address
+    R>
+    DUP
+    >R
+    _R @ >R \ put back return address
+;
+
+: LEAVE ( -- )
+    R> _R !  \ return address
+    R> DROP
+    R> DUP
+    >R >R
+    _R @ >R \ put back return address
+;
+
+: (LOOP)
+    R> _R !  \ return address
+
+    R> R>
+    DUP >R
+    SWAP 1+
+    DUP >R
+
+    > NOT DUP
+    IF
+        R> DROP
+        R> DROP
+    ENDIF
+    _R @ >R \ put back return address
+;
+
+: LOOP ( addr n -- ) \ at runtime
+    3 ?PAIRS \ Check the number left by DO . If it is not 3, issue an error message.
+             \ The loop is not properly nested.
+    COMPILE (LOOP)
+    COMPILE 0BRANCH
+    BACK
+; IMMEDIATE
+
+: +LOOP
+; IMMEDIATE
+
 : ERR ( n -- )
     F0EF F0 !
     F0   F2 !
@@ -236,16 +319,20 @@ VARIABLE (ERROR)
 -FIND ERR DROP DROP CFA (ERROR) !
 
 : SOME
-    3
-    BEGIN
-        456 SWAP
-        1 -
-        DUP 
-        WHILE
-        AAAA SWAP
-    REPEAT
-    DROP
-    FFFF
+    6
+    1
+    DO
+        \ print
+        49 EMIT CR
+        123
+        I
+        3 = IF
+            LEAVE
+        ENDIF
+    LOOP
+    \ e print
+    45 EMIT CR
+    1111
 ;
 
 SOME

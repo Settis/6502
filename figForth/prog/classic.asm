@@ -303,8 +303,11 @@ READ_NUMBER:
     BCC .digitChar
     ; carry is set already
     SBC #['A-'9-1]
+    CMP #10
+    BCC .nan
     CMP #$10
     BCC .digitChar
+.nan:
     JMP PRINT_NAN
 .digitChar:
     ORA STACK_TMP
@@ -852,7 +855,6 @@ F_WORD_BRANCH_CODE:
     JMP NEXT
 
 F_WORD_0BRANCH:
-LAST_F_WORD:
     DC 7  | $80
     DC "0BRANC"
     DC 'H | $80
@@ -876,12 +878,26 @@ F_WORD_0BRANCH_CODE:
     STA IP_ADDR+1
     JMP NEXT
 
+F_WORD_EMIT:
+LAST_F_WORD:
+    DC 4  | $80
+    DC "EMI"
+    DC 'T | $80
+    DC.W F_WORD_0BRANCH
+    DC.W F_WORD_EMIT_CODE
+F_WORD_EMIT_CODE:
+    JSR PULL_FROM_S
+    LDA STACK_TMP
+    JSR PRINT_CHAR
+    JMP NEXT
+
 IRQ:
     RTI
 
 TEXT:
     INCBIN "stripped.txt"
     dc " "
+    ; nan: . = K [ {
     ; dc "STATE @ : SOME 123 ; (WORD) SOME "
     ; dc ": F (WORD) DP @ CONTEXT @ (FIND) ; F DP DP 23 "
     dc 0
