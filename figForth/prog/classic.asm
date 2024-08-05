@@ -59,6 +59,7 @@ DEBUG_EXECUTE = 0
 DEBUG_DOCOL = 0
 DEBUG_NEXT = 0
 DEBUG_DOSEMICOL = 0
+DEBUG_CLEAN_STACK = 0
 
     seg.u UserArea
     org $7F00
@@ -385,9 +386,17 @@ PULL_FROM_S:
     LDY #$0
     LDA (SP_ADDR),Y
     STA STACK_TMP
+    IF DEBUG_CLEAN_STACK
+        LDA #0
+        STA (SP_ADDR),Y
+    ENDIF
     INY
     LDA (SP_ADDR),Y
     STA STACK_TMP+1
+    IF DEBUG_CLEAN_STACK
+        LDA #0
+        STA (SP_ADDR),Y
+    ENDIF
     RTS
 
 PUSH_TO_R:
@@ -407,9 +416,17 @@ PULL_FROM_R:
     LDY #$0
     LDA (RP_ADDR),Y
     STA STACK_TMP
+    IF DEBUG_CLEAN_STACK
+        LDA #0
+        STA (RP_ADDR),Y
+    ENDIF
     INY
     LDA (RP_ADDR),Y
     STA STACK_TMP+1
+    IF DEBUG_CLEAN_STACK
+        LDA #0
+        STA (RP_ADDR),Y
+    ENDIF
     RTS
 
 PUSH_TRUE_TO_S:
