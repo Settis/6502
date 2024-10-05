@@ -1,0 +1,51 @@
+: >> \ addr c count -- addr+count
+    >R SWAP R>
+    0 DO
+        OVER OVER C!
+        1+
+    LOOP
+    SWAP DROP
+;
+
+7F00 CONSTANT START
+
+: PRINT_3
+    ROT .
+    SWAP .
+    .
+;
+
+: TEST \ expected n1 n2 n3 -- 
+    45 EMIT \ EX:
+    58 EMIT
+    3A EMIT
+    SPACE
+    PRINT_3
+    CR
+
+    START 11 ENCLOSE
+
+    41 EMIT \ AC:
+    43 EMIT 
+    3A EMIT
+    SPACE    
+    PRINT_3
+    DROP
+    CR
+;
+
+\ 11 11 FF FF FF 11 11 11 11 FA
+START 11 2 >> FF 3 >> 11 4 >> FA 6 >> DROP
+2 5 9 TEST
+\ 11 11 FF FF FF 11 11 11 00 FA
+START 11 2 >> FF 3 >> 11 3 >> 00 1 >> FA 6 >> DROP
+2 5 8 TEST
+\ 11 11 FF FF FF 00 FA
+START 11 2 >> FF 3 >> 00 1 >> FA 6 >> DROP
+2 5 5 TEST
+\ FF FF FF FF 11 11 FA
+START FF 4 >> 11 2 >> FA 6 >> DROP
+0 4 6 TEST
+\ 00
+START 00 4 >> DROP
+0 0 0 TEST

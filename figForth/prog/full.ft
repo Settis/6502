@@ -94,8 +94,23 @@ VARIABLE TMP
     C0 STATE !
 ;
 
+: +! ( n addr -- ) \ increase value at addr by n
+    SWAP OVER @
+    + SWAP !
+;
+
 : HERE ( -- a )
     DP @
+;
+
+: ALLOT ( n -- )
+    DP +! \ Increment dictionary pointer DP by n, reserving n bytes of
+          \ dictionary memory for whatever purposes intended.
+;
+
+: C, ( b -- )
+    HERE C! 
+    1 ALLOT
 ;
 
 : MINUS ( n -- -n) \ change sign
@@ -105,6 +120,8 @@ VARIABLE TMP
 : - ( n n -- n ) \ subtract
     MINUS +
 ;
+
+: 1- ( n -- n ) 1 - ;
 
 VARIABLE (ERROR)
 
@@ -249,6 +266,10 @@ VARIABLE (ERROR)
     20 EMIT
 ;
 
+: R ( -- n )
+    R> R> DUP >R SWAP >R
+;
+
 VARIABLE _R
 
 : (DO) ( n1 n2 -- )
@@ -328,6 +349,159 @@ VARIABLE _R
     BACK 
 ; IMMEDIATE
 
+: . ( n -- )
+    4 0 DO
+        DUP
+        0F AND
+        SWAP
+        2/ 2/ 2/ 2/
+    LOOP
+    DROP
+    4 0 DO
+        DUP
+        A < IF
+            30
+        ELSE
+            37
+        ENDIF
+        + EMIT
+    LOOP
+    SPACE
+;
+
+: COUNT ( addr1 -- addr2 n )
+    DUP 1+  \ addr2=addr1+1
+    SWAP    \ Swap addr1 over addr2 and
+    C@      \ fetch the byte count to the stack.
+;
+
+: -DUP DUP IF DUP ENDIF ;
+
+: TYPE ( addr n - )
+    -DUP            \ Copy n if it is not zero.
+    IF              \ n is non-zero, do the following.
+        OVER +      \ addr+n, the end of the text
+        SWAP        \ addr, start of text
+        DO          \ Loop to type n characters
+            I C@    \ Fetch one character from text
+            EMIT    \ Type it out
+        LOOP
+    ELSE            \ n=0, no output necessary.
+        DROP        \ Discard addr
+    ENDIF
+;
+
+: ENCLOSE ( addr c -- addr n1 n2 n3 )
+    >R          \ addr on the stack
+    0 OVER      \ addr n1 addr
+    BEGIN
+        DUP C@   \ addr n1 addr content
+        R =
+    WHILE
+        1+ SWAP
+        1+ SWAP
+    REPEAT
+
+    >R DUP R>   \ addr n1 n2 addr+n1
+    BEGIN
+        DUP C@ DUP
+        0= SWAP
+        R =
+        OR NOT
+    WHILE \ it's not a separator and not a 0
+        1+ SWAP
+        1+ SWAP
+    REPEAT
+    >R DUP R>   \ addr n1 n2 n3 addr+n2
+    BEGIN
+        DUP C@
+        R =
+    WHILE
+        1+ SWAP
+        1+ SWAP
+    REPEAT
+
+    R> DROP DROP
+;
+
+: CMOVE ( from to u -- )
+    0 DO
+        OVER C@
+        OVER C!
+        1+ SWAP
+        1+ SWAP
+    LOOP
+    DROP DROP
+;
+
+: FILL ( addr n b -- )
+    SWAP >R \ store n on the return stack
+    OVER C! \ store b in addr
+    DUP 1+  \ addr+1, to be filled with b
+    R> 1-   \ n-1, number of butes to be filled by CMOVE
+    CMOVE   \ A primitive. Copy (addr) to (addr+1), (addr+1) to (addr+2),
+            \ etc, until all n locations are filled with b.
+;
+
+: ERASE 0 FILL ;
+20 CONSTANT BL
+: BLANKS BL FILL ; 
+
+: WORD ( c -- )
+    \ BLK check is disabled
+    TIB @           \ read from terminal input buffer
+    IN @            \ IN contains the character offset into the current input text buffer.
+    +               \ Add offset to the starting address of buffer, pointing to the next
+                    \ character to be read in.
+    SWAP            \ Get delimiter c over the string address.
+    ENCLOSE         \ A primitive word to scan the text. From the byte address and the
+                    \ delimiter c , it determines the byte offset to the first non-delimiter
+                    \ character, the offset to the first delimiter after the text string,
+                    \ and the offset to the next character after the delimiter. If the
+                    \ string is delimited by a NUL , the last offset is equal to the previous
+                    \ offset.
+                    \ ( addr c --- addr n1 n2 n3 )
+    HERE 22 BLANKS  \ Write 34 blanks to the top of dictionary.
+    1+              \ !!! this is a hack for working with bootstrap parser
+    IN +!           \ Increment IN by the character count, pointing to the next text string to
+                    \ be parsed.
+    OVER - >R       \ Save n2-n1 on return stack.
+    R HERE C!       \ Store character count as the length byte at HERE .
+    +               \ Buffer address + nl, starting point of the text string in the text
+                    \ buffer.
+    HERE 1+         \ Address after the length byte on dictionary.
+    R>              \ Get the character count back from the return stack.
+    CMOVE           \ Move the string from input buffer to top of dictionary.
+;
+
+: (.") ( -- )
+    R       \ Copy EP from the return stack, which points to the beginning of the in-
+            \ line text string.
+    COUNT   \ Get the length byte of the string, preparing for TYPE.
+    DUP 1+  \ Length+1
+    R> + >R \ Increment EP on the return stack by length+l, thus skip the text string
+            \ and point to the next word after ", which is the next word to be
+            \ executed.
+    TYPE    \ Now type out the text string.
+;
+
+: ." ( -- )
+    22                  \ hex ASCII value of the delimiter ".
+    STATE @             \ Compiling or executing?
+    IF                  \ Compiling state
+        COMPILE (.")    \ Compile the code field address of (") so it will type out text at runtime.
+        WORD            \ Fetch the text string delimited by " , and store it on top of dictionary,
+                        \ in-line with the compiled addresses.
+        HERE C@         \ Fetch the length of string
+        1+ ALLOT        \ Move the dictionary pointer parsing the text string. Ready to compile the
+                        \ next word in the same definition.
+    ELSE                \ Executing state
+        WORD            \ Get the text to HERE , on top of dictionary.
+        HERE            \ Start of text string, ready to be typed out.
+        COUNT TYPE
+    ENDIF
+; IMMEDIATE
+
 : ERR ( n -- )
     F0EF F0 !
     F0   F2 !
@@ -338,22 +512,12 @@ VARIABLE _R
 \ put ERR link to (ERROR)
 -FIND ERR DROP DROP CFA (ERROR) !
 
-: SOME
-    6
-    1
-    DO
-        \ print
-        49 EMIT CR
-        123
-        I
-        3 = IF
-            LEAVE
-        ENDIF
-    2
-    +LOOP
-    \ e print
-    45 EMIT CR
-    1111
+." Some thing"
+
+: TEST
+    ." Foo bar"
 ;
 
-SOME
+TEST
+
+\ TODO: during cold reinitialize TIB to the proper value

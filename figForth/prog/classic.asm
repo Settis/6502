@@ -72,11 +72,11 @@ INTERNAL_TMP: ds 2 ; [internal]
 TMP_LENGTH: ds 1 ; [internal] for string length
 DP_ADDR: ds 2
 SP_ADDR: ds 2
+TIB_ADDR: ds 2
 IN_ADDR: ds 2
 RP_ADDR: ds 2
 IP_ADDR: ds 2 ; [internal] interpretive pointer for call executor
 W_ADDR:  ds 2 ; [internal] current word pointer for call executor
-TEXT_ADDR: ds 2 ; [internal] pointer for initial text interpreter
 CONTEXT_VALUE: ds 2
 STATE_VALUE: ds 2
 UART_PRINT_STRING_ADDR: ds 2 ; [for debug]
@@ -103,12 +103,12 @@ START:
     ; init
     WRITE_WORD_TO $0200, DP_ADDR
     WRITE_WORD_TO S0_CONST, SP_ADDR
-    WRITE_WORD_TO TIB_CONST, IN_ADDR
+    WRITE_WORD_TO 0, TIB_ADDR
+    WRITE_WORD_TO TEXT, IN_ADDR
     WRITE_WORD_TO R0_CONST, RP_ADDR
     WRITE_WORD_TO LAST_F_WORD, CONTEXT_VALUE
     WRITE_WORD_TO 0, STATE_VALUE
 
-    WRITE_WORD_TO TEXT, TEXT_ADDR
 TEXT_LOOP:
     JSR COPY_WORD_FROM_TEXT
 
@@ -146,7 +146,7 @@ TEXT_LOOP:
 .endTextLoop:
     ; check if it's end of the text
     LDY #0
-    LDA (TEXT_ADDR),Y
+    LDA (IN_ADDR),Y
     BNE TEXT_LOOP
 
     PRINT_STRING "Stack:"
@@ -195,7 +195,7 @@ COPY_WORD_FROM_TEXT:
 .skipUp:
     LDY #0
 .copyLoop:
-    LDA (TEXT_ADDR),Y
+    LDA (IN_ADDR),Y
     CMP #'   ; check for space
     BEQ .end
     STA (STACK_TMP),Y
@@ -206,11 +206,11 @@ COPY_WORD_FROM_TEXT:
     TYA
     STA (DP_ADDR,X)
     SEC ; For increase text pointer by word size +1 for space
-    ADC TEXT_ADDR
-    STA TEXT_ADDR
-    LDA TEXT_ADDR+1
+    ADC IN_ADDR
+    STA IN_ADDR
+    LDA IN_ADDR+1
     ADC #0
-    STA TEXT_ADDR+1
+    STA IN_ADDR+1
     RTS
 
 FIND_IN_DICTIONARY: ; (FIND) primitive ( NAME_ADDR DICTIONARY_RECORD_ADDR -- PFA NAME_LENGTH TF / FF )
@@ -675,11 +675,24 @@ F_WORD_MUL_BY_2_CODE:
     JSR PUSH_TO_S
     JMP NEXT
 
+F_WORD_DIV_BY_2: ; 2/
+    DC 2  | $80
+    DC '2
+    DC '/ | $80
+    DC.W F_WORD_MUL_BY_2
+    DC.W F_WORD_DIV_BY_2_CODE
+F_WORD_DIV_BY_2_CODE:
+    JSR PULL_FROM_S
+    LSR STACK_TMP+1
+    ROR STACK_TMP
+    JSR PUSH_TO_S
+    JMP NEXT
+
 F_WORD_NAND: ; NAND
     DC 4  | $80
     DC "NAN"
     DC 'D | $80
-    DC.W F_WORD_MUL_BY_2
+    DC.W F_WORD_DIV_BY_2
     DC.W F_WORD_NAND_CODE
 F_WORD_NAND_CODE:
     JSR PULL_FROM_S
@@ -808,12 +821,28 @@ F_WORD_SP:
     DC.W F_WORD_DP
     DC.W F_WORD_CONSTANT_RUNTIME
     DC.W SP_ADDR
+
+F_WORD_TIB:
+    DC 3  | $80
+    DC "TI"
+    DC 'B | $80
+    DC.W F_WORD_SP
+    DC.W F_WORD_CONSTANT_RUNTIME
+    DC.W TIB_ADDR
+
+F_WORD_IN:
+    DC 2  | $80
+    DC 'I
+    DC 'N | $80
+    DC.W F_WORD_TIB
+    DC.W F_WORD_CONSTANT_RUNTIME
+    DC.W IN_ADDR
     
 F_WORD_STATE:
     DC 5  | $80
     DC "STAT"
     DC 'E | $80
-    DC.W F_WORD_SP
+    DC.W F_WORD_IN
     DC.W F_WORD_CONSTANT_RUNTIME
     DC.W STATE_VALUE
 
