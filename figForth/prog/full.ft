@@ -270,6 +270,13 @@ VARIABLE (ERROR)
     R> R> DUP >R SWAP >R
 ;
 
+: ?STACK ( -- )
+    SP@ S0 >        \ SP is out of upper bound, stack underflow
+    1 ?ERROR        \ Error 1.
+    SP@ HERE 80 + < \ SP is out of lower bound, stack overflow
+    7 ?ERROR        \ Error 7.
+;
+
 VARIABLE _R
 
 : (DO) ( n1 n2 -- )
@@ -391,6 +398,10 @@ VARIABLE _R
     ENDIF
 ;
 
+: RET \ for return of the function
+    R> DROP
+;
+
 : ENCLOSE ( addr c -- addr n1 n2 n3 )
     >R          \ addr on the stack
     0 OVER      \ addr n1 addr
@@ -401,6 +412,16 @@ VARIABLE _R
         1+ SWAP
         1+ SWAP
     REPEAT
+
+    \ Special case for NUL
+    DUP C@ 0=
+    IF
+        DROP
+        DUP 1+
+        DUP
+        R> DROP
+        RET
+    ENDIF
 
     >R DUP R>   \ addr n1 n2 addr+n1
     BEGIN
@@ -462,7 +483,6 @@ VARIABLE _R
                     \ offset.
                     \ ( addr c --- addr n1 n2 n3 )
     HERE 22 BLANKS  \ Write 34 blanks to the top of dictionary.
-    1+              \ !!! this is a hack for working with bootstrap parser
     IN +!           \ Increment IN by the character count, pointing to the next text string to
                     \ be parsed.
     OVER - >R       \ Save n2-n1 on return stack.
@@ -502,22 +522,199 @@ VARIABLE _R
     ENDIF
 ; IMMEDIATE
 
+: X ( -- )
+    \ cut out BLK processing
+    R> DROP
+;
+\ Change X to NUL
+\ Upper bit is set
+80 CONTEXT @ 1+ C!
+
+VARIABLE DPL
+
+: NUMBER ( addr -- d ) \ simplified version
+    FFFF DPL !      \ Set DPL to -1
+    0 0 ROT         \ Push two zero's on stack as the initial value of d .
+    COUNT OVER +    \ stack: addrFrom addrTo
+    SWAP DO
+        2* 2* 2* 2* \ shift the current number
+        I C@
+        30 -
+        DUP 0<      \ if it's lower than ASCII 0
+        0 ?ERROR 
+        DUP 9 >     \ is it from A to F?
+        IF 
+            7 -
+            DUP A < \ it's between ASCII 9 and A
+            0 ?ERROR
+            DUP F > \ it's bigger than ASCII F
+            0 ?ERROR
+        ENDIF
+        +           \ We can add it
+    LOOP
+    SWAP
+;
+
+: (LIT)
+    R           \ Copy return pointer
+    @           \ Read the literal
+    R> 2+ >R    \ Update the return pinter
+;
+
+: LITERAL 
+    STATE @
+    IF
+        [COMPILE] (LIT) ,
+    ENDIF
+; IMMEDIATE
+
+: DLITERAL
+    STATE @
+    IF
+        [COMPILE] LITERAL 
+        [COMPILE] LITERAL
+    ENDIF
+; IMMEDIATE
+
+: -FIND
+    BL WORD
+    HERE
+    CONTEXT @
+    (FIND)
+;
+
+: INTERPRET ( -- )
+    BEGIN                   \ Start the interpretation loop
+        -FIND               \ Move the next word from input stream to HERE and search the
+                            \ CONTEXT and then the CURRENT vocabularies for amatching entry.
+                            \ If found, the dictionary entry's parameter field address, its
+                            \ length byte, and a boolean true flag are left on stack.
+                            \ Otherwise, only a false flag is left.
+        IF                  \ A matching entry is found. Do the following:
+            STATE @ <       \ If the length byte < state , the word is to be compiled.
+            IF CFA ,        \ Compile the code field address of this word to the dictionary
+            ELSE            \ Length byte > state, this is an immediate word,
+                CFA         \ then put the code field address on the data stack and
+                EXECUTE     \ call the address interpreter to execute this word.
+            ENDIF
+            ?STACK          \ Check the data stack. If overflow or underflow, print error
+                            \ message and jump to QUIT .
+        ELSE                \ No matching entry. Try to convert the text to a number.
+            HERE            \ Start of the text string on top of the dictionary.
+            NUMBER          \ Convert the string at HERE to a signed double number, using
+                            \ current base. If a decimal point is encountered in the text, its
+                            \ position is stored in DPL. If numeric conversion is not
+                            \ possible, an error message will be given and QUIT
+            DPL @ 1+        \ Is there a decimal point? If there is, DPL + 1 should be greater
+                            \ than zero, i. e., true.
+            IF              \ Decimal point was detected
+                [COMPILE]   \ Compile the next immediate word.
+                DLITERAL    \ If compiling, compile the double number on stack into a literal,
+                            \ which will be pushed on stack during execution. If executing, the
+                            \ number remains on stack.
+            ELSE            \ No decimal point, the number should be a single 16 bit number.
+                DROP        \ Discard the high order part of the double number.
+                [COMPILE]
+                LITERAL     \ If compiling, compile the number on stack as a literal.
+                            \ The number is left on stack if executing.
+            ENDIF
+            ?STACK          \ Check the data stack overflow or underflow.
+        ENDIF               \ End of the IF clause after -FIND .
+    AGAIN                   \ Repeat interpretation of the next text string in the input
+                            \ stream.
+;
+
+: EXPECT ( addr n -- )
+    OVER +                  \ addr+n, the end of text.
+    OVER                    \ Start of text.
+    DO                      \ Repeat the following for n times
+        KEY                 \ Get one character from terminal
+        DUP                 \ Make a copy of the character.
+        8 = 
+        IF                  \ Check is input is a backspace
+            OVER            \ Copy addr
+            I =             \ See if the current character is the first character of text
+            DUP             \ Copy it, to be used as a flag.
+            R> 2 - +        \ Get the loop index. Decrement it by 1 if it is the starting character, or
+                            \ decrement it by 2 if it is in the middle of the text.
+            >R              \ Put the corrected loop index back on return stack. If the backspace is
+            +               \ the first character, ring the bell. Otherwise, output backspace and
+                            \ decrement character count.
+        ELSE                \ Not a backspace
+            DUP D =         \ Is it a carriage-return?
+            IF
+                LEAVE       \ Prepare to exit the loop. CR is end of text line.
+                DROP BL     \ Drop CR from the stack and replace with a blank.
+                \ 0           \ Put a null on stack.
+            ELSE            \ Input is a regular ASCII character.
+                DUP         \ Make a copy.
+                I C!        \ Store the ASCII character into the input buffer area.
+                0 I 1+ !    \ Guard the text with an ASCII NUL.
+            ENDIF
+        ENDIF
+        EMIT
+    LOOP DROP
+;
+
+: QUERY ( -- )
+    TIB @       \ TIB contains the starting address of the input terminal buffer.
+    50 EXPECT   \ Get 80 characters.
+    0 IN !      \ Set the input character counter IN to 0. Text parsing shall begin at TIB.
+;
+
+: QUIT ( -- )
+    \ 0 BLK ! BLK contains the current disk block number under interpretation.
+            \ 0 in BLK indicates the text should come from the terminal.
+    [COMPILE]       \ Compile the next IMMEDIATE word which normally is executed even in
+                    \ compilation state.
+    [               \ Set STATE to 0, thus enter the interpretive state.
+    BEGIN           \ Starting point of the 'Forth loop'.
+        RP!         \ A primitive. Set return stack pointer to its origin R0 .
+        CR
+        QUERY       \ Input 80 characters of text from the terminal. The text is
+                    \ positioned at the address contained in TIB with IN set to 0.
+        INTERPRET   \ Call the text interpreter to process the input text.
+        STATE @ 0=  \ Examine STATE .
+        IF          \ STATE is 0, in the interpretive state
+            ." ok." \ Type ok on terminal to indicate the line of text was successfully
+                    \ interpreted.
+        ENDIF
+    AGAIN           \ Loop back. Close the Forth loop .
+;
+
+: ABORT ( -- )
+    SP! \ A primitive. Set the stack pointer SP to its origin S0 .
+    \ DECIMAL Store 10 in BASE , establishing decimal number conversions.
+    CR
+    ." my-Forth" \ Print sign-on message on terminal.
+    \ FORTH Select FORTH trunk vocabulary.
+    \ DEFINITIONS Set CURRENT to CONTEXT so that new definitions will be linked to
+                \ the FORTH vocabulary.
+    QUIT        \ Jump to the Forth loop where the text interpreter resides.
+;
+
+VARIABLE WARNING
+0 WARNING !
+
 : ERR ( n -- )
-    F0EF F0 !
-    F0   F2 !
-         F4 !
-    BRK
+    WARNING @ 0<    \ See if WARNING is -1,
+    IF ABORT        \ if so, abort and restart.
+    ENDIF
+    HERE COUNT TYPE \ Print name of the offending word on top of the dictionary.
+    ." ? MSG#" .
+    SP!             \ Clean the data stack.
+    IN @
+    \ BLK @ \ Fetch IN and BLK on stack for the operator to look at if he
+            \ wishes.
+    QUIT    \ Restart the Forth loop.
 ;
 
 \ put ERR link to (ERROR)
--FIND ERR DROP DROP CFA (ERROR) !
+CONTEXT @ DUP C@ 7F AND 3 + + (ERROR) !
 
-." Some thing"
-
-: TEST
-    ." Foo bar"
+: COLD ( -- )
+    TIB!
+    ABORT
 ;
 
-TEST
-
-\ TODO: during cold reinitialize TIB to the proper value
+COLD

@@ -51,7 +51,7 @@
     PROCESSOR 6502
 
 S0_CONST = $7DFE
-TIB_CONST = $7E00
+TIB0_CONST = $7E00
 R0_CONST = $7EFE
 
 ; Debug output
@@ -99,6 +99,7 @@ UART_PRINT_STRING_ADDR: ds 2 ; [for debug]
 
 START:
     JSR INIT_UART
+    CLI
 
     ; init
     WRITE_WORD_TO $0200, DP_ADDR
@@ -211,6 +212,8 @@ COPY_WORD_FROM_TEXT:
     LDA IN_ADDR+1
     ADC #0
     STA IN_ADDR+1
+    TYA ; check if we read 0 characters
+    BEQ .skipUp ; we skip the space and try to read again
     RTS
 
 FIND_IN_DICTIONARY: ; (FIND) primitive ( NAME_ADDR DICTIONARY_RECORD_ADDR -- PFA NAME_LENGTH TF / FF )
@@ -806,7 +809,7 @@ F_WORD_VARIABLE_RUNTIME:
     JSR PUSH_TO_S
     JMP NEXT
 
-F_WORD_DP:
+F_WORD_DP: ; DP
     DC 2  | $80
     DC 'D
     DC 'P | $80
@@ -814,23 +817,15 @@ F_WORD_DP:
     DC.W F_WORD_CONSTANT_RUNTIME
     DC.W DP_ADDR
 
-F_WORD_SP:
-    DC 2  | $80
-    DC 'S
-    DC 'P | $80
-    DC.W F_WORD_DP
-    DC.W F_WORD_CONSTANT_RUNTIME
-    DC.W SP_ADDR
-
-F_WORD_TIB:
+F_WORD_TIB: ; TIB
     DC 3  | $80
     DC "TI"
     DC 'B | $80
-    DC.W F_WORD_SP
+    DC.W F_WORD_DP
     DC.W F_WORD_CONSTANT_RUNTIME
     DC.W TIB_ADDR
 
-F_WORD_IN:
+F_WORD_IN: ; IN
     DC 2  | $80
     DC 'I
     DC 'N | $80
@@ -838,7 +833,7 @@ F_WORD_IN:
     DC.W F_WORD_CONSTANT_RUNTIME
     DC.W IN_ADDR
     
-F_WORD_STATE:
+F_WORD_STATE: ; STATE
     DC 5  | $80
     DC "STAT"
     DC 'E | $80
@@ -846,7 +841,7 @@ F_WORD_STATE:
     DC.W F_WORD_CONSTANT_RUNTIME
     DC.W STATE_VALUE
 
-F_WORD_CONTEXT:
+F_WORD_CONTEXT: ; CONTEXT
     DC 7  | $80
     DC "CONTEX"
     DC 'T | $80
@@ -854,7 +849,7 @@ F_WORD_CONTEXT:
     DC.W F_WORD_CONSTANT_RUNTIME
     DC.W CONTEXT_VALUE
 
-F_WORD_COLON:
+F_WORD_COLON: ; :
     DC 1  | $80
     DC ': | $80
     DC.W F_WORD_CONTEXT
@@ -867,7 +862,7 @@ F_WORD_COLON_CODE:
     STA STATE_VALUE
     JMP NEXT
 
-F_WORD_SEMICOLON:
+F_WORD_SEMICOLON: ; ;
     DC 1  | $80 | $40
     DC '; | $80
     DC.W F_WORD_COLON
@@ -880,7 +875,7 @@ F_WORD_SEMICOLON_CODE:
     STA STATE_VALUE
     JMP NEXT
 
-F_WORD_BRANCH:
+F_WORD_BRANCH: ; BRANCH
     DC 6  | $80
     DC "BRANC"
     DC 'H | $80
@@ -900,7 +895,7 @@ F_WORD_BRANCH_CODE:
     STA IP_ADDR+1
     JMP NEXT
 
-F_WORD_0BRANCH:
+F_WORD_0BRANCH: ; 0BRANCH
     DC 7  | $80
     DC "0BRANC"
     DC 'H | $80
@@ -924,8 +919,7 @@ F_WORD_0BRANCH_CODE:
     STA IP_ADDR+1
     JMP NEXT
 
-F_WORD_EMIT:
-LAST_F_WORD:
+F_WORD_EMIT: ; EMIT
     DC 4  | $80
     DC "EMI"
     DC 'T | $80
@@ -937,17 +931,90 @@ F_WORD_EMIT_CODE:
     JSR PRINT_CHAR
     JMP NEXT
 
+F_WORD_KEY: ; key
+    DC 3  | $80
+    DC "KE"
+    DC 'Y | $80
+    DC.W F_WORD_EMIT
+    DC.W F_WORD_KEY_CODE
+F_WORD_KEY_CODE:
+    SUBROUTINE
+.loop:
+    LDA KEY_CODE
+    BEQ .loop
+    STA STACK_TMP
+    LDA #0
+    STA KEY_CODE
+    STA STACK_TMP+1
+    JSR PUSH_TO_S
+    JMP NEXT
+
+F_WORD_RESET_TIB: ; TIB!
+    DC 4  | $80
+    DC "TIB"
+    DC '! | $80
+    DC.W F_WORD_KEY
+    DC.W F_WORD_RESET_TIB_CODE
+F_WORD_RESET_TIB_CODE:
+    WRITE_WORD_TO TIB0_CONST, TIB_ADDR
+    JMP NEXT
+
+F_WORD_RESET_SP: ; SP!
+    DC 3  | $80
+    DC "SP"
+    DC '! | $80
+    DC.W F_WORD_RESET_TIB
+    DC.W F_WORD_RESET_SP_CODE
+F_WORD_RESET_SP_CODE:
+    WRITE_WORD_TO S0_CONST, SP_ADDR
+    JMP NEXT
+
+F_WORD_RESET_RP: ; RP!
+    DC 3  | $80
+    DC "RP"
+    DC '! | $80
+    DC.W F_WORD_RESET_SP
+    DC.W F_WORD_RESET_RP_CODE
+F_WORD_RESET_RP_CODE:
+    WRITE_WORD_TO R0_CONST, RP_ADDR
+    JMP NEXT
+
+F_WORD_SP_ADDR: ; SP@
+    DC 3  | $80
+    DC "SP"
+    DC '@ | $80
+    DC.W F_WORD_RESET_RP
+    DC.W F_WORD_SP_ADDR_CODE
+F_WORD_SP_ADDR_CODE:
+    COPY_WORD_TO SP_ADDR, STACK_TMP
+    JSR PUSH_TO_S 
+    JMP NEXT
+
+F_WORD_S0: ; S0
+LAST_F_WORD:
+    DC 2  | $80
+    DC 'S
+    DC '0 | $80
+    DC.W F_WORD_SP_ADDR
+    DC.W F_WORD_S0_CODE
+F_WORD_S0_CODE:
+    WRITE_WORD_TO S0_CONST, STACK_TMP
+    JSR PUSH_TO_S
+    JMP NEXT
+
+    seg.u zp
+KEY_CODE: ds 1
+
+    seg CODE
 IRQ:
+    LDA IOBASE
+    STA KEY_CODE
     RTI
 
 TEXT:
     INCBIN "stripped.txt"
     dc " "
-    ; nan: . = K [ {
-    ; dc "STATE @ : SOME 123 ; (WORD) SOME "
-    ; dc ": F (WORD) DP @ CONTEXT @ (FIND) ; F DP DP 23 "
     dc 0
-
 
 IOBASE   = $8800
 IOSTATUS = IOBASE + 1
