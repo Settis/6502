@@ -1,3 +1,9 @@
+VARIABLE CONTEXT
+VARIABLE CURRENT
+
+FORTH CONTEXT !
+FORTH CURRENT !
+
 VARIABLE TMP
 
 : DROP ( n -- )
@@ -78,9 +84,9 @@ VARIABLE TMP
 ;
 
 : IMMEDIATE ( -- )
-    CONTEXT @ C@
+    CONTEXT @ @ C@
     40 OR
-    CONTEXT @ C!
+    CONTEXT @ @ C!
 ;
 
 : 1+ ( n -- n ) 1 + ;
@@ -140,6 +146,11 @@ VARIABLE (ERROR)
     11 ?ERROR
 ;
 
+: ?EXEC ( -- )
+    STATE @
+    12 ?ERROR
+;
+
 : ?PAIRS ( n n -- )
     -
     13 ?ERROR
@@ -160,7 +171,7 @@ VARIABLE (ERROR)
 : -FIND
     (WORD)
     HERE
-    CONTEXT @
+    CONTEXT @ @
     (FIND)
 ;
 
@@ -398,7 +409,7 @@ VARIABLE _R
     ENDIF
 ;
 
-: RET \ for return of the function
+: ;S \ for return of the function
     R> DROP
 ;
 
@@ -420,7 +431,7 @@ VARIABLE _R
         DUP 1+
         DUP
         R> DROP
-        RET
+        ;S
     ENDIF
 
     >R DUP R>   \ addr n1 n2 addr+n1
@@ -528,7 +539,7 @@ VARIABLE _R
 ;
 \ Change X to NUL
 \ Upper bit is set
-80 CONTEXT @ 1+ C!
+80 CONTEXT @ @ 1+ C!
 
 VARIABLE DPL
 
@@ -576,11 +587,28 @@ VARIABLE DPL
     ENDIF
 ; IMMEDIATE
 
-: -FIND
-    BL WORD
-    HERE
-    CONTEXT @
-    (FIND)
+: LATEST ( -- addr )
+    CURRENT @ @
+;
+
+: -FIND ( -- pfa b tf , or ff )
+    BL WORD     \ Move text string delimited by blanks from input string to the top of
+                \ dictionary HERE .
+    HERE        \ The address of text to be matched.
+    CONTEXT @ @ \ Fetch the name field address of the last word defined in the CONTEXT
+                \ vocabulary and begin the dictionary search.
+    (FIND)      \ A primitive. Search the dictionary starting at the address on stack for
+                \ a name matching the text at the address second on stack. Return the
+                \ parameter field address of the matching name, its length byte, and a
+                \ boolean true flag on stack for a match. If no match is possible, only a
+                \ boolean false flag is left on stack.
+    DUP 0=      \ Look at the flag on stack
+    IF          \ No match in CONTEXT vocabulary
+        DROP    \ Discard the false flag
+        HERE    \ Get the address of text again
+        LATEST  \ The name field address of the last word defined in the CURRENT vocabulary
+        (FIND)  \ Search again through the CURRENT vocabulary.
+    ENDIF
 ;
 
 : INTERPRET ( -- )
@@ -657,6 +685,7 @@ VARIABLE DPL
 ;
 
 : QUERY ( -- )
+    0 TIB @ !
     TIB @       \ TIB contains the starting address of the input terminal buffer.
     50 EXPECT   \ Get 80 characters.
     0 IN !      \ Set the input character counter IN to 0. Text parsing shall begin at TIB.
@@ -710,11 +739,96 @@ VARIABLE WARNING
 ;
 
 \ put ERR link to (ERROR)
-CONTEXT @ DUP C@ 7F AND 3 + + (ERROR) !
+CONTEXT @ @ DUP C@ 7F AND 3 + + (ERROR) !
 
 : COLD ( -- )
     TIB!
     ABORT
 ;
+
+VARIABLE CSP
+
+: !CSP ( -- )
+    SP@ CSP !
+;
+
+: ?CSP ( -- )
+    SP@         \ Current stack pointer
+    CSP @       \ Saved stack pointer
+    -           \ If not equal,
+    14 ?ERROR   \ issue errro message 14.
+;
+
+VARIABLE WIDTH
+1F WIDTH !
+
+: MIN ( n n -- n )
+    OVER OVER >
+    IF
+        SWAP
+    ENDIF
+    DROP
+;
+
+: TOGGLE ( addr c -- )
+    OVER C@ \ extract the byte
+    XOR 
+    SWAP C!
+;
+
+: CREATE ( -- )
+    BL WORD             \ Bring the next string delimited by blanks to the top of
+                        \ dictionary.
+    HERE                \ Save dictionary pointer as name field address to be linked.
+    DUP C@              \ Get the length byte of the string
+    WIDTH @             \ WIDTH has the maximum number of characters allowed in the name field.
+    MIN                 \ Use the smaller of the two, and
+                        \ FIX: I should update name length here
+    1+ ALLOT            \ allocate space for name field, and advance DP to link field.
+    DUP A0 TOGGLE       \ byte of the name field. Make a 'smudged' head so that dictionary
+                        \ search will not find this name .
+    HERE 1- 80 TOGGLE   \ Toggle the eighth bit in the last character of the name as a
+                        \ delimiter to the name field.
+    LATEST ,            \ Compile the name field address of the last word in the link field,
+                        \ extending the linking chain.
+    CURRENT @ !         \ Update contents of LATEST in the current vocabulary.
+    HERE 2+ ,           \ Compile the parameter field address into code field, for the
+                        \ convenience of a new code definition. For other types of
+                        \ definitions, proper code routine address will be compiled here.
+;
+
+: SMUDGE ( -- )
+    CURRENT @ @ 20 TOGGLE
+;
+
+: ; ( -- )
+    [ SMUDGE ]  \ The word should be disabled here manually. Because bootstrap Ford not doing this on its own.
+    ?CSP        \ Check the stack pointer with that saved in CSP . If they differ,
+                \ issue an error message.
+    COMPILE ;S  \ Compile the code field address of the word ;S into the dictionary,
+                \ at run-time. ;S will return execution to the calling definition.
+    SMUDGE      \ Toggle the smudge bit back to zero. Restore the length byte in
+                \ the name field, thus completing the compilation of a new word.
+    [COMPILE] [ \ Set STATE to zero and return to the executing state.
+; IMMEDIATE
+
+\ SMUDGE the ;
+CURRENT @ @
+
+\ !CSP
+: : ( -- )
+    ?EXEC               \ Issue an error message if not executing.
+    !CSP                \ Save the stack pointer in CSP to be checked by ';' or ;CODE .
+    CURRENT @ CONTEXT ! \ Make CONTEXT vocabulary the same as the CURRENT vocabulary.
+    CREATE              \ Now create the header and establish linkage with the current
+                        \ vocabulary.
+    (DOCOL) HERE 2 - !  \ Set docol executor
+    ]                   \ Change STATE to non-zero. Enter compiling state and compile the
+                        \ words following till ';' or ;CODE .
+;
+
+20 TOGGLE
+
+\ redefine VARIABLE and CONSTANT
 
 COLD

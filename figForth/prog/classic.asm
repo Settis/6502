@@ -77,7 +77,7 @@ IN_ADDR: ds 2
 RP_ADDR: ds 2
 IP_ADDR: ds 2 ; [internal] interpretive pointer for call executor
 W_ADDR:  ds 2 ; [internal] current word pointer for call executor
-CONTEXT_VALUE: ds 2
+FORTH_VOCABULARY: ds 2
 STATE_VALUE: ds 2
 UART_PRINT_STRING_ADDR: ds 2 ; [for debug]
 
@@ -107,7 +107,7 @@ START:
     WRITE_WORD_TO 0, TIB_ADDR
     WRITE_WORD_TO TEXT, IN_ADDR
     WRITE_WORD_TO R0_CONST, RP_ADDR
-    WRITE_WORD_TO LAST_F_WORD, CONTEXT_VALUE
+    WRITE_WORD_TO LAST_F_WORD, FORTH_VOCABULARY
     WRITE_WORD_TO 0, STATE_VALUE
 
 TEXT_LOOP:
@@ -115,7 +115,7 @@ TEXT_LOOP:
 
     COPY_WORD_TO DP_ADDR, STACK_TMP
     JSR PUSH_TO_S
-    COPY_WORD_TO CONTEXT_VALUE, STACK_TMP
+    COPY_WORD_TO FORTH_VOCABULARY, STACK_TMP
     JSR PUSH_TO_S
     JSR FIND_IN_DICTIONARY
 
@@ -125,8 +125,7 @@ TEXT_LOOP:
 
     JSR PREPARE_CFA_NFA
 
-    LDX #0
-    LDA (INTERNAL_TMP,X)
+    LDA INTERNAL_TMP
     CMP STATE_VALUE  ; check if we need to run or compile this word
     BCS .executeWord
 .compileWord:
@@ -157,11 +156,9 @@ TEXT_LOOP:
 
 PREPARE_CFA_NFA:
     JSR PULL_FROM_S 
-    COPY_WORD_TO STACK_TMP, INTERNAL_TMP ; name size in internal tmp
-    CLC 
-    LDA INTERNAL_TMP
-    ADC #3
-    STA INTERNAL_TMP  ; name size + LFA size + 1 for the first byte in NFA
+    LDA STACK_TMP
+    STA INTERNAL_TMP
+    
     JSR PULL_FROM_S ; pull PFA
     SEC
     LDA STACK_TMP
@@ -171,14 +168,6 @@ PREPARE_CFA_NFA:
     SBC #0
     STA STACK_TMP+1
     JSR PUSH_TO_S  ; convert PFA to CFA
-
-    SEC
-    LDA STACK_TMP
-    SBC INTERNAL_TMP
-    STA INTERNAL_TMP
-    LDA STACK_TMP+1
-    SBC INTERNAL_TMP+1
-    STA INTERNAL_TMP+1 ; INTERNAL_TMP contains pointer to NFA
     RTS
 
 JMP_END_TEXT_LOOP_WORDS:
@@ -256,7 +245,8 @@ FIND_IN_DICTIONARY: ; (FIND) primitive ( NAME_ADDR DICTIONARY_RECORD_ADDR -- PFA
     ADC #0
     STA STACK_TMP+1
     JSR PUSH_TO_S
-    LDA TMP_LENGTH
+    LDY #0
+    LDA (INTERNAL_TMP),Y
     STA STACK_TMP
     LDA #0
     STA STACK_TMP+1
@@ -458,12 +448,12 @@ CREATE_DICTIONARY_HEADER_WITH_CFA: ; ( CFA -- ) reads the next word for a name
     STA (DP_ADDR),Y   ; Set high bits for NFA
 
     INY
-    LDA CONTEXT_VALUE
+    LDA FORTH_VOCABULARY
     STA (DP_ADDR),Y
     INY
-    LDA CONTEXT_VALUE+1
+    LDA FORTH_VOCABULARY+1
     STA (DP_ADDR),Y   ; LFA set
-    COPY_WORD_TO DP_ADDR, CONTEXT_VALUE ; Update context value
+    COPY_WORD_TO DP_ADDR, FORTH_VOCABULARY ; Update context value
 
     INY
     CLC
@@ -841,18 +831,18 @@ F_WORD_STATE: ; STATE
     DC.W F_WORD_CONSTANT_RUNTIME
     DC.W STATE_VALUE
 
-F_WORD_CONTEXT: ; CONTEXT
-    DC 7  | $80
-    DC "CONTEX"
-    DC 'T | $80
+F_WORD_FORTH: ; FORTH
+    DC 5  | $80
+    DC "FORT"
+    DC 'H | $80
     DC.W F_WORD_STATE
     DC.W F_WORD_CONSTANT_RUNTIME
-    DC.W CONTEXT_VALUE
+    DC.W FORTH_VOCABULARY
 
 F_WORD_COLON: ; :
     DC 1  | $80
     DC ': | $80
-    DC.W F_WORD_CONTEXT
+    DC.W F_WORD_FORTH
     DC.W F_WORD_COLON_CODE
 F_WORD_COLON_CODE:
     WRITE_WORD_TO DOCOL, STACK_TMP
@@ -991,7 +981,6 @@ F_WORD_SP_ADDR_CODE:
     JMP NEXT
 
 F_WORD_S0: ; S0
-LAST_F_WORD:
     DC 2  | $80
     DC 'S
     DC '0 | $80
@@ -1001,6 +990,15 @@ F_WORD_S0_CODE:
     WRITE_WORD_TO S0_CONST, STACK_TMP
     JSR PUSH_TO_S
     JMP NEXT
+
+F_WORD_DOCOL: ; (DOCOL)
+LAST_F_WORD:
+    DC 7  | $80
+    DC "(DOCOL"
+    DC ') | $80
+    DC.W F_WORD_S0
+    DC.W F_WORD_CONSTANT_RUNTIME
+    DC.W DOCOL
 
     seg.u zp
 KEY_CODE: ds 1
