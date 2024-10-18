@@ -536,7 +536,7 @@ VARIABLE _R
 : X ( -- )
     \ cut out BLK processing
     R> DROP
-;
+; IMMEDIATE
 \ Change X to NUL
 \ Upper bit is set
 80 CONTEXT @ @ 1+ C!
