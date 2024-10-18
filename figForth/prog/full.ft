@@ -826,6 +826,18 @@ CURRENT @ @
 
 20 TOGGLE
 
-\ redefine VARIABLE and CONSTANT
+: CONSTANT ( n -- )
+    CREATE
+    (DOCONST) HERE 2 - ! \ Update CFA for CONSTANT runtime
+    ,
+    SMUDGE
+;
+
+: VARIABLE ( -- )
+    CREATE
+    (DOVAR) HERE 2 - ! \ Update CFA for VARIABLE runtime
+    0 ,
+    SMUDGE
+;
 
 COLD
