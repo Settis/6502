@@ -572,18 +572,15 @@ VARIABLE DPL
     R> 2+ >R    \ Update the return pinter
 ;
 
+: DLITERAL
+    ." DLITERAL is not impemented" CR
+    (ERROR) @ EXECUTE
+; IMMEDIATE
+
 : LITERAL 
     STATE @
     IF
-        [COMPILE] (LIT) ,
-    ENDIF
-; IMMEDIATE
-
-: DLITERAL
-    STATE @
-    IF
-        [COMPILE] LITERAL 
-        [COMPILE] LITERAL
+        COMPILE (LIT) ,
     ENDIF
 ; IMMEDIATE
 
