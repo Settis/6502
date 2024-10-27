@@ -1021,8 +1021,14 @@ KEY_CODE: ds 1
 
     seg CODE
 IRQ:
+    LDA IOSTATUS
+    AND #$80
+    BEQ .other
+.keyboard_interrupt:
     LDA IOBASE
     STA KEY_CODE
+    RTI
+.other:
     RTI
 
 TEXT:
