@@ -80,6 +80,8 @@ W_ADDR:  ds 2 ; [internal] current word pointer for call executor
 FORTH_VOCABULARY: ds 2
 STATE_VALUE: ds 2
 UART_PRINT_STRING_ADDR: ds 2 ; [for debug]
+TIMER_COUNTER: ds 2
+TIMER_START_VALUE: ds 2
 
     seg CODE
     org $C000
@@ -98,7 +100,7 @@ UART_PRINT_STRING_ADDR: ds 2 ; [for debug]
     ENDM
 
 START:
-    JSR INIT_UART
+    JSR INIT_HW
     CLI
 
     ; init
@@ -1008,7 +1010,6 @@ F_WORD_DOVAR: ; (DOVAR)
     DC.W F_WORD_VARIABLE_RUNTIME
 
 F_WORD_DOCONST: ; (DOCONST)
-LAST_F_WORD:
     DC 9  | $80
     DC "(DOCONST"
     DC ') | $80
@@ -1016,19 +1017,78 @@ LAST_F_WORD:
     DC.W F_WORD_CONSTANT_RUNTIME
     DC.W F_WORD_CONSTANT_RUNTIME
 
+F_WORD_T_CNT: ; T_CNT
+    DC 5  | $80
+    DC "T_CN"
+    DC 'T | $80
+    DC.W F_WORD_DOCONST
+    DC.W F_WORD_CONSTANT_RUNTIME
+    DC.W TIMER_COUNTER
+
+F_WORD_T_START_VAL: ; T_START_VAL
+    DC 11 | $80
+    DC "T_START_VA"
+    DC 'L | $80
+    DC.W F_WORD_T_CNT
+    DC.W F_WORD_CONSTANT_RUNTIME
+    DC.W TIMER_START_VALUE
+
+F_WORD_T_START: ; T_START
+    DC 7  | $80
+    DC "T_STAR"
+    DC 'T | $80
+    DC.W F_WORD_T_START_VAL
+    DC.W F_WORD_T_START_CODE
+F_WORD_T_START_CODE:
+    LDA #%01000000
+    STA VIA_AUXILARY_CONTROL
+    LDA #0
+    STA TIMER_COUNTER
+    STA TIMER_COUNTER+1
+    LDA TIMER_START_VALUE
+    STA T1COUNTER_L
+    LDA TIMER_START_VALUE+1
+    STA T1COUNTER_H
+    JMP NEXT
+
+F_WORD_T_STOP: ; T_STOP
+LAST_F_WORD:
+    DC 6  | $80
+    DC "T_STO"
+    DC 'P | $80
+    DC.W F_WORD_T_START
+    DC.W F_WORD_T_STOP_CODE
+F_WORD_T_STOP_CODE:
+    LDA #%00000000
+    STA VIA_AUXILARY_CONTROL
+    JMP NEXT
+
     seg.u zp
 KEY_CODE: ds 1
 
     seg CODE
 IRQ:
+    SUBROUTINE
+    PHA
     LDA IOSTATUS
     AND #$80
-    BEQ .other
+    BEQ .timer
 .keyboard_interrupt:
     LDA IOBASE
     STA KEY_CODE
-    RTI
+    JMP .other
+.timer:
+    BRK
+    LDA VIA_IFR
+    AND #%01000000
+    BEQ .other
+    LDA T1COUNTER_L
+    INC TIMER_COUNTER
+    BNE .other
+    INC TIMER_COUNTER+1
+    JMP .other
 .other:
+    PLA
     RTI
 
 TEXT:
@@ -1041,11 +1101,22 @@ IOSTATUS = IOBASE + 1
 IOCMD    = IOBASE + 2
 IOCTRL   = IOBASE + 3
 
-INIT_UART:
+VIABASE     = $8000
+T1COUNTER_L = $8004
+T1COUNTER_H = $8005
+T1LATCH_L   = $8006
+T1LATCH_H   = $8007
+VIA_AUXILARY_CONTROL = $800B
+VIA_IER     = $800E
+VIA_IFR     = $800D
+
+INIT_HW:
     LDA #$09
     STA IOCMD      ; Set command status
     LDA #$1A
     STA IOCTRL     ; 0 stop bits, 8 bit word, 2400 baud
+    LDA #%11000000 ; enable T1 interrupts
+    STA VIA_IER
     RTS
 
 tmp set 0
