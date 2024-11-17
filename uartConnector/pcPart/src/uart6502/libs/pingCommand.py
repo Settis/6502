@@ -2,8 +2,8 @@ import random
 import sys
 
 from .consts import COMMAND_PING
-from .serialPort import get_port
 from .timer import timer
+from .device import connect
 
 
 def register_ping(subparsers):
@@ -13,15 +13,14 @@ def register_ping(subparsers):
 
 @timer("Ping")
 def run_ping_cmd(args):
-    run_ping(args.dev)
+    run_ping(connect(args.dev))
 
 
 def run_ping(dev):
-    port = get_port(dev)
-    port.timeout = 1
+    # port.timeout = 1
     data = random.randint(5, 200)
-    port.write(bytes([COMMAND_PING, data]))
-    response_raw = port.read(1)
+    dev.write(bytes([COMMAND_PING, data]))
+    response_raw = dev.read(1)
     if len(response_raw) == 0:
         print('No response for ping.')
         sys.exit(1)

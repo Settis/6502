@@ -9,6 +9,7 @@ from .readCommand import run_read
 from .runCommand import run_run
 from .writeCommand import run_write_chunk
 from .timer import timer
+from .device import connect
 
 OFFSET = 0x0A00
 PROG = [0xa9, 0xb5, 0x8d, 0x00, 0x0a, 0x60]
@@ -21,7 +22,7 @@ def register_test(subparsers):
 
 @timer("Test")
 def run_test(args):
-    dev = args.dev
+    dev = connect(args.dev)
     run_ping(dev)
     print('Write prog')
     run_write_chunk(dev, OFFSET, PROG)

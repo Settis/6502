@@ -1,9 +1,9 @@
 import sys
 
 from .consts import COMMAND_READ
-from .serialPort import get_port
 from .utils import convert_word_number_to_bytes, crc, construct_chunks
 from .timer import timer
+from .device import connect
 
 
 def register_read(subparsers):
@@ -16,7 +16,7 @@ def register_read(subparsers):
 
 @timer("Read")
 def run_read_cmd(args):
-    dev = args.dev
+    dev = connect(args.dev)
     offset = int(args.offset, 16)
     size = int(args.size, 16)
     result = run_read(dev, offset, size)
@@ -37,23 +37,22 @@ def run_read(dev, offset, size):
 
 
 def run_read_chunk(dev, offset, size):
-    port = get_port(dev)
-    port.write(bytes([COMMAND_READ]))
-    port.write(convert_word_number_to_bytes(offset))
+    dev.write(bytes([COMMAND_READ]))
+    dev.write(convert_word_number_to_bytes(offset))
     if size == 0x100:
-        port.write(bytes([0]))
+        dev.write(bytes([0]))
     else:
-        port.write(bytes([size]))
+        dev.write(bytes([size]))
     result = []
     for i in range(size):
         # send something to trigger interrupt
-        port.write(bytes([0]))
-        result.append(port.read(1)[0])
+        dev.write(bytes([0]))
+        result.append(dev.read(1)[0])
 
     calc_crc = crc(result)
     # send something to trigger interrupt
-    port.write(bytes([0]))
-    rec_crc = port.read(1)[0]
+    dev.write(bytes([0]))
+    rec_crc = dev.read(1)[0]
     if calc_crc != rec_crc:
         print('Checksum is wrong')
         sys.exit(1)

@@ -1,7 +1,7 @@
 from .consts import COMMAND_RUN
-from .serialPort import get_port
 from .utils import convert_word_number_to_bytes
 from .timer import timer
+from .device import connect
 
 
 def register_run(subparsers):
@@ -13,20 +13,19 @@ def register_run(subparsers):
 @timer("Run")
 def run_run_cmd(args):
     addr = int(args.addr, 16)
-    run_run(args.dev, addr)
+    run_run(connect(args.dev), addr)
 
 
 def run_run(dev, addr):
-    port = get_port(dev)
-    port.write(bytes([COMMAND_RUN]))
-    port.write(convert_word_number_to_bytes(addr))
+    dev.write(bytes([COMMAND_RUN]))
+    dev.write(convert_word_number_to_bytes(addr))
 
     # wait for the end
     # and print logs
     has_logs = False
     last_byte = None
     while True:
-        byte = port.read(1)
+        byte = dev.read(1)
         if byte[0] == 4:
             if last_byte != 0xA and has_logs:  # Newline
                 print()

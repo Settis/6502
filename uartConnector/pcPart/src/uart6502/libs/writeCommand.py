@@ -1,9 +1,9 @@
 import sys
 
 from .consts import COMMAND_WRITE
-from .serialPort import get_port
 from .utils import convert_word_number_to_bytes, convert_word_bytes_to_number, crc, construct_chunks
 from .timer import timer
+from .device import connect
 
 
 def register_write(subparsers):
@@ -16,7 +16,7 @@ def register_write(subparsers):
 @timer("Write")
 def run_write_cmd(args):
     data = Data(args)
-    run_write(args.dev, data.offset, data.content)
+    run_write(connect(args.dev), data.offset, data.content)
 
 
 def run_write(dev, offset, data):
@@ -28,18 +28,17 @@ def run_write(dev, offset, data):
 
 
 def run_write_chunk(dev, offset, data):
-    port = get_port(dev)
-    port.write(bytes([COMMAND_WRITE]))
-    port.write(convert_word_number_to_bytes(offset))
+    dev.write(bytes([COMMAND_WRITE]))
+    dev.write(convert_word_number_to_bytes(offset))
     length = len(data)
     if length == 0x100:
-        port.write(bytes([0]))
+        dev.write(bytes([0]))
     else:
-        port.write(bytes([len(data)]))
-    port.write(bytes(data))
+        dev.write(bytes([len(data)]))
+    dev.write(bytes(data))
 
     calc_crc = crc(data)
-    rec_crc = port.read(1)[0]
+    rec_crc = dev.read(1)[0]
 
     if calc_crc != rec_crc:
         print('Checksum is wrong')
