@@ -1,11 +1,10 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <WiFiMulti.h>
 #include <wifiSecrets.h>
 #include <ESPmDNS.h>
 
-const char* ssid     = WIFI_SSID;
-const char* password = WIFI_PASS;
-
+WiFiMulti wifiMulti;
 WiFiServer server(23);
 WiFiClient serverClient;
 
@@ -15,24 +14,21 @@ WiFiClient serverClient;
 void setup() {
   pinMode(LED_PIN, OUTPUT);
 
+  digitalWrite(LED_PIN, 1);
   Serial.begin(9600);
 
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
+  wifiMulti.addAP(WIFI_1_SSID, WIFI_1_PASS);
+  wifiMulti.addAP(WIFI_2_SSID, WIFI_2_PASS);
 
-  WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi...");
 
-  while (WiFi.status() != WL_CONNECTED) {
-    digitalWrite(LED_PIN, 1);
-    delay(200);
-    digitalWrite(LED_PIN, 0);
-    delay(300);
-    Serial.print(".");
+  if (wifiMulti.run() != WL_CONNECTED) {
+    Serial.print("Can't connect");
+    ESP.restart();
   }
 
   Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(ssid);
+  Serial.print("Connected");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
@@ -54,6 +50,7 @@ void setup() {
   
   serverClient = WiFiClient();
 
+  digitalWrite(LED_PIN, 0);
   Serial.println("Ready.");
 }
 
