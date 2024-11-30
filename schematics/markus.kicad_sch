@@ -1023,6 +1023,44 @@
 			)
 		)
 	)
+	(sheet
+		(at 104.14 86.36)
+		(size 29.21 10.16)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "e7a10e58-ebc2-481e-bdbc-3183aa203334")
+		(property "Sheetname" "ESP"
+			(at 104.14 85.6484 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "esp.kicad_sch"
+			(at 104.14 97.1046 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "markus"
+				(path "/03a78ca6-eaff-4f05-be7b-36cd15f8b56d"
+					(page "13")
+				)
+			)
+		)
+	)
 	(sheet_instances
 		(path "/"
 			(page "1")
