@@ -1112,7 +1112,6 @@ IRQ:
     TAX
     JMP .other
 .timer:
-    BRK
     LDA VIA_IFR
     AND #%01000000
     BEQ .other
