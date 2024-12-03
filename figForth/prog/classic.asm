@@ -1081,7 +1081,6 @@ F_WORD_T_START_CODE:
     JMP NEXT
 
 F_WORD_T_STOP: ; T_STOP
-LAST_F_WORD:
     DC 6  | $80
     DC "T_STO"
     DC 'P | $80
@@ -1091,6 +1090,15 @@ F_WORD_T_STOP_CODE:
     LDA #%00000000
     STA VIA_AUXILARY_CONTROL
     JMP NEXT
+
+F_WORD_BENCHMARK:
+LAST_F_WORD:
+    DC 9  | $80
+    DC "BENCHMAR"
+    DC 'K | $80
+    DC.W F_WORD_T_STOP
+    DC.W F_WORD_CONSTANT_RUNTIME
+    DC.W BENCHMARK
 
 IRQ:
     SUBROUTINE
@@ -1125,7 +1133,12 @@ IRQ:
     RTI
 
 TEXT:
-    INCBIN "stripped.txt"
+    INCBIN "full.txt"
+    dc " "
+    dc 0
+
+BENCHMARK:
+    INCBIN "benchmark.txt"
     dc " "
     dc 0
 

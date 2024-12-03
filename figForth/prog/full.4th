@@ -841,4 +841,11 @@ CURRENT @ @
     SMUDGE
 ;
 
+: RUN 
+    0 TIB !
+    BENCHMARK IN !
+    INTERPRET
+    COLD
+;
+
 COLD
