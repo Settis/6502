@@ -270,7 +270,7 @@ VARIABLE (ERROR)
 ;
 
 : CR 
-    D EMIT
+    A EMIT
 ;
 
 : SPACE
@@ -666,7 +666,7 @@ VARIABLE DPL
             +               \ the first character, ring the bell. Otherwise, output backspace and
                             \ decrement character count.
         ELSE                \ Not a backspace
-            DUP D =         \ Is it a carriage-return?
+            DUP A =         \ Is it a carriage-return?
             IF
                 LEAVE       \ Prepare to exit the loop. CR is end of text line.
                 DROP BL     \ Drop CR from the stack and replace with a blank.
@@ -677,7 +677,8 @@ VARIABLE DPL
                 0 I 1+ !    \ Guard the text with an ASCII NUL.
             ENDIF
         ENDIF
-        EMIT
+        \ EMIT 
+        DROP  \ Well, I should send echo back, but it works bad when I connect it to my laptop
     LOOP DROP
 ;
 

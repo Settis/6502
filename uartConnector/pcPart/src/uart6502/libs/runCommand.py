@@ -1,3 +1,6 @@
+import threading
+import sys
+
 from .consts import COMMAND_RUN
 from .utils import convert_word_number_to_bytes
 from .timer import timer
@@ -15,6 +18,10 @@ def run_run_cmd(args):
     addr = int(args.addr, 16)
     run_run(connect(args.dev), addr)
 
+def handle_keyboard(device, proceed):
+    while proceed:
+        keypress = sys.stdin.read(1)
+        device.write(keypress.encode('UTF-8'))
 
 def run_run(dev, addr):
     dev.write(bytes([COMMAND_RUN]))
@@ -24,11 +31,17 @@ def run_run(dev, addr):
     # and print logs
     has_logs = False
     last_byte = None
+
+    capture_input = True
+    receiver_thread = threading.Thread(target=handle_keyboard, args=(dev,capture_input), daemon=True)
+    receiver_thread.start()
+
     while True:
         byte = dev.read(1)
         if byte[0] == 4:
             if last_byte != 0xA and has_logs:  # Newline
                 print()
+            capture_input = False
             return
         has_logs = True
         print(byte_to_string(byte), end='', flush=True)

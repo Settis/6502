@@ -9,7 +9,8 @@
 ;       ..7DFF data stack `S0` & `SP`
 ;   7E00..     `TIB` (terminal input buffer) & `IN`
 ;       ..7EFF Return stack `R0` & `RP`
-;   7F00..7FFF user area
+;   7F00..7F7F UART input buffer
+;   7F80..7FFF user area
 
 ; Constants
 ; S0  = 7DFF
@@ -50,6 +51,8 @@
 
     PROCESSOR 6502
 
+IN_RAM = 1
+
 S0_CONST = $7DFE
 TIB0_CONST = $7E00
 R0_CONST = $7EFE
@@ -61,8 +64,12 @@ DEBUG_NEXT = 0
 DEBUG_DOSEMICOL = 0
 DEBUG_CLEAN_STACK = 0
 
+    seg.u UARTInputBuffer
+UART_INPUT_BUFFER_ADDR = $7F00
+    org UART_INPUT_BUFFER_ADDR
+
     seg.u UserArea
-    org $7F00
+    org $7F80
     ; It's empty for now
 
     seg.u zp
@@ -82,9 +89,16 @@ STATE_VALUE: ds 2
 UART_PRINT_STRING_ADDR: ds 2 ; [for debug]
 TIMER_COUNTER: ds 2
 TIMER_START_VALUE: ds 2
+UART_input_buffer_start: ds 1
+UART_input_buffer_end: ds 1
 
     seg CODE
-    org $C000
+    
+    IF IN_RAM = 1
+        org $0200
+    ELSE
+        org $C000
+    ENDIF
     
     MAC WRITE_WORD_TO ; 1 - data, 2 - addr
         LDA #<{1}
@@ -99,12 +113,22 @@ TIMER_START_VALUE: ds 2
         STA {2}+1
     ENDM
 
+MAIN:
 START:
     JSR INIT_HW
+
+    LDA #0
+    STA UART_input_buffer_start
+    STA UART_input_buffer_end
+
     CLI
 
     ; init
-    WRITE_WORD_TO $0200, DP_ADDR
+    IF IN_RAM = 1
+        WRITE_WORD_TO END_OF_CODE, DP_ADDR
+    ELSE
+        WRITE_WORD_TO $0200, DP_ADDR
+    ENDIF
     WRITE_WORD_TO S0_CONST, SP_ADDR
     WRITE_WORD_TO 0, TIB_ADDR
     WRITE_WORD_TO TEXT, IN_ADDR
@@ -932,12 +956,17 @@ F_WORD_KEY: ; key
 F_WORD_KEY_CODE:
     SUBROUTINE
 .loop:
-    LDA KEY_CODE
+    LDX UART_input_buffer_start
+    CPX UART_input_buffer_end
     BEQ .loop
+    LDA UART_INPUT_BUFFER_ADDR,X
     STA STACK_TMP
     LDA #0
-    STA KEY_CODE
     STA STACK_TMP+1
+    INX
+    TXA
+    AND #$7F
+    STA UART_input_buffer_start
     JSR PUSH_TO_S
     JMP NEXT
 
@@ -1063,10 +1092,6 @@ F_WORD_T_STOP_CODE:
     STA VIA_AUXILARY_CONTROL
     JMP NEXT
 
-    seg.u zp
-KEY_CODE: ds 1
-
-    seg CODE
 IRQ:
     SUBROUTINE
     PHA
@@ -1074,8 +1099,17 @@ IRQ:
     AND #$80
     BEQ .timer
 .keyboard_interrupt:
+    TXA
+    PHA
+    LDX UART_input_buffer_end
     LDA IOBASE
-    STA KEY_CODE
+    STA UART_INPUT_BUFFER_ADDR,X
+    INX
+    TXA
+    AND #$7F
+    STA UART_input_buffer_end
+    PLA
+    TAX
     JMP .other
 .timer:
     BRK
@@ -1096,27 +1130,26 @@ TEXT:
     dc " "
     dc 0
 
-IOBASE   = $8800
+IOBASE   = %1000000000100000
 IOSTATUS = IOBASE + 1
 IOCMD    = IOBASE + 2
 IOCTRL   = IOBASE + 3
 
-VIABASE     = $8000
-T1COUNTER_L = $8004
-T1COUNTER_H = $8005
-T1LATCH_L   = $8006
-T1LATCH_H   = $8007
-VIA_AUXILARY_CONTROL = $800B
-VIA_IER     = $800E
-VIA_IFR     = $800D
+VIABASE     = %1000000000010000
+T1COUNTER_L = VIABASE + $4
+T1COUNTER_H = VIABASE + $5
+T1LATCH_L   = VIABASE + $6
+T1LATCH_H   = VIABASE + $7
+VIA_AUXILARY_CONTROL = VIABASE + $B
+VIA_IER     = VIABASE + $E
+VIA_IFR     = VIABASE + $D
 
 INIT_HW:
-    LDA #$09
-    STA IOCMD      ; Set command status
-    LDA #$1A
-    STA IOCTRL     ; 0 stop bits, 8 bit word, 2400 baud
     LDA #%11000000 ; enable T1 interrupts
     STA VIA_IER
+    IF IN_RAM = 1
+        WRITE_WORD_TO IRQ, $FE
+    ENDIF
     RTS
 
 tmp set 0
@@ -1199,11 +1232,11 @@ PRINT_CHAR:
         BEQ .ECHO1       ; No, wait for it to empty
         PLA             ; Otherwise, load saved accumulator,
         STA IOBASE      ; write to output,
-        CMP #$0D        ; check if it was CR
-        BNE .END
-        LDA #$0A        ; then output LF too
-        PHA
-        JMP .ECHO1
+        ; CMP #$0D        ; check if it was CR
+        ; BNE .END
+        ; LDA #$0A        ; then output LF too
+        ; PHA
+        ; JMP .ECHO1
 .END:    RTS             ; and return
 
 PRINT_NAN:
@@ -1220,11 +1253,17 @@ PRINT_NAN:
     BNE .loop
     BRK
 
+END_OF_CODE:
+
 ; system vectors
 
-    seg VECTORS
-    org $FFFA
+    IF IN_RAM = 0
 
-    word IRQ         ; NMI vector
-    word START       ; RESET vector
-    word IRQ         ; IRQ vector
+        seg VECTORS
+        org $FFFA
+
+        word IRQ         ; NMI vector
+        word START       ; RESET vector
+        word IRQ         ; IRQ vector
+
+    ENDIF
