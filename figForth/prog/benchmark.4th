@@ -1,13 +1,13 @@
 \ 10 000 ticks
-\ 270E T_START_VAL !
+270E T_START_VAL !
 \ 50 000 ticks
-C34E T_START_VAL !
+\ C34E T_START_VAL !
 
 HERE
 
 T_START
 
-6 CONSTANT SIZE
+25 CONSTANT SIZE
 
 VARIABLE DATA_ADDR SIZE 2* ALLOT
 
@@ -38,7 +38,35 @@ VARIABLE DATA_ADDR SIZE 2* ALLOT
     LOOP
 ;
 
+: ENSURE_ELEMENTS ( n -- b ) 
+    2* DATA_ADDR + \ element addr
+    DUP 2 - \ ADDR[n] ADDR[n-1]
+    OVER @ OVER @ \ ADDR[n] ADDR[n-1] Data[n] Data[n-1]
+    OVER OVER < IF
+        >R
+        SWAP !
+        R> 
+        SWAP !
+        FFFF \ return true
+    ELSE
+        DROP DROP DROP DROP 
+        0 \ return false
+    ENDIF
+;
+
+: DO_PASS ( -- b )
+    0 
+    SIZE 1 DO
+        I ENSURE_ELEMENTS
+        OR
+    LOOP
+;
+
 : SORT
+    BEGIN
+        DO_PASS
+    WHILE
+    REPEAT
 ;
 
 T_STOP
