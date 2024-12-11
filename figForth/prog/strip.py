@@ -12,3 +12,4 @@ def strip(name):
 
 strip('full')
 strip('benchmark')
+strip('fullNative')
