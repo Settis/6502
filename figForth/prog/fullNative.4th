@@ -88,6 +88,8 @@ VARIABLE TMP
     C0 STATE !
 ;
 
+VARIABLE FUNC
+
 : TEST ( f -- n)
    5555 SWAP
    ( IF ) 0BRANCH [ HERE 0 , ] 
@@ -98,5 +100,6 @@ VARIABLE TMP
    AAAA
 ;
 
-0 TEST
-1 TEST
+CONTEXT @ @ DUP C@ 7F AND 3 + + FUNC !
+
+0 FUNC @ EXECUTE

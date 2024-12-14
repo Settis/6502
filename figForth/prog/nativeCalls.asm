@@ -155,15 +155,7 @@ TEXT_LOOP:
     JSR F_WORD_COMMA_SUBROUTINE
     JMP .endTextLoop
 .executeWord:
-    JSR PULL_FROM_S
-    ; self modified code!
-    IF IN_RAM = 0
-        ECHO "It can't run in ROM"
-        ERR
-    ENDIF
-    COPY_WORD_TO STACK_TMP, jsrCommand+1
-jsrCommand:
-    JSR $FFFF
+    JSR F_WORD_EXECUTE_CODE
     JMP .endTextLoop
 
 .parseNumber:
@@ -746,12 +738,15 @@ F_WORD_WORD_INT: ; (WORD)
     DC.W F_WORD_FIND_INT
     JMP COPY_WORD_FROM_TEXT
 
-F_WORD_EXECUTE: ; EXECUTE TODO:rewrite
+F_WORD_EXECUTE: ; EXECUTE
     DC 7  | $80
     DC "EXECUT"
     DC 'E | $80
     DC.W F_WORD_WORD_INT
-    DC.W EXECUTE
+
+F_WORD_EXECUTE_CODE:
+    JSR PULL_FROM_S
+    JMP (STACK_TMP)
 
 F_WORD_COMMA: ; ,
     DC 1  | $80
