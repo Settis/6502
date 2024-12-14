@@ -603,7 +603,15 @@ F_WORD_TO_RETURN_STACK: ; >R
     DC 'R | $80
     DC.W 0
     JSR PULL_FROM_S
+    PLA 
+    TAX
+    PLA
+    TAY
     PUSH_TO_R
+    TYA
+    PHA
+    TXA
+    PHA
     RTS
 
 F_WORD_FROM_RETURN_STACK: ; R>
@@ -611,7 +619,15 @@ F_WORD_FROM_RETURN_STACK: ; R>
     DC 'R
     DC '> | $80
     DC.W F_WORD_TO_RETURN_STACK
+    PLA 
+    TAX
+    PLA
+    TAY
     PULL_FROM_R
+    TYA
+    PHA
+    TXA
+    PHA
     JSR PUSH_TO_S
     RTS
 
@@ -730,7 +746,7 @@ F_WORD_WORD_INT: ; (WORD)
     DC.W F_WORD_FIND_INT
     JMP COPY_WORD_FROM_TEXT
 
-F_WORD_EXECUTE: ; EXECUTE
+F_WORD_EXECUTE: ; EXECUTE TODO:rewrite
     DC 7  | $80
     DC "EXECUT"
     DC 'E | $80
@@ -898,49 +914,86 @@ F_WORD_SEMICOLON: ; ;
     STA STATE_VALUE
     RTS
 
-F_WORD_BRANCH: ; BRANCH !TODO: I need to rewrite it
+F_WORD_BRANCH: ; BRANCH
     DC 6  | $80
     DC "BRANC"
     DC 'H | $80
     DC.W F_WORD_SEMICOLON
-    DC.W F_WORD_BRANCH_CODE
-F_WORD_BRANCH_CODE:
-    COPY_WORD_TO IP_ADDR, STACK_TMP
+
+    SUBROUTINE
+    PLA
+    STA STACK_TMP
+    PLA
+    STA STACK_TMP+1
+    INC STACK_TMP
+    BNE .skip
+    INC STACK_TMP+1
+.skip:
     JSR PUSH_TO_S
     JSR F_WORD_READ_FROM_ADDR_SUBROUTINE
     JSR PULL_FROM_S
-    CLC
-    LDA STACK_TMP
-    ADC IP_ADDR
-    STA IP_ADDR
-    LDA STACK_TMP+1
-    ADC IP_ADDR+1
-    STA IP_ADDR+1
-    JMP NEXT
 
-F_WORD_0BRANCH: ; 0BRANCH !TODO: and this too
+    LDA STACK_TMP
+    BNE .skipDec
+    DEC STACK_TMP+1
+.skipDec:
+    DEC STACK_TMP
+
+    LDA STACK_TMP+1
+    PHA
+    LDA STACK_TMP
+    PHA
+    RTS
+
+F_WORD_0BRANCH: ; 0BRANCH
     DC 7  | $80
     DC "0BRANC"
     DC 'H | $80
     DC.W F_WORD_BRANCH
-    DC.W F_WORD_0BRANCH_CODE
-F_WORD_0BRANCH_CODE:
+
     SUBROUTINE
+
     JSR PULL_FROM_S
     LDA STACK_TMP
-    BNE .next
+    BNE .noBranch
     LDA STACK_TMP+1
-    BNE .next
-    JMP F_WORD_BRANCH_CODE
-.next:
-    CLC 
-    LDA #2
-    ADC IP_ADDR
-    STA IP_ADDR
-    LDA #0
-    ADC IP_ADDR+1
-    STA IP_ADDR+1
-    JMP NEXT
+    BNE .noBranch
+
+.doBranch:
+    PLA
+    STA STACK_TMP
+    PLA
+    STA STACK_TMP+1
+    INC STACK_TMP
+    BNE .skip
+    INC STACK_TMP+1
+.skip:
+    JSR PUSH_TO_S
+    JSR F_WORD_READ_FROM_ADDR_SUBROUTINE
+    JSR PULL_FROM_S
+
+    LDA STACK_TMP
+    BNE .skipDec
+    DEC STACK_TMP+1
+.skipDec:
+    DEC STACK_TMP
+    JMP .end
+
+.noBranch:
+    CLC
+    PLA
+    ADC #2
+    STA STACK_TMP
+    PLA
+    ADC #0
+    STA STACK_TMP+1
+    
+.end:
+    LDA STACK_TMP+1
+    PHA
+    LDA STACK_TMP
+    PHA
+    RTS
 
 F_WORD_EMIT: ; EMIT
     DC 4  | $80
