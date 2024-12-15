@@ -2,15 +2,20 @@ classic.asm where return stack implemented in software
 
 my-Forth
 RUN
-Compile time:FF4C  653,560,000 ticks
-Dictionary:0120 
-Init time:075D      18,850,000 ticks
-Sort time:73A9     296,090,000 ticks
+Compile time:FF4C  653,560,000 ticks   100%
+Dictionary:0120                        100%
+Init time:075D      18,850,000 ticks   100%
+Sort time:73A9     296,090,000 ticks   100%
 
 hStack.asm where return stack is 6502 hardware stack
 my-Forth
 RUN
-Compile time:F950  638,240,000 ticks
-Dictionary:0120 
-Init time:0731      18,410,000 ticks
-Sort time:70D0     288,800,000 ticks
+Compile time:F950  638,240,000 ticks    97.7%
+Dictionary:0120                        100% 
+Init time:0731      18,410,000 ticks    97.7%
+Sort time:70D0     288,800,000 ticks    97.5%
+
+Compile time:2701   99,850,000 ticks    15.3%
+Dictionary:016B                        126%       
+Init time:0129       2,970,000 ticks    15.8%
+Sort time:1329      49,050,000 ticks    16.7%

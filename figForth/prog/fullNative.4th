@@ -840,15 +840,20 @@ CURRENT @ @
 
 : CONSTANT ( n -- )
     CREATE
-    [COMPILE] LITERAL
+    [COMPILE] ]
+    COMPILE (LIT) ,
+    COMPILE ;S
+    [COMPILE] [
     SMUDGE
 ;
 
 : VARIABLE ( -- )
     CREATE
-    HERE 5 +
-    [COMPILE] LITERAL
-    2 ALLOT
+    [COMPILE] ]
+    COMPILE (LIT) HERE 5 + ,
+    COMPILE ;S
+    0 ,
+    [COMPILE] [
     SMUDGE
 ;
 
