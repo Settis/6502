@@ -413,17 +413,17 @@ PULL_FROM_S:
     RTS
 
     MACRO PUSH_TO_R
-        LDA STACK_TMP
-        PHA
         LDA STACK_TMP+1
+        PHA
+        LDA STACK_TMP
         PHA
     ENDM
 
     MACRO PULL_FROM_R
         PLA
-        STA STACK_TMP+1
-        PLA
         STA STACK_TMP
+        PLA
+        STA STACK_TMP+1
     ENDM
 
 PUSH_TRUE_TO_S:
@@ -1040,8 +1040,10 @@ F_WORD_RESET_RP: ; RP!
     DC "RP"
     DC '! | $80
     DC.W F_WORD_RESET_SP
+    PULL_FROM_R
     LDX #$FF
     TXS
+    PUSH_TO_R
     RTS
 
 F_WORD_SP_ADDR: ; SP@
