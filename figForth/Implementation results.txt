@@ -15,7 +15,16 @@ Dictionary:0120                        100%
 Init time:0731      18,410,000 ticks    97.7%
 Sort time:70D0     288,800,000 ticks    97.5%
 
-Compile time:2701   99,850,000 ticks    15.3%
+hStackOptimized.asm where DOCOL & DOSEMICOL rewrited
+Compile time:4585  177,970,000 ticks    27.2%
+Dictionary:0120 
+Init time:0201       5,130,000 ticks    27.2%
+Sort time:1F0B      79,470,000 ticks    26.8%
+
+nativeCalls.asm where JSR & RTS used insead of DOCOL and DOSEMICOL
+                                     |from     | from
+                                     |classic  | optimized
+Compile time:2701   99,850,000 ticks    15.3%     56.1%
 Dictionary:016B                        126%       
-Init time:0129       2,970,000 ticks    15.8%
-Sort time:1329      49,050,000 ticks    16.7%
+Init time:0129       2,970,000 ticks    15.8%     57.9%
+Sort time:1329      49,050,000 ticks    16.7%     61.7%
