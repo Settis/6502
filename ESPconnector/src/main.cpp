@@ -32,7 +32,7 @@ void setup() {
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
-  if (!MDNS.begin("markus")) {
+  if (!MDNS.begin("marcus")) {
     Serial.println("Error setting up MDNS responder!");
     digitalWrite(LED_PIN, 1);
     while(1) {

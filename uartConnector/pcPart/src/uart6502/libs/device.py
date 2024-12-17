@@ -5,7 +5,7 @@ import serial
 
 
 DEFAULT_USB_DEV = '/dev/ttyUSB0'
-DEFAULT_NET_DEV = 'markus.local:23'
+DEFAULT_NET_DEV = 'marcus.local:23'
 
 class Device(ABC):
     @abstractmethod

@@ -5,7 +5,7 @@
 	(uuid "03a78ca6-eaff-4f05-be7b-36cd15f8b56d")
 	(paper "A4")
 	(title_block
-		(title "Markus")
+		(title "Marcus")
 	)
 	(lib_symbols
 		(symbol "power:+5V"
@@ -636,7 +636,7 @@
 			)
 		)
 		(instances
-			(project "markus"
+			(project "marcus"
 				(path "/03a78ca6-eaff-4f05-be7b-36cd15f8b56d"
 					(page "2")
 				)
@@ -674,7 +674,7 @@
 			)
 		)
 		(instances
-			(project "markus"
+			(project "marcus"
 				(path "/03a78ca6-eaff-4f05-be7b-36cd15f8b56d"
 					(page "12")
 				)
@@ -712,7 +712,7 @@
 			)
 		)
 		(instances
-			(project "markus"
+			(project "marcus"
 				(path "/03a78ca6-eaff-4f05-be7b-36cd15f8b56d"
 					(page "7")
 				)
@@ -750,7 +750,7 @@
 			)
 		)
 		(instances
-			(project "markus"
+			(project "marcus"
 				(path "/03a78ca6-eaff-4f05-be7b-36cd15f8b56d"
 					(page "4")
 				)
@@ -788,7 +788,7 @@
 			)
 		)
 		(instances
-			(project "markus"
+			(project "marcus"
 				(path "/03a78ca6-eaff-4f05-be7b-36cd15f8b56d"
 					(page "5")
 				)
@@ -826,7 +826,7 @@
 			)
 		)
 		(instances
-			(project "markus"
+			(project "marcus"
 				(path "/03a78ca6-eaff-4f05-be7b-36cd15f8b56d"
 					(page "8")
 				)
@@ -864,7 +864,7 @@
 			)
 		)
 		(instances
-			(project "markus"
+			(project "marcus"
 				(path "/03a78ca6-eaff-4f05-be7b-36cd15f8b56d"
 					(page "10")
 				)
@@ -902,7 +902,7 @@
 			)
 		)
 		(instances
-			(project "markus"
+			(project "marcus"
 				(path "/03a78ca6-eaff-4f05-be7b-36cd15f8b56d"
 					(page "9")
 				)
@@ -940,7 +940,7 @@
 			)
 		)
 		(instances
-			(project "markus"
+			(project "marcus"
 				(path "/03a78ca6-eaff-4f05-be7b-36cd15f8b56d"
 					(page "3")
 				)
@@ -978,7 +978,7 @@
 			)
 		)
 		(instances
-			(project "markus"
+			(project "marcus"
 				(path "/03a78ca6-eaff-4f05-be7b-36cd15f8b56d"
 					(page "11")
 				)
@@ -1016,7 +1016,7 @@
 			)
 		)
 		(instances
-			(project "markus"
+			(project "marcus"
 				(path "/03a78ca6-eaff-4f05-be7b-36cd15f8b56d"
 					(page "6")
 				)
@@ -1054,7 +1054,7 @@
 			)
 		)
 		(instances
-			(project "markus"
+			(project "marcus"
 				(path "/03a78ca6-eaff-4f05-be7b-36cd15f8b56d"
 					(page "13")
 				)
