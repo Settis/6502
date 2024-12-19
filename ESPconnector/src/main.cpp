@@ -22,7 +22,7 @@ void setup() {
 
   Serial.print("Connecting to WiFi...");
 
-  if (wifiMulti.run() != WL_CONNECTED) {
+  if (wifiMulti.run(25000) != WL_CONNECTED) {
     Serial.print("Can't connect");
     ESP.restart();
   }
