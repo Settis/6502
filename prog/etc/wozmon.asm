@@ -6,7 +6,7 @@
 ;  Also with ability to work in ROM and runned via UART
 ;  Hardware:
 ;       Keyboard connected to VIA1 port A
-;       Display connected to VIA1 port B, as well as VIA2 port A&B.
+;       Display connected to VIA1 port B
 ;
 ;-------------------------------------------------------------------------
 
@@ -334,18 +334,18 @@ RESET           CLD                  ;   Clear decimal arithmetic mode
 
 ; Init displays
 ; Start with 1, then 2, then overflows to 0 and stay with it
-	LDA #1
+	LDA #2
 	STA CURRENT_DISPLAY_NO
 	JSR UPDATE_DISPLAY_PORT
     JSR INIT_DISPLAY
 	
-	INC CURRENT_DISPLAY_NO
-	JSR UPDATE_DISPLAY_PORT
-	JSR INIT_DISPLAY_NOW ; we don't need to wait the second time
+	; INC CURRENT_DISPLAY_NO
+	; JSR UPDATE_DISPLAY_PORT
+	; JSR INIT_DISPLAY_NOW ; we don't need to wait the second time
 
-	INC CURRENT_DISPLAY_NO
-	JSR UPDATE_DISPLAY_PORT
-	JSR INIT_DISPLAY_NOW
+	; INC CURRENT_DISPLAY_NO
+	; JSR UPDATE_DISPLAY_PORT
+	; JSR INIT_DISPLAY_NOW
 
     ; ; Set display mode shift at the time during writing operation.
     ; LDA #%00000111
@@ -587,15 +587,15 @@ ECHO:
                 TXA
                 PHA
 
-				LDA CURRENT_DISPLAY_NO
-				CMP #2
-				IF_NEQ
-					INC CURRENT_DISPLAY_NO
-					JSR UPDATE_DISPLAY_PORT
-				ELSE_
-                	JSR wait_for_key_press
-					JSR CLEAR_ALL_DISPLAYS
-				END_IF
+				; LDA CURRENT_DISPLAY_NO
+				; CMP #2
+				; IF_NEQ
+				; 	INC CURRENT_DISPLAY_NO
+				; 	JSR UPDATE_DISPLAY_PORT
+				; ELSE_
+                ; 	JSR wait_for_key_press
+				; 	JSR CLEAR_ALL_DISPLAYS
+				; END_IF
                 PLA
                 TAX
                 LDA #%10000000
@@ -605,11 +605,11 @@ ECHO:
             JSR SEND_DISPLAY_COMMAND
         END_OF
 		CASE_OF TAB
-			JSR DISABLE_CURSOR
-			INC CURRENT_DISPLAY_NO
-			JSR UPDATE_DISPLAY_PORT
-			JSR ENABLE_CURSOR
-			; JMP ESCAPE ; it's good idea, but let's try another thing
+			; JSR DISABLE_CURSOR
+			; INC CURRENT_DISPLAY_NO
+			; JSR UPDATE_DISPLAY_PORT
+			; JSR ENABLE_CURSOR
+			JMP ESCAPE ; it's good idea, but let's try another thing
 		END_OF
         if RAM = 1
             CASE_OF ESC
@@ -634,12 +634,12 @@ ECHO:
 
 CLEAR_ALL_DISPLAYS:
 	SUBROUTINE
-	LDA #1
-	STA CURRENT_DISPLAY_NO
-	JSR .clear_the_display
-	INC CURRENT_DISPLAY_NO
-	JSR .clear_the_display
-	INC CURRENT_DISPLAY_NO
+	; LDA #1
+	; STA CURRENT_DISPLAY_NO
+	; JSR .clear_the_display
+	; INC CURRENT_DISPLAY_NO
+	; JSR .clear_the_display
+	; INC CURRENT_DISPLAY_NO
 .clear_the_display:
 	JSR UPDATE_DISPLAY_PORT
 	JSR CLEAR_DISPLAY
@@ -657,6 +657,7 @@ TEST_FOR_SL:
             RTS
         END_IF
     NEXT_X
+	JMP STEAM_LOCOMOTIVE
 
 	SEG.U zpVars
 CURRENT_DISPLAY_NO: ds 1
@@ -688,7 +689,7 @@ UPDATE_DISPLAY_PORT:
 			LDA #%00100000
 			STA DISPLAY_PCR_MASK
 		END_OF
-		LDA #0
+		LDA #2
 		STA CURRENT_DISPLAY_NO
 		JMP UPDATE_DISPLAY_PORT
 	END_CASE
