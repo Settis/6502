@@ -1,0 +1,25 @@
+.include "../include/std.inc"
+.include "../include/delayImport.inc"
+
+.code
+
+.import UART_ADDR
+
+.export UART_INIT
+.proc UART_INIT
+
+.endproc
+
+.export UART_WRITE
+.proc UART_WRITE ; A - data to write
+    STA UART_ADDR+W65C51::dataReg
+    ; Wait untill the byte is transfered
+    ; 9600 baud rate
+    ; frame is 11 bits 
+    ; 1/(9600/11) = 0.001146 s per byte
+    ; 1,146 ms / 0.16 us = 7163 ticks
+    LDX #74
+    LDY #19
+    ; it should be 7164
+    JMP DELAY_LOOP
+.endproc

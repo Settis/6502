@@ -1,0 +1,52 @@
+.include "../include/std.inc"
+.include "../include/uartImport.inc"
+
+.code
+.export UART_PRINT_STRING
+.proc UART_PRINT_STRING ; zero terminated string is after the call
+    LDY #1
+@LOOP:
+    LDA (1,S),Y
+    BEQ @END
+    PHY
+    JSR UART_WRITE
+    PLY 
+    INY
+    BRA @LOOP
+@END:
+    A16
+    TYA
+    CLC
+    ADC 1,S
+    STA 1,S
+    A8
+    RTS
+.endproc
+
+.export UART_PRINT_NEW_LINE
+.proc UART_PRINT_NEW_LINE
+    LDA #$A ; new line ASCII
+    JMP UART_WRITE
+.endproc
+
+.export UART_PRINT_HEX
+.proc UART_PRINT_HEX ; A - the data
+    PHA
+    LSR
+    LSR
+    LSR
+    LSR
+    JSR @PRINT_HALF_NUMBER
+    PLA
+    AND #$F
+@PRINT_HALF_NUMBER:
+    CLC
+    ADC #'0'
+    CMP #'9'+1
+    BCC @DIGIT
+    ; Carry is set here
+    ADC #('A' - '9' - 2)
+@DIGIT: 
+    JSR UART_WRITE
+    RTS
+.endproc

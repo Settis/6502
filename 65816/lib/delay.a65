@@ -1,0 +1,58 @@
+.feature   c_comments
+/*
+
+def calc(x, y):
+     return 7+(5*x+6)*y+13
+
+def find_x(y, total):
+     max_total = total*1.1
+     result_x = -1
+     for x in range(1,256):
+         ticks = calc(x,y)
+         if ticks>max_total:
+             break
+         if ticks==total:
+             return x
+         if ticks>total:
+             result_x = x
+             max_total = ticks
+     return result_x
+
+
+def find_xy(total):
+     max_total = total*1.1
+     result_xy = (-1,-1)
+     for y in range(1,256):
+         x = find_x(y, total)
+         if x==-1:
+             continue
+         ticks = calc(x, y)
+         if ticks==total:
+             return (x, y)
+         if ticks>total and ticks<max_total:
+             max_total = ticks
+             result_xy = (x,y)
+     print(f"Ticks: {calc(result_xy[0], result_xy[1])}")
+     return result_xy
+
+
+find_xy(93750)
+
+
+*/
+.export DELAY_LOOP
+.proc DELAY_LOOP ; takes x & y as input
+; 6 MHz = 0.16 µs
+; Timing: 6 + 2 + (2 + (2+3)*X - 1 + 2+3)*Y - 1 + 6
+;   (5*X + 6)*Y + 13
+;   JSR           6
+    TXA         ; 2
+@LOOP_Y:
+    TAX         ; 2
+@LOOP_X:
+    DEX         ; 2
+    BNE @LOOP_X ; 3 / 2
+    DEY         ; 2
+    BNE @LOOP_Y ; 3 / 2
+    RTS         ; 6
+.endproc

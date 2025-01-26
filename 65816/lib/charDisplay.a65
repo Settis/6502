@@ -1,0 +1,187 @@
+.include "../include/std.inc"
+.include "../include/charDisplayCommands.inc"
+.include "../include/delayImport.inc"
+
+; Connection:
+; Port C2 -> E
+; P7..P4 -> DB7..DB4
+; P1 -> R/W
+; P0 -> RS
+
+.import DISPLAY_IOR ; input/output register
+.import DISPLAY_DDR ; data direction register
+.import DISPLAY_PCR ; peripheral control register for clock pulses via handshake
+.importzp DISPLAY_PCR_MASK ; mask to specify if handshake is done on port A or port B
+
+.LINECONT + ; Enable line continuation
+
+.code
+.export DISPLAY_INIT
+.proc DISPLAY_INIT
+    JSR DELAY_15_ms
+
+    ; Set port to output
+    LDA #$F3
+    STA DISPLAY_DDR
+
+    ; Initial sequence
+    LDA #%00110000
+    JSR WRITE_4_BYTES
+    JSR DELAY_4_1_ms
+
+    LDA #%00110000
+    JSR WRITE_4_BYTES
+    JSR DELAY_4_1_ms
+
+    LDA #%00110000
+    JSR WRITE_4_BYTES
+    JSR DELAY_100_us
+
+    ; first part of 4-bit mode
+    LDA #%00100000
+    JSR WRITE_4_BYTES
+    JSR DELAY_37_us
+
+    ; 4-bit mode command
+    ; 00100000 - command
+    ; 00010000 - 8-bit mode
+    ; 00001000 - 2 lines
+    ; 00000100 - font
+    LDA #%00101100
+    JSR DISPLAY_SEND_COMMAND
+
+    LDA #(CharDisplayCommands::displayControl \
+     | CharDisplayCommands::displayControl::displayOn \
+     | CharDisplayCommands::displayControl::cursorOn \
+     | CharDisplayCommands::displayControl::blinkOn )
+    JSR DISPLAY_SEND_COMMAND
+
+    LDA #CharDisplayCommands::clearDisplay
+    JSR DISPLAY_SEND_COMMAND
+
+    LDA #(CharDisplayCommands::shifting \
+     | CharDisplayCommands::shifting::right )
+    JMP DISPLAY_SEND_COMMAND
+.endproc
+
+.export DISPLAY_PRINT_CHAR
+.proc DISPLAY_PRINT_CHAR ; A - byte to print
+    LDX #$01
+    JMP WRITE_TO_DISPLAY
+.endproc
+
+.export DISPLAY_SEND_COMMAND
+.proc DISPLAY_SEND_COMMAND ; A - command to send
+    LDX #0
+    ; JMP WRITE_TO_DISPLAY ; it's next here
+.endproc
+.proc WRITE_TO_DISPLAY ; A - byte to write 
+                       ; X contains RS bit
+    PHX
+    PHA
+    ; Wait if display is busy
+@WAIT:
+    JSR READ_FROM_DISPLAY
+    AND #%10000000
+    BNE @WAIT
+
+    PLA
+    TAX ; save for later use 4 lower bits
+    JSR @PREPARE_BITS_AND_WRITE
+
+    TXA ; shifting 4 lower bits to upper part
+    ASL
+    ASL
+    ASL
+    ASL
+    JSR @PREPARE_BITS_AND_WRITE
+    PLX
+    RTS
+    
+@PREPARE_BITS_AND_WRITE:
+    AND #$F0
+    ORA 3,S
+    JSR WRITE_4_BYTES
+    RTS
+.endproc
+
+.proc READ_FROM_DISPLAY ; result in A
+    ; Set port to input
+    LDA #$03
+    STA DISPLAY_DDR
+
+    ; Send to display read from RS
+    LDA #$02
+    STA DISPLAY_IOR
+
+    JSR READ_4_BYTES
+    PHA
+    JSR READ_4_BYTES
+    LSR
+    LSR
+    LSR
+    LSR
+    ORA 1,S
+    PLX ; extract it from stack
+
+    ; Set port to output
+    LDX #$F3
+    STX DISPLAY_DDR
+
+    RTS
+.endproc
+
+.proc WRITE_4_BYTES
+    STA DISPLAY_IOR
+    LDA #DISPLAY_PCR_MASK
+    TSB DISPLAY_PCR
+    NOP ; enable pulse must be >450ns
+    NOP
+    TRB DISPLAY_PCR
+    RTS
+.endproc
+
+.proc READ_4_BYTES
+    LDA #DISPLAY_PCR_MASK
+    TSB DISPLAY_PCR
+    NOP ; enable pulse must be >450ns
+    NOP
+    LDA DISPLAY_IOR
+    AND #$F0
+    TAX
+    LDA #DISPLAY_PCR_MASK
+    TRB DISPLAY_PCR
+    TXA
+    RTS
+.endproc
+
+.proc DELAY_15_ms
+; 15 ms = 93750 ticks
+    LDX #143       ; 2
+    LDY #130       ; 2
+    JMP DELAY_LOOP ; 3
+    ; should be 93750 ticks
+.endproc
+
+.proc DELAY_4_1_ms ; for 4.1 ms
+; 4.1 ms = 25625 ticks
+    LDX #164       ; 2
+    LDY #31        ; 2
+    JMP DELAY_LOOP ; 3
+    ; should be 25626 ticks
+.endproc
+
+.proc DELAY_100_us 
+; 100 us = 625 ticks
+    LDX #23        ; 2
+    LDY #5         ; 2
+    JMP DELAY_LOOP ; 3
+    ; should be 625 ticks
+.endproc
+
+.proc DELAY_37_us
+; 37 us = 232 ticks
+    LDX #20
+    LDY #2
+    JMP DELAY_LOOP
+.endproc

@@ -1,0 +1,54 @@
+.include "../include/std.inc"
+.include "../include/charDisplayImport.inc"
+.include "../include/uartImport.inc"
+.include "../include/uartDebugMsg.inc"
+.include "../include/charDisplayCommands.inc"
+
+.export DISPLAY_IOR = VIA_22_FIRST + W65C22::RA
+.export DISPLAY_DDR = VIA_22_FIRST + W65C22::DDRA
+.export DISPLAY_PCR = VIA_22_FIRST + W65C22::PCR
+.exportzp DISPLAY_PCR_MASK = W65C22::PCR::CA2_lowOutput ^ W65C22::PCR::CA2_highOutput
+
+.export UART_ADDR = UART_51
+
+.segment "runner"
+.word $0200
+    JMP main
+
+.code
+.export main
+.proc main
+    ENABNE_NATIVE_MODE
+
+    JSR UART_PRINT_STRING
+    .asciiz "Hi! I'll print p"
+    JSR UART_PRINT_NEW_LINE
+
+    LDA #(W65C22::PCR::CB2_lowOutput | W65C22::PCR::CA2_lowOutput)
+    STA DISPLAY_PCR
+    JSR DISPLAY_INIT
+
+    ; Set port to output
+    ; temporal without DISPLAY_INIT
+    ; LDA #$F3
+    ; STA DISPLAY_DDR
+
+    LDA #'4'
+    JSR DISPLAY_PRINT_CHAR
+
+    LDA #CharDisplayCommands::returnHome
+    JSR DISPLAY_SEND_COMMAND
+
+    LDA #'7'
+    JSR DISPLAY_PRINT_CHAR
+    LDA #'R'
+    JSR DISPLAY_PRINT_CHAR
+    LDA #'n'
+    JSR DISPLAY_PRINT_CHAR
+
+    ; LDA #CharDisplayCommands::clearDisplay
+    ; JSR DISPLAY_SEND_COMMAND
+
+    DISABLE_NATIVE_MODE
+    RTS
+.endproc
