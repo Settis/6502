@@ -1,0 +1,107 @@
+; The module writes atari binary format from the program body to appropriate place.
+.include "../include/std.inc"
+.include "../include/delayImport.inc"
+
+.import ATARI_DATA_START
+.import ATARI_DATA_END
+
+.code
+.export COPY_ATARI_DATA
+.proc COPY_ATARI_DATA
+    PHP
+    A16_IND16    
+    LDA #ATARI_DATA_START
+    PHA
+@LOOP:
+        ; FH - frame header
+        ; stack: FH pointer 
+        LDY #0
+        LDA (1,S),Y ; Read start, or header
+        CMP #$FFFF
+        BNE @NO_HEADER
+        INY
+        INY
+        LDA (1,S),Y ; Read start
+@NO_HEADER:
+        PHA
+        INY
+        INY
+        LDA (3,S),Y ; Read end
+        PHA
+        ; stack: FH pointer, start pointer, end pointer
+        PHY
+        PLY
+        INY
+        INY
+        TYA
+        CLC
+        ADC 5,S
+        STA 5,S
+        ; FD - frame data
+        ; stack: FD pointer, start pointer, end pointer
+        PLA
+        SEC
+        SBC 1,S
+        PHA
+        ; stack: FD pointer, start pointer, copy bytes -1
+        LDA 5,S
+        PHA
+        SEC ; for add proper copy bytes
+        ADC 3,S
+        STA 7,S
+        ; stack: next FH pointer, start pointer, copy bytes -1, FD pointer
+        PLX
+        PLA
+        PLY
+        ; A - copy bytes - 1
+        ; X - src
+        ; Y - dst
+        ; MVN #0, #0
+        JSR copy_like_mvn
+
+        ; stack: next FH pointer
+        LDA 1,S
+        CMP #ATARI_DATA_END
+        BCC @LOOP
+    PLA
+    PLP
+    RTS
+.endproc
+
+.proc copy_like_mvn
+.A16
+.I16
+    INC A ; to have exact bytes to copy
+    PHA
+    PHX
+    PHY
+    ; Stack: dst, src, count
+    
+    LDY #0
+@LOOP:
+    A8
+    LDA (3,S),Y
+    STA (1,S),Y
+    PHY
+    IND8
+    JSR delay_10_ms
+    A16_IND16
+    PLY
+    INY
+    TYA
+    CMP 5,S
+    BNE @LOOP
+
+    PLA
+    PLA
+    PLA
+    RTS
+.endproc
+
+.proc delay_10_ms
+.I8
+    ; 62500 ticks
+    LDX #226
+    LDY #55
+    JMP DELAY_LOOP
+.endproc

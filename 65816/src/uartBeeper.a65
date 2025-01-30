@@ -1,0 +1,47 @@
+.include "../include/std.inc"
+.include "../include/uartImport.inc"
+.include "../include/uartDebugMsg.inc"
+.include "../include/delayImport.inc"
+
+.import COPY_ATARI_DATA
+.export UART_ADDR = UART_51
+
+.segment "runner"
+.word $0200
+    JMP main
+
+.code
+.proc main
+    JSR UART_INIT
+@LOOP:
+    JSR UART_PRINT_STRING
+    .asciiz "Beep!"
+    JSR UART_PRINT_NEW_LINE
+    JSR delay_500_ms
+    BRA @LOOP
+.endproc
+
+
+.proc delay_500_ms
+    LDX #10
+@LOOP:
+    PHX
+    JSR delay_50_ms
+    PLX
+    DEX
+    BNE @LOOP
+    RTS
+.endproc
+
+.proc delay_50_ms
+    ; need 312500 ticks
+    LDX #255
+    LDY #244
+    JMP DELAY_LOOP
+    ; expected Ticks: 312584
+.endproc
+
+.segment "resetVector"
+    .word main ; NMI
+    .word main ; RESET
+    .word main ; IRQ

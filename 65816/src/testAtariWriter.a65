@@ -1,0 +1,151 @@
+.include "../include/std.inc"
+.include "../include/uartImport.inc"
+.include "../include/uartDebugMsg.inc"
+
+.import COPY_ATARI_DATA
+.export UART_ADDR = UART_51
+
+.segment "runner"
+.word $0200
+    JMP main
+
+.code
+.proc main
+    ENABNE_NATIVE_MODE
+    JSR zero_memory
+
+    JSR UART_PRINT_STRING
+    .asciiz "Zeroing memory"
+    JSR UART_PRINT_NEW_LINE
+    JSR print_memory
+    JSR UART_PRINT_STRING
+    .asciiz "Expected:"
+    JSR UART_PRINT_NEW_LINE
+    JSR UART_PRINT_STRING
+    .asciiz "1000: 00 00 12 13 14 15 00 27 28 29 00 00 3C 3D 3E 00"
+    JSR UART_PRINT_NEW_LINE
+    
+    JSR COPY_ATARI_DATA
+    
+    JSR UART_PRINT_STRING
+    .asciiz "After test:"
+    JSR UART_PRINT_NEW_LINE
+    JSR print_memory
+    DISABLE_NATIVE_MODE
+    RTS
+.endproc
+.export ATARI_DATA_START
+ATARI_DATA_START:
+    .word $FFFF, $1002, $1005
+    .byte $12, $13, $14, $15
+    .word $1007, $1009
+    .byte $27, $28, $29
+    .word $FFFF, $100C, $100E
+    .byte $3C, $3D, $3E
+.export ATARI_DATA_END
+ATARI_DATA_END:
+    ; some garbage after
+    .byte $BA, $BE, $BC, $BD, $BE, $BF
+
+.proc zero_memory
+    LDX #$0
+@LOOP:
+        STZ $1000,X
+        INX
+        CPX #$10
+        BNE @LOOP
+    RTS
+.endproc
+
+.proc print_memory
+    JSR UART_PRINT_STRING
+    .asciiz "1000: "
+    LDX #$0
+@LOOP:
+        LDA $1000,X
+        PHX
+        JSR UART_PRINT_HEX
+        LDA #' '
+        JSR UART_WRITE
+        PLX
+        INX
+        CPX #$10
+        BNE @LOOP
+    JSR UART_PRINT_NEW_LINE
+    RTS
+.endproc
+
+.macro printWordFromStack
+    PLX
+    PLA
+    PHX
+    JSR UART_PRINT_HEX
+    PLA
+    JSR UART_PRINT_HEX
+    JSR UART_PRINT_NEW_LINE
+.endmacro
+.export print_regs
+.proc print_regs
+    ; x - src
+    ; y - dst
+    ; a - count
+    PHA
+    PHY
+    PHX
+
+    A8_IND8
+
+    JSR UART_PRINT_STRING
+    .asciiz "X - src: "
+    printWordFromStack
+
+    JSR UART_PRINT_STRING
+    .asciiz "Y - dst: "
+    printWordFromStack
+
+    JSR UART_PRINT_STRING
+    .asciiz "A - count: "
+    printWordFromStack
+    A16_IND16
+    RTS
+.endproc
+
+.export print_stack
+.proc print_stack
+    A8_IND8
+
+    JSR UART_PRINT_STRING
+    .asciiz "Stack: "
+
+    LDA 4,S
+    JSR UART_PRINT_HEX
+    LDA 3,S
+    JSR UART_PRINT_HEX
+    LDA #' '
+    JSR UART_WRITE
+
+    LDA 6,S
+    JSR UART_PRINT_HEX
+    LDA 5,S
+    JSR UART_PRINT_HEX
+    LDA #' '
+    JSR UART_WRITE
+
+    LDA 8,S
+    JSR UART_PRINT_HEX
+    LDA 7,S
+    JSR UART_PRINT_HEX
+    LDA #' '
+    JSR UART_WRITE
+
+    LDA 10,S
+    JSR UART_PRINT_HEX
+    LDA 9,S
+    JSR UART_PRINT_HEX
+    LDA #' '
+    JSR UART_WRITE
+
+    JSR UART_PRINT_NEW_LINE
+    A16_IND16
+    RTS
+.endproc

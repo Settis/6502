@@ -1,13 +1,24 @@
 .include "../include/std.inc"
 .include "../include/delayImport.inc"
 
+.LINECONT + ; Enable line continuation
+
 .code
 
 .import UART_ADDR
 
 .export UART_INIT
 .proc UART_INIT
+    LDA #W65C51::controlReg::default
+    STA UART_ADDR+W65C51::controlReg
 
+    LDA #(W65C51::commandReg::parityModEnabled \
+     | W65C51::commandReg::receiverEvenParityChecked \
+     | W65C51::commandReg::transmitInterruptDisabled \
+     | W65C51::commandReg::dataTerminalReady )
+    STA UART_ADDR+W65C51::commandReg
+
+    RTS
 .endproc
 
 .export UART_WRITE
