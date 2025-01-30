@@ -88,10 +88,10 @@ class Emulator:
     def read_serial(self):
         return self.port.read(1)[0]
 
-    def print_zp(self):
-        ind = 0
-        while ind < 0xff:
-            print(f"{ind:02x}: ", end='')
+    def print_dump(self, start, end):
+        ind = start
+        while ind < end:
+            print(f"{ind:04x}: ", end='')
             for i in range(8):
                 print(f"{self.memory.get(ind,0):02x} ", end='')
                 ind += 1
@@ -123,6 +123,10 @@ class Emulator:
     def show_zp(self):
         self.show_page(0)
 
+    def dump(self):
+        for page in range(0xC0, 0x100):
+            self.show_page(page)
+
     def show_page(self, number):
         self.disable_cpu_bus()
         for i in range(0x100):
@@ -130,8 +134,8 @@ class Emulator:
             command = self.read_serial()
             if command != BUS_DATA_COMMAND:
                 print(f"Bad comamnd: {command}")
-            self.memory[i] = self.read_serial()
-        self.print_zp()
+            self.memory[number*0x100+i] = self.read_serial()
+        self.print_dump(number*0x100, number*0x100+0x100)
 
     def write_default(self):
         self.write_prog('/home/stk/projects/8-bit/6502/hard/prog/a.out')
@@ -173,6 +177,9 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         if sys.argv[1].lower() == 'rom':
             Emulator().write_prog_to_rom(sys.argv[2])
+            sys.exit(0)
+        if sys.argv[1].lower() == 'dump':
+            Emulator().dump()
             sys.exit(0)
         if sys.argv[1].lower().startswith("w"):
             Emulator().write_default()
