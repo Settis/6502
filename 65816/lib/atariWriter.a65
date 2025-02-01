@@ -5,96 +5,72 @@
 .import ATARI_DATA_START
 .import ATARI_DATA_END
 
+.zeropage
+SRC_POINTER: 
+    .res 2
+DST_POINTER: 
+    .res 2
+DST_END_POINTER: 
+    .res 2
+LAST_ROM_PAGE: 
+    .res 2
+
+PAGE_ADDR_MASK = $FFC0
+
 .code
 .export COPY_ATARI_DATA
 .proc COPY_ATARI_DATA
     PHP
-    A16_IND16    
+    IND8
+    A16
+    STZ LAST_ROM_PAGE
     LDA #ATARI_DATA_START
-    PHA
+    STA SRC_POINTER
 @LOOP:
-        ; FH - frame header
-        ; stack: FH pointer 
-        LDY #0
-        LDA (1,S),Y ; Read start, or header
+        LDA (SRC_POINTER)
         CMP #$FFFF
         BNE @NO_HEADER
-        INY
-        INY
-        LDA (1,S),Y ; Read start
-@NO_HEADER:
-        PHA
-        INY
-        INY
-        LDA (3,S),Y ; Read end
-        PHA
-        ; stack: FH pointer, start pointer, end pointer
-        PHY
-        PLY
-        INY
-        INY
-        TYA
-        CLC
-        ADC 5,S
-        STA 5,S
-        ; FD - frame data
-        ; stack: FD pointer, start pointer, end pointer
-        PLA
-        SEC
-        SBC 1,S
-        PHA
-        ; stack: FD pointer, start pointer, copy bytes -1
-        LDA 5,S
-        PHA
-        SEC ; for add proper copy bytes
-        ADC 3,S
-        STA 7,S
-        ; stack: next FH pointer, start pointer, copy bytes -1, FD pointer
-        PLX
-        PLA
-        PLY
-        ; A - copy bytes - 1
-        ; X - src
-        ; Y - dst
-        ; MVN #0, #0
-        JSR copy_like_mvn
+        INC SRC_POINTER
+        INC SRC_POINTER
+        LDA (SRC_POINTER)
+    @NO_HEADER:
+        STA DST_POINTER
+        INC SRC_POINTER
+        INC SRC_POINTER
+        LDA (SRC_POINTER)
+        STA DST_END_POINTER
 
-        ; stack: next FH pointer
-        LDA 1,S
+        ; to point to copying data
+        INC SRC_POINTER
+        INC SRC_POINTER
+
+        ; copy
+    @COPY_LOOP:
+        LDA DST_POINTER
+        AND #PAGE_ADDR_MASK
+        CMP LAST_ROM_PAGE
+        BEQ @SAME_PAGE
+        STA LAST_ROM_PAGE
+        JSR delay_10_ms
+    @SAME_PAGE:
+        A8
+        LDA (SRC_POINTER)
+        STA (DST_POINTER)
+        A16
+        INC SRC_POINTER
+        LDA DST_POINTER
+        CMP DST_END_POINTER
+        BEQ @END_COPY
+        INC DST_POINTER
+        BRA @COPY_LOOP
+    @END_COPY:
+
+        LDA SRC_POINTER
         CMP #ATARI_DATA_END
         BCC @LOOP
-    PLA
-    PLP
-    RTS
-.endproc
-
-.proc copy_like_mvn
-.A16
-.I16
-    INC A ; to have exact bytes to copy
-    PHA
-    PHX
-    PHY
-    ; Stack: dst, src, count
     
-    LDY #0
-@LOOP:
-    A8
-    LDA (3,S),Y
-    STA (1,S),Y
-    PHY
-    IND8
     JSR delay_10_ms
-    A16_IND16
-    PLY
-    INY
-    TYA
-    CMP 5,S
-    BNE @LOOP
-
-    PLA
-    PLA
-    PLA
+    PLP
     RTS
 .endproc
 

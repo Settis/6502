@@ -18,6 +18,10 @@
     .asciiz "Beep!"
     JSR UART_PRINT_NEW_LINE
     JSR delay_500_ms
+    JSR UART_PRINT_STRING
+    .asciiz "<silence>"
+    JSR UART_PRINT_NEW_LINE
+    JSR delay_500_ms
     BRA @LOOP
 .endproc
 
