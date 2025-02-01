@@ -6058,10 +6058,10 @@
 					)
 				)
 			)
-			(pin passive line
+			(pin no_connect line
 				(at 41.91 7.62 270)
 				(length 2.54)
-				(name "ROM_W"
+				(name "NA"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -6094,7 +6094,7 @@
 					)
 				)
 			)
-			(pin passive line
+			(pin no_connect line
 				(at 46.99 7.62 270)
 				(length 2.54)
 				(name "NA"
@@ -6112,7 +6112,7 @@
 					)
 				)
 			)
-			(pin passive line
+			(pin no_connect line
 				(at 49.53 7.62 270)
 				(length 2.54)
 				(name "NA"
@@ -6130,7 +6130,7 @@
 					)
 				)
 			)
-			(pin passive line
+			(pin no_connect line
 				(at 52.07 7.62 270)
 				(length 2.54)
 				(name "NA"
@@ -6148,7 +6148,7 @@
 					)
 				)
 			)
-			(pin passive line
+			(pin no_connect line
 				(at 54.61 7.62 270)
 				(length 2.54)
 				(name "NA"

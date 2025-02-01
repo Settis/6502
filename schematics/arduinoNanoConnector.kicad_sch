@@ -1682,10 +1682,10 @@
 						)
 					)
 				)
-				(pin passive line
+				(pin no_connect line
 					(at 41.91 7.62 270)
 					(length 2.54)
-					(name "ROM_W"
+					(name "NA"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1718,7 +1718,7 @@
 						)
 					)
 				)
-				(pin passive line
+				(pin no_connect line
 					(at 46.99 7.62 270)
 					(length 2.54)
 					(name "NA"
@@ -1736,7 +1736,7 @@
 						)
 					)
 				)
-				(pin passive line
+				(pin no_connect line
 					(at 49.53 7.62 270)
 					(length 2.54)
 					(name "NA"
@@ -1754,7 +1754,7 @@
 						)
 					)
 				)
-				(pin passive line
+				(pin no_connect line
 					(at 52.07 7.62 270)
 					(length 2.54)
 					(name "NA"
@@ -1772,7 +1772,7 @@
 						)
 					)
 				)
-				(pin passive line
+				(pin no_connect line
 					(at 54.61 7.62 270)
 					(length 2.54)
 					(name "NA"
@@ -4641,7 +4641,6 @@
 	)
 	(label "D7"
 		(at 107.95 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4652,7 +4651,6 @@
 	)
 	(label "Ard14"
 		(at 113.03 57.15 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4663,7 +4661,6 @@
 	)
 	(label "A[0..15]"
 		(at 110.49 152.4 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4675,7 +4672,6 @@
 	)
 	(label "Ard21"
 		(at 138.43 165.1 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4686,7 +4682,6 @@
 	)
 	(label "A0"
 		(at 105.41 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4697,7 +4692,6 @@
 	)
 	(label "A4"
 		(at 95.25 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4708,7 +4702,6 @@
 	)
 	(label "Ard13"
 		(at 74.93 57.15 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4719,7 +4712,6 @@
 	)
 	(label "Ard3"
 		(at 97.79 34.29 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4730,7 +4722,6 @@
 	)
 	(label "Ard5"
 		(at 92.71 34.29 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4741,7 +4732,6 @@
 	)
 	(label "A11"
 		(at 77.47 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4752,7 +4742,6 @@
 	)
 	(label "A5"
 		(at 115.57 97.79 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4763,7 +4752,6 @@
 	)
 	(label "Ard23"
 		(at 95.25 57.15 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4774,7 +4762,6 @@
 	)
 	(label "A14"
 		(at 69.85 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4785,7 +4772,6 @@
 	)
 	(label "Ard6"
 		(at 90.17 34.29 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4796,7 +4782,6 @@
 	)
 	(label "A15"
 		(at 67.31 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4807,7 +4792,6 @@
 	)
 	(label "Ard2"
 		(at 151.13 165.1 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4818,7 +4802,6 @@
 	)
 	(label "D3"
 		(at 170.18 97.79 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4829,7 +4812,6 @@
 	)
 	(label "Ard4"
 		(at 95.25 34.29 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4840,7 +4822,6 @@
 	)
 	(label "D5"
 		(at 113.03 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4851,7 +4832,6 @@
 	)
 	(label "Ard15"
 		(at 148.59 165.1 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4862,7 +4842,6 @@
 	)
 	(label "D[0..7]"
 		(at 130.81 152.4 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4874,7 +4853,6 @@
 	)
 	(label "Ard16"
 		(at 115.57 34.29 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4885,7 +4863,6 @@
 	)
 	(label "Ard10"
 		(at 52.07 127 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4896,7 +4873,6 @@
 	)
 	(label "Ard7"
 		(at 54.61 97.79 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4907,7 +4883,6 @@
 	)
 	(label "D1"
 		(at 172.72 97.79 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4918,7 +4893,6 @@
 	)
 	(label "Ard7"
 		(at 87.63 34.29 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4929,7 +4903,6 @@
 	)
 	(label "D4"
 		(at 165.1 124.46 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4940,7 +4913,6 @@
 	)
 	(label "Ard5"
 		(at 172.72 120.65 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4951,7 +4923,6 @@
 	)
 	(label "D3"
 		(at 118.11 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4962,7 +4933,6 @@
 	)
 	(label "A3"
 		(at 97.79 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4973,7 +4943,6 @@
 	)
 	(label "A7"
 		(at 87.63 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4984,7 +4953,6 @@
 	)
 	(label "Ard9"
 		(at 82.55 34.29 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4995,7 +4963,6 @@
 	)
 	(label "Ard20"
 		(at 87.63 57.15 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5006,7 +4973,6 @@
 	)
 	(label "D2"
 		(at 120.65 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5017,7 +4983,6 @@
 	)
 	(label "D7"
 		(at 165.1 97.79 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5028,7 +4993,6 @@
 	)
 	(label "Ard6"
 		(at 157.48 99.06 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5039,7 +5003,6 @@
 	)
 	(label "Ard22"
 		(at 92.71 57.15 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5050,7 +5013,6 @@
 	)
 	(label "A6"
 		(at 110.49 124.46 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5061,7 +5023,6 @@
 	)
 	(label "Ard9"
 		(at 72.39 97.79 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5072,7 +5033,6 @@
 	)
 	(label "D5"
 		(at 167.64 97.79 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5083,7 +5043,6 @@
 	)
 	(label "Ard12"
 		(at 120.65 120.65 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5094,7 +5053,6 @@
 	)
 	(label "D4"
 		(at 115.57 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5105,7 +5063,6 @@
 	)
 	(label "A11"
 		(at 67.31 97.79 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5116,7 +5073,6 @@
 	)
 	(label "D6"
 		(at 110.49 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5127,7 +5083,6 @@
 	)
 	(label "A9"
 		(at 82.55 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5138,7 +5093,6 @@
 	)
 	(label "Ard11"
 		(at 77.47 34.29 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5149,7 +5103,6 @@
 	)
 	(label "Ard19"
 		(at 85.09 57.15 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5160,7 +5113,6 @@
 	)
 	(label "Ard3"
 		(at 154.94 120.65 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5171,7 +5123,6 @@
 	)
 	(label "D1"
 		(at 123.19 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5182,7 +5133,6 @@
 	)
 	(label "A1"
 		(at 102.87 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5193,7 +5143,6 @@
 	)
 	(label "A13"
 		(at 64.77 97.79 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5204,7 +5153,6 @@
 	)
 	(label "A14"
 		(at 59.69 125.73 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5215,7 +5163,6 @@
 	)
 	(label "Ard19"
 		(at 133.35 165.1 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5226,7 +5173,6 @@
 	)
 	(label "Ard22"
 		(at 140.97 165.1 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5237,7 +5183,6 @@
 	)
 	(label "Ard2"
 		(at 100.33 34.29 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5248,7 +5193,6 @@
 	)
 	(label "Ard15"
 		(at 115.57 57.15 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5259,7 +5203,6 @@
 	)
 	(label "D6"
 		(at 162.56 124.46 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5270,7 +5213,6 @@
 	)
 	(label "Ard13"
 		(at 128.27 165.1 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5281,7 +5223,6 @@
 	)
 	(label "A7"
 		(at 113.03 97.79 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5292,7 +5233,6 @@
 	)
 	(label "Ard20"
 		(at 135.89 165.1 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5303,7 +5243,6 @@
 	)
 	(label "A0"
 		(at 118.11 124.46 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5314,7 +5253,6 @@
 	)
 	(label "Ard23"
 		(at 143.51 165.1 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5325,7 +5263,6 @@
 	)
 	(label "D0"
 		(at 170.18 124.46 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5336,7 +5273,6 @@
 	)
 	(label "Ard16"
 		(at 153.67 165.1 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5347,7 +5283,6 @@
 	)
 	(label "A3"
 		(at 118.11 97.79 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5358,7 +5293,6 @@
 	)
 	(label "A6"
 		(at 90.17 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5369,7 +5303,6 @@
 	)
 	(label "A8"
 		(at 67.31 125.73 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5380,7 +5313,6 @@
 	)
 	(label "Ard8"
 		(at 85.09 34.29 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5391,7 +5323,6 @@
 	)
 	(label "Ard14"
 		(at 146.05 165.1 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5402,7 +5333,6 @@
 	)
 	(label "A8"
 		(at 85.09 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5413,7 +5343,6 @@
 	)
 	(label "Ard10"
 		(at 80.01 34.29 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5424,7 +5353,6 @@
 	)
 	(label "Ard18"
 		(at 82.55 57.15 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5435,7 +5363,6 @@
 	)
 	(label "A9"
 		(at 69.85 97.79 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5446,7 +5373,6 @@
 	)
 	(label "Ard12"
 		(at 74.93 34.29 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5457,7 +5383,6 @@
 	)
 	(label "A13"
 		(at 72.39 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5468,7 +5393,6 @@
 	)
 	(label "A10"
 		(at 64.77 125.73 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5479,7 +5403,6 @@
 	)
 	(label "A1"
 		(at 120.65 97.79 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5490,7 +5413,6 @@
 	)
 	(label "A12"
 		(at 74.93 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5501,7 +5423,6 @@
 	)
 	(label "Ard4"
 		(at 157.48 120.65 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5512,7 +5433,6 @@
 	)
 	(label "D0"
 		(at 125.73 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5523,7 +5443,6 @@
 	)
 	(label "Ard21"
 		(at 90.17 57.15 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5534,7 +5453,6 @@
 	)
 	(label "Ard18"
 		(at 130.81 165.1 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5545,7 +5463,6 @@
 	)
 	(label "Ard11"
 		(at 54.61 127 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5556,7 +5473,6 @@
 	)
 	(label "A4"
 		(at 113.03 124.46 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5567,7 +5483,6 @@
 	)
 	(label "Ard8"
 		(at 57.15 97.79 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5578,7 +5493,6 @@
 	)
 	(label "A2"
 		(at 115.57 124.46 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5589,7 +5503,6 @@
 	)
 	(label "D2"
 		(at 167.64 124.46 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5600,7 +5513,6 @@
 	)
 	(label "A10"
 		(at 80.01 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5611,7 +5523,6 @@
 	)
 	(label "A5"
 		(at 92.71 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5622,7 +5533,6 @@
 	)
 	(label "A15"
 		(at 62.23 97.79 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5633,7 +5543,6 @@
 	)
 	(label "A12"
 		(at 62.23 125.73 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5644,7 +5553,6 @@
 	)
 	(label "A2"
 		(at 100.33 163.83 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)

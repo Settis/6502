@@ -1446,10 +1446,10 @@
 						)
 					)
 				)
-				(pin passive line
+				(pin no_connect line
 					(at 41.91 7.62 270)
 					(length 2.54)
-					(name "ROM_W"
+					(name "NA"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1482,7 +1482,7 @@
 						)
 					)
 				)
-				(pin passive line
+				(pin no_connect line
 					(at 46.99 7.62 270)
 					(length 2.54)
 					(name "NA"
@@ -1500,7 +1500,7 @@
 						)
 					)
 				)
-				(pin passive line
+				(pin no_connect line
 					(at 49.53 7.62 270)
 					(length 2.54)
 					(name "NA"
@@ -1518,7 +1518,7 @@
 						)
 					)
 				)
-				(pin passive line
+				(pin no_connect line
 					(at 52.07 7.62 270)
 					(length 2.54)
 					(name "NA"
@@ -1536,7 +1536,7 @@
 						)
 					)
 				)
-				(pin passive line
+				(pin no_connect line
 					(at 54.61 7.62 270)
 					(length 2.54)
 					(name "NA"
@@ -2345,12 +2345,6 @@
 		)
 	)
 	(junction
-		(at 118.11 54.61)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "05550283-c6cc-4757-88d8-7bbec25916c5")
-	)
-	(junction
 		(at 115.57 121.92)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2417,10 +2411,6 @@
 		(uuid "9a25c5a3-cb46-4d94-a2d0-81b95657bf71")
 	)
 	(no_connect
-		(at 125.73 143.51)
-		(uuid "c2e575b0-a415-46b7-b038-b07a25679e5c")
-	)
-	(no_connect
 		(at 148.59 143.51)
 		(uuid "c32f34a6-623a-442a-a51e-2fce141c6b59")
 	)
@@ -2431,6 +2421,10 @@
 	(no_connect
 		(at 143.51 143.51)
 		(uuid "d4c44c37-6bee-4c19-9e00-03153edb0581")
+	)
+	(no_connect
+		(at 140.97 143.51)
+		(uuid "ead9ed2f-e877-4d47-a5a6-5091bcbba962")
 	)
 	(no_connect
 		(at 153.67 143.51)
@@ -2942,6 +2936,16 @@
 		)
 		(uuid "1043d0e3-f072-4416-8b23-5acac2458a54")
 	)
+	(wire
+		(pts
+			(xy 119.38 123.19) (xy 119.38 71.12)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "10bd33a6-d6e6-45c3-85c7-d16ea30bc961")
+	)
 	(bus
 		(pts
 			(xy 102.87 134.62) (xy 115.57 134.62)
@@ -3021,16 +3025,6 @@
 			(type default)
 		)
 		(uuid "191c9fc3-1314-4922-9ebf-347221fec5c3")
-	)
-	(wire
-		(pts
-			(xy 110.49 62.23) (xy 110.49 71.12)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "1a4bba57-ff6d-4e75-b3e3-f2b2a4ae0e79")
 	)
 	(bus
 		(pts
@@ -3174,7 +3168,7 @@
 	)
 	(wire
 		(pts
-			(xy 118.11 54.61) (xy 124.46 54.61)
+			(xy 106.68 54.61) (xy 124.46 54.61)
 		)
 		(stroke
 			(width 0)
@@ -3244,6 +3238,16 @@
 	)
 	(wire
 		(pts
+			(xy 125.73 123.19) (xy 119.38 123.19)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3e4e63ae-9dcb-4890-a1a6-e175d009a124")
+	)
+	(wire
+		(pts
 			(xy 80.01 143.51) (xy 80.01 137.16)
 		)
 		(stroke
@@ -3301,6 +3305,16 @@
 			(type default)
 		)
 		(uuid "4c3a0edb-5b3d-49da-8e9e-d882ed605bca")
+	)
+	(wire
+		(pts
+			(xy 125.73 143.51) (xy 125.73 123.19)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4e0c8d08-3728-476f-9b75-7fb197243c06")
 	)
 	(wire
 		(pts
@@ -3374,16 +3388,6 @@
 	)
 	(wire
 		(pts
-			(xy 118.11 62.23) (xy 118.11 54.61)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "5c82ab57-3423-476d-9eb0-398490c5469d")
-	)
-	(wire
-		(pts
 			(xy 54.61 71.12) (xy 54.61 72.39)
 		)
 		(stroke
@@ -3394,7 +3398,7 @@
 	)
 	(wire
 		(pts
-			(xy 110.49 71.12) (xy 105.41 71.12)
+			(xy 105.41 71.12) (xy 119.38 71.12)
 		)
 		(stroke
 			(width 0)
@@ -4192,16 +4196,6 @@
 		)
 		(uuid "dd5690ad-3006-4ed4-a72f-6836d8cfb607")
 	)
-	(wire
-		(pts
-			(xy 106.68 54.61) (xy 118.11 54.61)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "dd95b023-7258-4d3a-9c17-af789e047e17")
-	)
 	(bus
 		(pts
 			(xy 115.57 88.9) (xy 115.57 121.92)
@@ -4344,7 +4338,6 @@
 	)
 	(label "A3"
 		(at 92.71 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4355,7 +4348,6 @@
 	)
 	(label "A6"
 		(at 85.09 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4366,7 +4358,6 @@
 	)
 	(label "A11"
 		(at 72.39 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4377,7 +4368,6 @@
 	)
 	(label "A5"
 		(at 77.47 78.74 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4388,7 +4378,6 @@
 	)
 	(label "A14"
 		(at 64.77 143.51 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4399,7 +4388,6 @@
 	)
 	(label "A5"
 		(at 87.63 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4410,7 +4398,6 @@
 	)
 	(label "D7"
 		(at 106.68 91.44 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4421,7 +4408,6 @@
 	)
 	(label "D1"
 		(at 78.74 96.52 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4432,7 +4418,6 @@
 	)
 	(label "A3"
 		(at 77.47 83.82 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4443,7 +4428,6 @@
 	)
 	(label "A9"
 		(at 107.95 78.74 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4454,7 +4438,6 @@
 	)
 	(label "D[0..7]"
 		(at 138.43 129.54 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4466,7 +4449,6 @@
 	)
 	(label "D6"
 		(at 106.68 93.98 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4477,7 +4459,6 @@
 	)
 	(label "A10"
 		(at 107.95 86.36 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4488,7 +4469,6 @@
 	)
 	(label "D7"
 		(at 102.87 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4499,7 +4479,6 @@
 	)
 	(label "D5"
 		(at 107.95 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4510,7 +4489,6 @@
 	)
 	(label "A6"
 		(at 77.47 76.2 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4521,7 +4499,6 @@
 	)
 	(label "A15"
 		(at 127 68.58 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4530,20 +4507,8 @@
 		)
 		(uuid "56421de0-ed43-453c-8c2b-1a867a012a8a")
 	)
-	(label "ROM_W"
-		(at 110.49 68.58 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "5b1f260d-70c8-4352-9e4e-ed652c4cb8dc")
-	)
 	(label "A8"
 		(at 80.01 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4554,7 +4519,6 @@
 	)
 	(label "A11"
 		(at 107.95 81.28 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4565,7 +4529,6 @@
 	)
 	(label "D3"
 		(at 106.68 101.6 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4576,7 +4539,6 @@
 	)
 	(label "Clock"
 		(at 123.19 143.51 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4585,20 +4547,8 @@
 		)
 		(uuid "73af0a4e-f6f7-4db3-baf6-ce5ea8c69a2e")
 	)
-	(label "ROM_W"
-		(at 140.97 143.51 90)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "74b6d02c-f6db-4bdd-9a7d-c6851daf418c")
-	)
 	(label "A13"
 		(at 107.95 73.66 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4609,7 +4559,6 @@
 	)
 	(label "A14"
 		(at 127 71.12 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4620,7 +4569,6 @@
 	)
 	(label "D4"
 		(at 106.68 99.06 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4631,7 +4579,6 @@
 	)
 	(label "A10"
 		(at 74.93 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4642,7 +4589,6 @@
 	)
 	(label "A0"
 		(at 77.47 91.44 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4653,7 +4599,6 @@
 	)
 	(label "D2"
 		(at 78.74 99.06 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4664,7 +4609,6 @@
 	)
 	(label "A9"
 		(at 77.47 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4675,7 +4619,6 @@
 	)
 	(label "A1"
 		(at 97.79 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4686,7 +4629,6 @@
 	)
 	(label "D3"
 		(at 113.03 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4697,7 +4639,6 @@
 	)
 	(label "D4"
 		(at 110.49 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4708,7 +4649,6 @@
 	)
 	(label "A12"
 		(at 77.47 71.12 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4719,7 +4659,6 @@
 	)
 	(label "A2"
 		(at 77.47 86.36 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4730,7 +4669,6 @@
 	)
 	(label "A2"
 		(at 95.25 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4741,7 +4679,6 @@
 	)
 	(label "A[0..15]"
 		(at 115.57 132.08 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4753,7 +4690,6 @@
 	)
 	(label "D0"
 		(at 120.65 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4764,7 +4700,6 @@
 	)
 	(label "A15"
 		(at 62.23 143.51 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4775,7 +4710,6 @@
 	)
 	(label "A8"
 		(at 107.95 76.2 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4786,7 +4720,6 @@
 	)
 	(label "A4"
 		(at 77.47 81.28 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4797,7 +4730,6 @@
 	)
 	(label "D0"
 		(at 78.74 93.98 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4808,7 +4740,6 @@
 	)
 	(label "A0"
 		(at 100.33 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4819,7 +4750,6 @@
 	)
 	(label "A7"
 		(at 82.55 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4830,7 +4760,6 @@
 	)
 	(label "D2"
 		(at 115.57 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4841,7 +4770,6 @@
 	)
 	(label "D6"
 		(at 105.41 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4852,7 +4780,6 @@
 	)
 	(label "A13"
 		(at 67.31 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4863,7 +4790,6 @@
 	)
 	(label "A7"
 		(at 77.47 73.66 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4874,7 +4800,6 @@
 	)
 	(label "Prog"
 		(at 105.41 83.82 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4885,7 +4810,6 @@
 	)
 	(label "Prog"
 		(at 60.96 93.98 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4896,7 +4820,6 @@
 	)
 	(label "D1"
 		(at 118.11 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4907,7 +4830,6 @@
 	)
 	(label "A1"
 		(at 77.47 88.9 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4918,7 +4840,6 @@
 	)
 	(label "A12"
 		(at 69.85 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4929,7 +4850,6 @@
 	)
 	(label "Clock"
 		(at 158.75 78.74 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4940,7 +4860,6 @@
 	)
 	(label "A4"
 		(at 90.17 142.24 90)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4951,7 +4870,6 @@
 	)
 	(label "D5"
 		(at 106.68 96.52 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5913,73 +5831,6 @@
 			(project "marcus"
 				(path "/03a78ca6-eaff-4f05-be7b-36cd15f8b56d/4e0565c2-54d5-42cd-9fad-4b6deda009d9"
 					(reference "J3")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 114.3 62.23 270)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "8a5d245c-3157-441f-b16d-49a14bec985e")
-		(property "Reference" "R9"
-			(at 114.3 56.9722 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "R"
-			(at 114.3 59.2836 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 114.3 60.452 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 114.3 62.23 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 114.3 62.23 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "3ff20e83-5539-47fc-9838-33f5023798ca")
-		)
-		(pin "1"
-			(uuid "75cba1c2-b071-49ad-836c-e98430a78e92")
-		)
-		(instances
-			(project "marcus"
-				(path "/03a78ca6-eaff-4f05-be7b-36cd15f8b56d/4e0565c2-54d5-42cd-9fad-4b6deda009d9"
-					(reference "R9")
 					(unit 1)
 				)
 			)

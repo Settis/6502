@@ -1809,7 +1809,6 @@
 	)
 	(label "P6"
 		(at 127 78.74 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1820,7 +1819,6 @@
 	)
 	(label "P5"
 		(at 127 86.36 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1831,7 +1829,6 @@
 	)
 	(label "P5"
 		(at 81.28 90.17 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1842,7 +1839,6 @@
 	)
 	(label "C2"
 		(at 127 83.82 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1853,7 +1849,6 @@
 	)
 	(label "P7"
 		(at 153.67 88.9 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1864,7 +1859,6 @@
 	)
 	(label "P7"
 		(at 81.28 85.09 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1875,7 +1869,6 @@
 	)
 	(label "P6"
 		(at 81.28 87.63 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1886,7 +1879,6 @@
 	)
 	(label "C1"
 		(at 153.67 83.82 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1897,7 +1889,6 @@
 	)
 	(label "C1"
 		(at 59.69 82.55 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1908,7 +1899,6 @@
 	)
 	(label "C2"
 		(at 81.28 82.55 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1919,7 +1909,6 @@
 	)
 	(label "{C[1..2] P[5..7]}"
 		(at 63.5 102.87 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
