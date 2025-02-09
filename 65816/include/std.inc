@@ -27,7 +27,7 @@
 
 .macro IND16
     REP #$10
-    .I8
+    .I16
 .endmacro
 
 .macro A8_IND8
