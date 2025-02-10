@@ -120,8 +120,8 @@ UART_51       = %1000000000100000
     .endscope
     controlReg = 3
     .scope controlReg
-        ; 1 stop bit & parity, 8 bits word length, internal baud rate, 9600
-        default = %10011110
+        ; 1 stop bit & parity, 8 bits word length, internal baud rate, 115200
+        default = %10010000
     .endscope
 .endscope
 

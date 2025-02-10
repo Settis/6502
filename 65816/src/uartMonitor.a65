@@ -1,0 +1,156 @@
+.include "../include/std.inc"
+.include "../include/uartImport.inc"
+
+.export UART_ADDR = UART_51
+
+INTERRUPT_INDIRECT = $FE ; word
+MEM_POINTER = $FC ; word
+DATA_LENGTH = $FB
+CRC_SUM = $FA
+
+UART_PING_COMMAND = 1
+UART_WRITE_COMMAND = 2
+UART_READ_COMMAND = 3
+UART_RUN_COMMAND = 4
+
+.segment "runner"
+.word $0200
+    JMP main
+
+.code
+.proc main
+    SEI ; it's not needed here, but in order to work with old uartMonitor
+    LDX $FF
+    TXS
+    ENABNE_NATIVE_MODE
+    JSR UART_INIT
+    IND16
+    ; put the interrupt guard
+    LDX #stop
+    STX INTERRUPT_INDIRECT
+    IND8
+@LOOP:
+    JSR read_uart_byte
+    BEQ @LOOP ; it should be >=0
+    CMP #5
+    BCS @LOOP ; it should be <=4
+    ASL
+    TAX
+    JSR (JUMP_TABLE-2,X)
+    BRA @LOOP
+.endproc
+
+.proc read_uart_byte
+    WAI ; wait for command
+    LDA UART_51 + W65C51::statusReg
+    LDA UART_51 + W65C51::dataReg
+    RTS
+.endproc
+
+JUMP_TABLE:
+.word ping_handler
+.word write_handler
+.word read_hander
+.word run_hander
+
+.proc ping_handler
+    JSR read_uart_byte
+    CLC
+    ADC #1
+    JMP UART_WRITE
+.endproc
+
+.proc write_handler
+    JSR read_uart_byte
+    STA MEM_POINTER
+    JSR read_uart_byte
+    STA MEM_POINTER+1
+    JSR read_uart_byte
+    STA DATA_LENGTH
+
+    STZ CRC_SUM
+    LDY #0
+@LOOP:
+    PHY
+    JSR read_uart_byte
+    PLY
+    STA (MEM_POINTER),Y
+    PHY
+    JSR CRC_IT
+    PLY
+    INY
+    CPY DATA_LENGTH
+    BNE @LOOP
+
+    LDA CRC_SUM
+    JMP UART_WRITE
+.endproc
+
+.proc read_hander
+    JSR read_uart_byte
+    STA MEM_POINTER
+    JSR read_uart_byte
+    STA MEM_POINTER+1
+    JSR read_uart_byte
+    STA DATA_LENGTH
+
+    STZ CRC_SUM
+    LDY #0
+@LOOP:
+    LDA (MEM_POINTER),Y
+    PHY
+    PHA
+    JSR CRC_IT
+    PLA
+    JSR UART_WRITE
+    PLY
+    INY
+    CPY DATA_LENGTH
+    BNE @LOOP
+
+    LDA CRC_SUM
+    JMP UART_WRITE
+.endproc
+
+.proc CRC_IT ; a - data
+    EOR CRC_SUM
+    LDX #8
+@loop:
+    ASL
+    BCC @next
+    EOR #$07
+@next:
+    DEX
+    BNE @loop
+    STA CRC_SUM
+    RTS
+.endproc
+
+.proc run_hander
+    JSR read_uart_byte
+    STA MEM_POINTER
+    JSR read_uart_byte
+    STA MEM_POINTER+1
+
+    LDX #0
+    JSR (MEM_POINTER,X)
+
+    ; Clean after the program
+    SEI
+    A8_IND8
+    LDA #4
+    JMP UART_WRITE
+.endproc
+
+.proc irq
+    JMP (INTERRUPT_INDIRECT)
+.endproc
+
+.proc stop
+    STP ; guard
+.endproc
+
+.segment "resetVector"
+    .word irq ; NMI
+    .word main ; RESET
+    .word irq ; IRQ

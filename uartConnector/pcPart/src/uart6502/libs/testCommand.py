@@ -33,6 +33,7 @@ def run_test(args):
         sys.exit(1)
     print('Run the program')
     run_run(dev, OFFSET)
+    print('Check run result')
     result = run_read(dev, OFFSET, 1)
     if result[0] != 0xB5:
         print('The result of program run is wrong')

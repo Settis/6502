@@ -45,13 +45,9 @@ def run_read_chunk(dev, offset, size):
         dev.write(bytes([size]))
     result = []
     for i in range(size):
-        # send something to trigger interrupt
-        dev.write(bytes([0]))
         result.append(dev.read(1)[0])
 
     calc_crc = crc(result)
-    # send something to trigger interrupt
-    dev.write(bytes([0]))
     rec_crc = dev.read(1)[0]
     if calc_crc != rec_crc:
         print('Checksum is wrong')

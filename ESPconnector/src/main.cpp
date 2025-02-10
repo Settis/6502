@@ -40,7 +40,7 @@ void setup() {
     }
   }
   Serial.println("mDNS responder started");
-  Serial2.begin(9600, SERIAL_8E1);
+  Serial2.begin(115200, SERIAL_8E1);
   server.begin();
   server.setNoDelay(true);
   Serial.println("telnet server started");

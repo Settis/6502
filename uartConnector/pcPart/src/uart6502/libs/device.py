@@ -19,7 +19,7 @@ class Device(ABC):
 class UsbDevice(Device):
     def __init__(self, dev) -> None:
         super().__init__()
-        self.serial = serial.Serial(dev, parity=serial.PARITY_EVEN)
+        self.serial = serial.Serial(dev, baudrate=115200, parity=serial.PARITY_EVEN)
 
     def write(self, data: bytes):
         self.serial.write(data)

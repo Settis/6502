@@ -25,12 +25,12 @@
 .proc UART_WRITE ; A - data to write
     STA UART_ADDR+W65C51::dataReg
     ; Wait untill the byte is transfered
-    ; 9600 baud rate
+    ; 115200 baud rate
     ; frame is 11 bits 
-    ; 1/(9600/11) = 0.001146 s per byte
-    ; 1,146 ms / 0.16 us = 7163 ticks
-    LDX #74
-    LDY #19
-    ; it should be 7164
+    ; 1/(115200/11) = 0.00009548 s per byte
+    ; 95.48 us / 0.16 us = 573 ticks
+    LDX #21
+    LDY #5
+    ; it should be 575
     JMP DELAY_LOOP
 .endproc
