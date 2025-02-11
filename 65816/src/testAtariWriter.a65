@@ -6,7 +6,6 @@
 .export UART_ADDR = UART_51
 
 .segment "runner"
-.word $0200
     JMP main
 
 .code

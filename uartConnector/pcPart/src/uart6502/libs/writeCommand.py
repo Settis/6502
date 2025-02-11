@@ -16,7 +16,9 @@ def register_write(subparsers):
 @timer("Write")
 def run_write_cmd(args):
     data = Data(args)
-    run_write(connect(args.dev), data.offset, data.content)
+    dev = connect(args.dev)
+    for chunk in data.chunks:
+        run_write(dev, chunk.start, chunk.data)
 
 
 def run_write(dev, offset, data):
@@ -47,17 +49,23 @@ def run_write_chunk(dev, offset, data):
 
 class Data:
     def __init__(self, args):
+        self.chunks = []
         with open(args.file, 'rb') as file:
-            self.offset = convert_word_bytes_to_number(file.read(2))
-            self.content = []
-            while byte := file.read(1):
-                self.content.append(byte[0])
+            while True:
+                two_bytes = file.read(2)
+                if not two_bytes:
+                    break
+                start = convert_word_bytes_to_number(two_bytes)
+                if (start == 0xFFFF):
+                    start = convert_word_bytes_to_number(file.read(2))
+                end = convert_word_bytes_to_number(file.read(2))
+                data = []
+                for i in range(start, end+1):
+                    data.append(file.read(1)[0])
+                self.chunks.append(Chunk(start, data))
 
-    def get_little_endian_offset(self):
-        return convert_word_number_to_bytes(self.offset)
 
-    def get_length(self):
-        return bytes([len(self.content)])
-
-    def get_data(self):
-        return bytes(self.content)
+class Chunk:
+    def __init__(self, start, data):
+        self.start = start
+        self.data = data
