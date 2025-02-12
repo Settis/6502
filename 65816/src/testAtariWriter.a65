@@ -2,13 +2,13 @@
 .include "../include/uartImport.inc"
 .include "../include/uartDebugMsg.inc"
 
+; Libs: uart, delay, uartDebugMsg, atariWriter
+
 .import COPY_ATARI_DATA
 .export UART_ADDR = UART_51
 
-.segment "runner"
-    JMP main
-
 .code
+.export main
 .proc main
     ENABNE_NATIVE_MODE
     JSR zero_memory
