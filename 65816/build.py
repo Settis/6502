@@ -16,9 +16,26 @@ def parse_args():
 def get_obj_file_name(src_file_name):
     return src_file_name[:-3] + 'o'
 
-def ensure_obj_file(src_file_name):
+def obj_is_actual(src_file_name):
     obj_file_name = get_obj_file_name(src_file_name)
-    if os.path.exists(obj_file_name) and os.path.getmtime(obj_file_name) > os.path.getmtime(src_file_name):
+    if not os.path.exists(obj_file_name):
+        return False
+    obj_time = os.path.getmtime(obj_file_name)
+    if obj_time < os.path.getmtime(src_file_name):
+        return False
+    src_file_dir = os.path.dirname(src_file_name)
+    with open(src_file_name, 'r') as src_file:
+        for line in src_file.readlines():
+            match = re.match(r"\s*\.(?:include|incbin)\s+\"(.+)\"", line)
+            if match:
+                included_file = match.group(1)
+                included_file_name = os.path.normpath(os.path.join(src_file_dir, included_file))
+                if obj_time < os.path.getmtime(included_file_name):
+                    return False
+    return True
+
+def ensure_obj_file(src_file_name):
+    if obj_is_actual(src_file_name):
         return # obj file is already up to date
     p = subprocess.run(['ca65', src_file_name], capture_output=True)
     exit_code = p.returncode
