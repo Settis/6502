@@ -1,0 +1,62 @@
+.include "../include/std.inc"
+
+.A16
+.I16
+
+.zeropage
+SP: 
+    .res 2
+IP:
+    .res 2
+W:
+    .res 2
+
+.code
+.proc NEXT
+    LDA (IP)
+    LDX IP
+    INX
+    INX
+    STX IP
+    TAX
+    INC A
+    INC A
+    STA W
+    JMP (0,X)
+.endproc
+
+.proc DOCOL
+    LDA IP
+    PHA
+    LDA W
+    STA IP
+    JMP NEXT
+.endproc
+
+FORTH_WORD_DOSEMICOL:
+.word DOSEMICOL
+.proc DOSEMICOL ;S
+    PLA
+    STA IP
+    JMP NEXT
+.endproc
+
+.proc PULL_SP ; data in A
+    LDA (SP)
+    LDX SP
+    INX
+    INX
+    STX SP
+    RTS
+.endproc
+
+.proc PUSH_SP ; data in A
+    LDX SP
+    DEX
+    DEX
+    STX SP
+    STA (SP)
+    RTS
+.endproc
+
+.include "../forth/core.a65"

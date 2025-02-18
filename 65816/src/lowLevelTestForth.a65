@@ -1,0 +1,2 @@
+.include "../include/std.inc"
+.include "../include/forth.inc"
