@@ -15,10 +15,10 @@ class ForthWord:
             return
         for word in line.split('\\')[0].split(' '):
             if word:
-                self.lines.append(f"    .word FORTH_WORD_{word}")
+                self.lines.append(f"    .word FORTH_WORD_{print_name(word)}")
 
     def get_content(self) -> str:
-        output_lines = [f"FORTH_WORD_{self.name}:", 
+        output_lines = [f"FORTH_WORD_{print_name(self.name)}:", 
                         '    .word DOCOL']
         output_lines.extend(self.lines)
         output_lines.append('    .word FORTH_WORD_DOSEMICOL')
@@ -39,13 +39,21 @@ class AsmWord:
         self.lines.append(line)
 
     def get_content(self) -> str:
-        output_lines = [f"FORTH_WORD_{self.name}:", 
-                        f"    .word FORTH_WORD_{self.name}_CODE",
-                        f"FORTH_WORD_{self.name}_CODE:"]
+        output_lines = [f"FORTH_WORD_{print_name(self.name)}:", 
+                        f"    .word FORTH_WORD_{print_name(self.name)}_CODE",
+                        f"FORTH_WORD_{print_name(self.name)}_CODE:"]
         output_lines.extend(self.lines)
         if not self.lines[-1].strip().startswith('JMP'):
             output_lines.append('    JMP NEXT')
         return "\n".join(output_lines)
+    
+def print_name(name: str) -> str:
+    return (name.replace('!', 'EXCL')
+        .replace('@', 'AT')
+        .replace('>', 'GT')
+        .replace('+', 'PLUS')
+        .replace('*', 'MUL')
+        .replace('=', 'EQ'))
 
 class Program:
     def __init__(self):
@@ -53,6 +61,9 @@ class Program:
         self.current_word = None
 
     def add_line(self, line: str):
+        if line.strip() == '':
+            return
+        
         if self.current_word:
             self.current_word.add_line(line)
             if self.current_word.ended:
@@ -88,7 +99,7 @@ class Program:
         if word.immediate:
             flags += ' | $40'
         return textwrap.dedent(f"""\
-            FORTH_WORD_{word.name}_H:
+            FORTH_WORD_{print_name(word.name)}_H:
                 .byte {flags} | .strlen("{word.name}")
                 .byte "{word.name}\"""")
 
@@ -101,13 +112,13 @@ class Program:
             if not word.hide:
                 chunks.append(self.get_header(word))
                 if last_word:
-                    chunks.append(f"    .word FORTH_WORD_{last_word.name}_H")
+                    chunks.append(f"    .word FORTH_WORD_{print_name(last_word.name)}_H")
                 else:
                     chunks.append('    .word 0')
             chunks.append(word.get_content())
             if not word.hide:
                 last_word = word
-        chunks.append(f"LAST_WORD = FORTH_WORD_{last_word.name}_H\n")
+        chunks.append(f"LAST_WORD = FORTH_WORD_{print_name(last_word.name)}_H\n")
         return "\n".join(chunks)
 
 def compile():

@@ -1,2 +1,518 @@
 .include "../include/std.inc"
 .include "../include/forth.inc"
+.include "../include/uartImport.inc"
+.include "../include/uartDebugMsg.inc"
+
+; Libs: uart, delay, uartDebugMsg, forth
+
+.export UART_ADDR = UART_51
+
+.zeropage
+TESTS:
+    .res 1
+FAILS:
+    .res 1
+OK:
+    .res 1
+RESULT:
+    .res 1
+
+REUSLT_OK = $AA
+SP_HEAD = $F0 ; assuming that I have some space in ZP
+
+.code
+.export MAIN
+.proc MAIN
+    A8_IND8
+
+    JSR UART_PRINT_STRING
+    .asciiz "Tests: "
+
+    STZ TESTS
+    STZ FAILS
+    STZ OK
+    LDX #0
+@LOOP:
+    STZ RESULT
+    PHX
+    A16_IND16
+    LDA #SP_HEAD
+    STA SP
+    JSR (TEST_LIST,X)
+    A8_IND8
+    INC TESTS
+    LDA RESULT
+    CMP #REUSLT_OK
+        BNE @NOT_OK
+        INC OK
+        LDA #'.'
+        JSR UART_WRITE
+        BRA @LOOP_TAIL
+@NOT_OK:
+    INC FAILS
+    LDA #'F'
+    JSR UART_WRITE
+
+@LOOP_TAIL:
+    PLX
+    INX
+    INX
+    CPX #(TEST_LIST_END-TEST_LIST)
+    BCC @LOOP
+
+    JSR UART_PRINT_NEW_LINE
+
+    JSR UART_PRINT_STRING
+    .asciiz "Tests total: "
+    LDA TESTS
+    JSR UART_PRINT_HEX
+    JSR UART_PRINT_NEW_LINE
+
+    JSR UART_PRINT_STRING
+    .asciiz "OK: "
+    LDA OK
+    JSR UART_PRINT_HEX
+    JSR UART_PRINT_NEW_LINE
+
+    JSR UART_PRINT_STRING
+    .asciiz "FAILS: "
+    LDA FAILS
+    JSR UART_PRINT_HEX
+    JSR UART_PRINT_NEW_LINE
+
+    RTS
+.endproc
+
+TEST_LIST:
+.word TEST_FORTH_WORD_CALLING
+.word TEST_FORTH_WORD_LIT
+.word TEST_FORTH_NESTED_WORDS
+.word TEST_FORTH_WORD_EXCL
+.word TEST_FORTH_WORD_AT
+.word TEST_FORTH_WORD_CEXCL
+.word TEST_FORTH_WORD_CAT
+.word TEST_FORTH_WORD_R
+.word TEST_FORTH_WORD_PLUS
+.word TEST_FORTH_WORD_2MUL
+.word TEST_FORTH_WORD_DROP
+.word TEST_FORTH_WORD_DUP
+.word TEST_FORTH_WORD_SWAP
+.word TEST_FORTH_WORD_OVER
+.word TEST_FORTH_WORD_ROT
+.word TEST_FORTH_WORD_NOT
+.word TEST_FORTH_WORD_OR
+.word TEST_FORTH_WORD_AND
+.word TEST_FORTH_WORD_XOR
+.word TEST_FORTH_WORD_0EQ_FALSE
+.word TEST_FORTH_WORD_0EQ_TRUE
+.word TEST_FORTH_BRANCH_THEN
+.word TEST_FORTH_BRANCH_ELSE
+TEST_LIST_END:
+
+.A16
+.I16
+.proc MARK_TEST_PASSED
+    A8
+    LDA #REUSLT_OK
+    STA RESULT
+    A16
+    RTS
+.endproc
+
+.proc RETURN_TO_TEST
+    .word @CODE
+@CODE:
+    RTS
+.endproc
+
+.proc EXECUTE_FORTH_FOR_TEST
+    JSR PUSH_SP
+    PLA
+    INC A
+    STA RETURN_ADDRESS
+    LDA #RETURN_PTR
+    STA IP
+    JMP FORTH_WORD_EXECUTE_CODE
+.endproc
+RETURN_PTR:
+    .word RETURN_ADDRESS
+RETURN_ADDRESS:
+    .word 0
+
+.macro FAIL_IF_NOT_EQ
+.scope
+    BEQ @PASS
+    RTS
+@PASS:
+.endscope
+.endmacro
+
+.macro CHECK_SP
+    LDA SP
+    CMP #SP_HEAD
+    FAIL_IF_NOT_EQ
+.endmacro
+
+.proc TEST_FORTH_WORD_CALLING
+    LDA #SIPMLE_FORTH_WORD ; function just exits
+    JSR EXECUTE_FORTH_FOR_TEST
+    CHECK_SP  ; we are here & this is success. And data stack is not touched
+    JMP MARK_TEST_PASSED
+.endproc
+.proc SIPMLE_FORTH_WORD
+    .word DOCOL
+    .word FORTH_WORD_DOSEMICOL
+.endproc
+
+.proc TEST_FORTH_WORD_LIT
+    LDA #T_PUSH_5A
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: 55AA
+    CMP #$55AA
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+.proc T_PUSH_5A
+    .word DOCOL
+    .word FORTH_WORD_LIT
+    .word $55AA
+    .word FORTH_WORD_DOSEMICOL
+.endproc
+
+.proc TEST_FORTH_NESTED_WORDS
+    LDA #T_REUSE_PUSH_5A
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: 55AA, 55AA
+    CMP #$55AA
+    FAIL_IF_NOT_EQ
+    JSR PULL_SP
+    CMP #$55AA
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+.proc T_REUSE_PUSH_5A
+    .word DOCOL
+    .word T_PUSH_5A ; Call FORTH word from another FORTH word
+    .word T_PUSH_5A 
+    .word FORTH_WORD_DOSEMICOL
+.endproc
+
+TWO_BYTES_OF_MEMORY:
+.word 0
+.proc TEST_FORTH_WORD_EXCL
+    STZ TWO_BYTES_OF_MEMORY
+    LDA #$FFAA 
+    JSR PUSH_SP
+    LDA #TWO_BYTES_OF_MEMORY
+    JSR PUSH_SP
+    LDA #FORTH_WORD_EXCL ; DataStack: FFAA, ADDR
+    JSR EXECUTE_FORTH_FOR_TEST
+    CHECK_SP ; data stack is empty
+    LDA TWO_BYTES_OF_MEMORY
+    CMP #$FFAA
+    FAIL_IF_NOT_EQ
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_FORTH_WORD_AT
+    LDA #$BCDE
+    STA TWO_BYTES_OF_MEMORY
+    LDA #TWO_BYTES_OF_MEMORY
+    JSR PUSH_SP
+    LDA #FORTH_WORD_AT ; DataStack: ADDR
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: BCDE
+    CMP #$BCDE
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_FORTH_WORD_CEXCL
+    LDA #$1234
+    STA TWO_BYTES_OF_MEMORY
+    LDA #$5678
+    JSR PUSH_SP
+    LDA #TWO_BYTES_OF_MEMORY
+    JSR PUSH_SP ; DataStack: 5678, ADDR
+    LDA #FORTH_WORD_CEXCL
+    JSR EXECUTE_FORTH_FOR_TEST
+    CHECK_SP ; Data stack is empty
+    LDA TWO_BYTES_OF_MEMORY
+    CMP #$1278 ; but only lower byte was updated
+    FAIL_IF_NOT_EQ
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_FORTH_WORD_CAT
+    LDA #$BCDE
+    STA TWO_BYTES_OF_MEMORY
+    LDA #TWO_BYTES_OF_MEMORY
+    JSR PUSH_SP ; DataStack: ADDR
+    LDA #FORTH_WORD_CAT
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: 00DE
+    CMP #$00DE ; Because only one byte was readed
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_FORTH_WORD_R
+    LDA #$BEEF
+    JSR PUSH_SP
+    LDA #T_R_CHECK ; DataStack: BEEF
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: 1111, BEEF, 2222, BEEF
+    CMP #$BEEF
+    FAIL_IF_NOT_EQ
+    JSR PULL_SP
+    CMP #$2222
+    FAIL_IF_NOT_EQ
+    JSR PULL_SP
+    CMP #$BEEF
+    FAIL_IF_NOT_EQ
+    JSR PULL_SP
+    CMP #$1111
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+.proc T_R_CHECK ; N -- 1111 N 2222 N
+    .word DOCOL
+    .word FORTH_WORD_GTR
+    .word FORTH_WORD_LIT
+    .word $1111
+    .word FORTH_WORD_R
+    .word FORTH_WORD_LIT
+    .word $2222
+    .word FORTH_WORD_RGT
+    .word FORTH_WORD_DOSEMICOL
+.endproc
+
+.proc TEST_FORTH_WORD_PLUS
+    LDA #$1234
+    JSR PUSH_SP
+    LDA #$4321
+    JSR PUSH_SP
+    LDA #FORTH_WORD_PLUS ; DataStack: 1234, 4321
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: 5555
+    CMP #$5555
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_FORTH_WORD_2MUL
+    LDA #$1234
+    JSR PUSH_SP
+    LDA #FORTH_WORD_2MUL ; DataStack: 1234
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: 2468
+    CMP #$2468
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_FORTH_WORD_DROP
+    LDA #$1234
+    JSR PUSH_SP
+    LDA #FORTH_WORD_DROP ; DataStack: 1234
+    JSR EXECUTE_FORTH_FOR_TEST
+    CHECK_SP ; Data stack is empty
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_FORTH_WORD_DUP
+    LDA #$1234
+    JSR PUSH_SP
+    LDA #FORTH_WORD_DUP ; DataStack: 1234
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: 1234, 1234
+    CMP #$1234
+    FAIL_IF_NOT_EQ
+    JSR PULL_SP
+    CMP #$1234
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_FORTH_WORD_SWAP
+    LDA #$1234
+    JSR PUSH_SP
+    LDA #$4321
+    JSR PUSH_SP
+    LDA #FORTH_WORD_SWAP ; DataStack: 1234, 4321
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: 4321, 1234
+    CMP #$1234
+    FAIL_IF_NOT_EQ
+    JSR PULL_SP
+    CMP #$4321
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_FORTH_WORD_OVER
+    LDA #$1234
+    JSR PUSH_SP
+    LDA #$4321
+    JSR PUSH_SP
+    LDA #FORTH_WORD_OVER ; DataStack: 1234, 4321
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: 1234, 4321, 1234
+    CMP #$1234
+    FAIL_IF_NOT_EQ
+    JSR PULL_SP
+    CMP #$4321
+    FAIL_IF_NOT_EQ
+    JSR PULL_SP
+    CMP #$1234
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_FORTH_WORD_ROT
+    LDA #$1111
+    JSR PUSH_SP
+    LDA #$2222
+    JSR PUSH_SP
+    LDA #$3333
+    JSR PUSH_SP
+    LDA #FORTH_WORD_ROT ; DataStack: 1111, 2222, 3333
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: 2222, 3333, 1111
+    CMP #$1111
+    FAIL_IF_NOT_EQ
+    JSR PULL_SP
+    CMP #$3333
+    FAIL_IF_NOT_EQ
+    JSR PULL_SP
+    CMP #$2222
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_FORTH_WORD_NOT
+    LDA #$5500
+    JSR PUSH_SP
+    LDA #FORTH_WORD_NOT ; DataStack: 5500
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: AAFF
+    CMP #$AAFF
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_FORTH_WORD_OR
+    LDA #$5500
+    JSR PUSH_SP
+    LDA #$00FA
+    JSR PUSH_SP
+    LDA #FORTH_WORD_OR ; DataStack: 5500, 00FA
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: 55FA
+    CMP #$55FA
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_FORTH_WORD_AND
+    LDA #$55FA
+    JSR PUSH_SP
+    LDA #$0F0F
+    JSR PUSH_SP
+    LDA #FORTH_WORD_AND ; DataStack: 55FA, 0F0F
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: 050A
+    CMP #$050A
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_FORTH_WORD_XOR
+    LDA #$55AA
+    JSR PUSH_SP
+    LDA #$0F0F
+    JSR PUSH_SP
+    LDA #FORTH_WORD_XOR ; DataStack: 55AA, 0F0F
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: 5AA5
+    CMP #$5AA5
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_FORTH_WORD_0EQ_FALSE
+    LDA #1
+    JSR PUSH_SP
+    LDA #FORTH_WORD_0EQ ; DataStack: 1
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: 0
+    CMP #0
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_FORTH_WORD_0EQ_TRUE
+    LDA #0
+    JSR PUSH_SP
+    LDA #FORTH_WORD_0EQ ; DataStack: 0
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: FFFF
+    CMP #$FFFF
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_FORTH_BRANCH_THEN
+    LDA #1
+    JSR PUSH_SP
+    LDA #T_BRANCH ; DataStack: 1
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: 1111
+    CMP #$1111
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED  
+.endproc
+.proc T_BRANCH
+    .word DOCOL
+    .word FORTH_WORD_0BRANCH
+    .word @ZERO
+    .word FORTH_WORD_LIT
+    .word $1111
+    .word FORTH_WORD_BRANCH
+    .word @END
+@ZERO:
+    .word FORTH_WORD_LIT
+    .word $2222
+@END:
+    .word FORTH_WORD_DOSEMICOL
+.endproc
+
+.proc TEST_FORTH_BRANCH_ELSE
+    LDA #0
+    JSR PUSH_SP
+    LDA #T_BRANCH ; DataStack: 0
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: 2222
+    CMP #$2222
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED 
+.endproc

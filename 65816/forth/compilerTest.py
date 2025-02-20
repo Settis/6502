@@ -143,6 +143,25 @@ class TestWordCompilation(unittest.TestCase):
             LAST_WORD = FORTH_WORD_SOME_H
             '''))
 
+    def test_ignore_empty_line(self):
+        self.assertEqual(compile.compile_lines(textwrap.dedent('''\
+            : SOME
+                FOO
+
+            ;
+            
+            ''')), textwrap.dedent('''\
+            FORTH_WORD_SOME_H:
+                .byte $80 | .strlen("SOME")
+                .byte "SOME"
+                .word 0
+            FORTH_WORD_SOME:
+                .word DOCOL
+                .word FORTH_WORD_FOO
+                .word FORTH_WORD_DOSEMICOL
+            LAST_WORD = FORTH_WORD_SOME_H
+            '''))
+
     def test_literal_reusage(self):
         pass
 

@@ -4,14 +4,26 @@
 .I16
 
 .zeropage
+.exportzp SP
 SP: 
     .res 2
+.exportzp IP
 IP:
     .res 2
 W:
     .res 2
 
 .code
+
+.export DOCOL
+.proc DOCOL
+    LDA IP
+    PHA
+    LDA W
+    STA IP
+    ; JMP NEXT 
+    ; this is the next procedure
+.endproc
 .proc NEXT
     LDA (IP)
     LDX IP
@@ -25,38 +37,49 @@ W:
     JMP (0,X)
 .endproc
 
-.proc DOCOL
-    LDA IP
-    PHA
-    LDA W
-    STA IP
-    JMP NEXT
-.endproc
-
-FORTH_WORD_DOSEMICOL:
-.word DOSEMICOL
-.proc DOSEMICOL ;S
-    PLA
-    STA IP
-    JMP NEXT
-.endproc
-
+.export PULL_SP
 .proc PULL_SP ; data in A
-    LDA (SP)
-    LDX SP
-    INX
-    INX
-    STX SP
-    RTS
-.endproc
+    LDA (SP)  ; 6
+    LDX SP    ; 4
+    INX       ; 2
+    INX       ; 2
+    STX SP    ; 4
+    RTS       ; 6 + 6 for JSR
+.endproc      ; total 30
 
+.export PUSH_SP
 .proc PUSH_SP ; data in A
-    LDX SP
-    DEX
-    DEX
-    STX SP
-    STA (SP)
-    RTS
-.endproc
+    LDX SP    ; 4
+    DEX       ; 2
+    DEX       ; 2
+    STX SP    ; 4
+    STA (SP)  ; 6
+    RTS       ; 6 + 6 for JSR
+.endproc      ; total 30
 
 .include "../forth/core.a65"
+.export FORTH_WORD_DOSEMICOL
+.export FORTH_WORD_LIT
+.export FORTH_WORD_EXECUTE_CODE
+.export FORTH_WORD_EXCL
+.export FORTH_WORD_AT
+.export FORTH_WORD_CEXCL
+.export FORTH_WORD_CAT
+.export FORTH_WORD_RGT
+.export FORTH_WORD_R
+.export FORTH_WORD_GTR
+.export FORTH_WORD_PLUS
+.export FORTH_WORD_2MUL
+.export FORTH_WORD_DROP
+.export FORTH_WORD_DUP
+.export FORTH_WORD_SWAP
+.export FORTH_WORD_OVER
+.export FORTH_WORD_ROT
+.export FORTH_WORD_NOT
+.export FORTH_WORD_OR
+.export FORTH_WORD_AND
+.export FORTH_WORD_XOR
+.export LAST_WORD
+.export FORTH_WORD_0EQ
+.export FORTH_WORD_BRANCH
+.export FORTH_WORD_0BRANCH
