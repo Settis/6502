@@ -1,21 +1,70 @@
 #!/bin/env python3
+from dataclasses import dataclass
 import textwrap
+import re
+from typing import Set
+
+@dataclass
+class ProgramState:
+    defined_words: Set[str]
+    last_label_number: int
+
+def is_digit(word: str) -> bool:
+    return re.match(r'^\d+$', word) or re.match(r'^\$[\da-fA-F]+$', word)
 
 class ForthWord:
-    def __init__(self, name: str):
+    def __init__(self, prog_state: ProgramState, name: str):
+        self.prog_state = prog_state
         self.name = name
         self.lines = []
         self.immediate = False
         self.hide = False
         self.ended = False
+        self.labels_stack = []
 
     def add_line(self, line: str):
         if line == ';':
+            if len(self.labels_stack) != 0:
+                raise Exception("label stack is not empty")
             self.ended = True
             return
+
         for word in line.split('\\')[0].split(' '):
             if word:
-                self.lines.append(f"    .word FORTH_WORD_{print_name(word)}")
+                self.process_word(word)
+            
+    def get_next_lablel(self):
+        label = self.prog_state.last_label_number + 1
+        self.prog_state.last_label_number = label
+        return label
+
+    def process_word(self, word):
+        if word == 'IF':
+            label = self.get_next_lablel()
+            self.lines.append('    .word FORTH_WORD_0BRANCH')
+            self.lines.append(f"    .word FORTH_BRANCH_{label}")
+            self.labels_stack.append(label)
+            return
+        
+        if word == 'ELSE':
+            old_label = self.labels_stack.pop()
+            label = self.get_next_lablel()
+            self.lines.append('    .word FORTH_WORD_BRANCH')
+            self.lines.append(f"    .word FORTH_BRANCH_{label}")
+            self.lines.append(f"FORTH_BRANCH_{old_label}:")
+            self.labels_stack.append(label)
+            return
+
+        if word == 'THEN':
+            label = self.labels_stack.pop()
+            self.lines.append(f"FORTH_BRANCH_{label}:")
+            return
+
+        if is_digit(word) and not word in self.prog_state.defined_words:
+            self.lines.append('    .word FORTH_WORD_LIT')
+            self.lines.append(f"    .word {word}")
+        else:
+            self.lines.append(f"    .word FORTH_WORD_{print_name(word)}")
 
     def get_content(self) -> str:
         output_lines = [f"FORTH_WORD_{print_name(self.name)}:", 
@@ -59,6 +108,7 @@ class Program:
     def __init__(self):
         self.words = []
         self.current_word = None
+        self.prog_state = ProgramState(set(), 0)
 
     def add_line(self, line: str):
         if line.strip() == '':
@@ -67,12 +117,13 @@ class Program:
         if self.current_word:
             self.current_word.add_line(line)
             if self.current_word.ended:
+                self.prog_state.defined_words.add(self.current_word.name)
                 self.current_word = None
             return
         
         if line.startswith(': '):
             name = line.split(' ')[1]
-            word = ForthWord(name)
+            word = ForthWord(self.prog_state, name)
             self.words.append(word)
             self.current_word = word
             return

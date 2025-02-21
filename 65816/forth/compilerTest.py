@@ -4,6 +4,10 @@ import unittest
 import compile
 
 class TestWordCompilation(unittest.TestCase):
+    def __init__(self, methodName = "runTest"):
+        super().__init__(methodName)
+        self.maxDiff = None
+
     def test_word(self):
         self.assertEqual(compile.compile_lines(textwrap.dedent('''\
             : SOME
@@ -162,14 +166,110 @@ class TestWordCompilation(unittest.TestCase):
             LAST_WORD = FORTH_WORD_SOME_H
             '''))
 
+    def test_literal_dec_hex(self):
+        self.assertEqual(compile.compile_lines(textwrap.dedent('''\
+            : LITERALS
+                1234 $56F
+            ;
+            ''')), textwrap.dedent('''\
+            FORTH_WORD_LITERALS_H:
+                .byte $80 | .strlen("LITERALS")
+                .byte "LITERALS"
+                .word 0
+            FORTH_WORD_LITERALS:
+                .word DOCOL
+                .word FORTH_WORD_LIT
+                .word 1234
+                .word FORTH_WORD_LIT
+                .word $56F
+                .word FORTH_WORD_DOSEMICOL
+            LAST_WORD = FORTH_WORD_LITERALS_H
+            '''))
+
     def test_literal_reusage(self):
-        pass
+        self.assertEqual(compile.compile_lines(textwrap.dedent('''\
+            : 1
+                1
+            ;
+            : 3
+                1 2 +
+            ;
+            ''')), textwrap.dedent('''\
+            FORTH_WORD_1_H:
+                .byte $80 | .strlen("1")
+                .byte "1"
+                .word 0
+            FORTH_WORD_1:
+                .word DOCOL
+                .word FORTH_WORD_LIT
+                .word 1
+                .word FORTH_WORD_DOSEMICOL
+            FORTH_WORD_3_H:
+                .byte $80 | .strlen("3")
+                .byte "3"
+                .word FORTH_WORD_1_H
+            FORTH_WORD_3:
+                .word DOCOL
+                .word FORTH_WORD_1
+                .word FORTH_WORD_LIT
+                .word 2
+                .word FORTH_WORD_PLUS
+                .word FORTH_WORD_DOSEMICOL
+            LAST_WORD = FORTH_WORD_3_H
+            '''))
 
     def test_string_literal(self):
         pass
 
     def test_if(self):
-        pass
+        self.assertEqual(compile.compile_lines(textwrap.dedent('''\
+            : IF_TEST
+                IF
+                    PRE_NESTED
+                    IF
+                        FIRST
+                    ELSE
+                        SECOND
+                    THEN
+                    POST_NESTED
+                ELSE
+                    THIRD
+                    IF
+                        FOURTH
+                    THEN
+                THEN
+            ;
+            ''')), textwrap.dedent('''\
+            FORTH_WORD_IF_TEST_H:
+                .byte $80 | .strlen("IF_TEST")
+                .byte "IF_TEST"
+                .word 0
+            FORTH_WORD_IF_TEST:
+                .word DOCOL
+                .word FORTH_WORD_0BRANCH
+                .word FORTH_BRANCH_1
+                .word FORTH_WORD_PRE_NESTED
+                .word FORTH_WORD_0BRANCH
+                .word FORTH_BRANCH_2
+                .word FORTH_WORD_FIRST
+                .word FORTH_WORD_BRANCH
+                .word FORTH_BRANCH_3
+            FORTH_BRANCH_2:
+                .word FORTH_WORD_SECOND
+            FORTH_BRANCH_3:
+                .word FORTH_WORD_POST_NESTED
+                .word FORTH_WORD_BRANCH
+                .word FORTH_BRANCH_4
+            FORTH_BRANCH_1:
+                .word FORTH_WORD_THIRD
+                .word FORTH_WORD_0BRANCH
+                .word FORTH_BRANCH_5
+                .word FORTH_WORD_FOURTH
+            FORTH_BRANCH_5:
+            FORTH_BRANCH_4:
+                .word FORTH_WORD_DOSEMICOL
+            LAST_WORD = FORTH_WORD_IF_TEST_H
+            '''))
 
 if __name__ == '__main__':
     unittest.main()
