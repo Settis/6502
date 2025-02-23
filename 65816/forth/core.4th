@@ -195,3 +195,72 @@ CODE XOR
     EOR (SP)
     STA (SP)
 END-CODE
+
+CODE (FIND) ( NAME_ADDR DICTIONARY_RECORD_ADDR -- CFA NFA_FIRST_BYTE TF / FF )
+    JSR PULL_SP
+    STA NFA_ADDR
+    JSR PULL_SP
+    STA NAME_ADDR
+    A8_IND8
+    ; Check name max length
+    LDA (NAME_ADDR)
+    CMP #32
+    BCC @normalSize
+    LDA #31 ; the maximum size
+@normalSize:
+    STA TMP_WORD_LENGTH
+@checkName:
+    LDY #0
+    LDA (NFA_ADDR)
+    BIT #$20 ; check smudge flag
+    BNE @nextRecord
+    AND #$1F ; extract size only
+    CMP TMP_WORD_LENGTH
+    BNE @nextRecord
+@nextChar:
+    INY
+    LDA (NAME_ADDR),Y
+    CMP (NFA_ADDR),Y
+    BNE @nextRecord
+    CPY TMP_WORD_LENGTH
+    BNE @nextChar
+    ; found !
+    LDA (NFA_ADDR)
+    INY ; LFA
+    INY
+    INY ; + 2 CFA
+    TAX
+    A16_IND16
+    TYA
+    CLC
+    ADC NFA_ADDR
+    PHX
+    JSR PUSH_SP
+    PLX
+    TXA
+    JSR PUSH_SP
+    LDA #$FFFF
+    JSR PUSH_SP
+    JMP NEXT
+
+@nextRecord:
+    .a8
+    .i8
+    LDA (NFA_ADDR)
+    AND #$1F
+    TAY
+    INY ; LFA
+    A16_IND16
+    LDA (NFA_ADDR),Y
+    BNE @nextExists
+    LDA #0
+    JSR PUSH_SP
+    JMP NEXT
+@nextExists:
+    STA NFA_ADDR
+    A8_IND8
+    .a16 ; it's not correct here, but I did it for FORTH compiler 
+    .i16
+    JMP @checkName ; this JMP is the last thing, and JMP NEXT will not be added
+END-CODE
+HIDE

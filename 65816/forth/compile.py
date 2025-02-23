@@ -102,7 +102,9 @@ def print_name(name: str) -> str:
         .replace('>', 'GT')
         .replace('+', 'PLUS')
         .replace('*', 'MUL')
-        .replace('=', 'EQ'))
+        .replace('=', 'EQ')
+        .replace('(', 'O_PAR')
+        .replace(')', 'C_PAR'))
 
 class Program:
     def __init__(self):

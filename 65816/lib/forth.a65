@@ -12,7 +12,12 @@ IP:
     .res 2
 W:
     .res 2
-
+NAME_ADDR:
+    .res 2
+NFA_ADDR:
+    .res 2
+TMP_WORD_LENGTH:
+    .res 1
 .code
 
 .export DOCOL
@@ -60,7 +65,7 @@ W:
 .include "../forth/core.a65"
 .export FORTH_WORD_DOSEMICOL
 .export FORTH_WORD_LIT
-.export FORTH_WORD_EXECUTE_CODE
+.export FORTH_WORD_EXECUTE
 .export FORTH_WORD_EXCL
 .export FORTH_WORD_AT
 .export FORTH_WORD_CEXCL
@@ -83,3 +88,4 @@ W:
 .export FORTH_WORD_0EQ
 .export FORTH_WORD_BRANCH
 .export FORTH_WORD_0BRANCH
+.export FORTH_WORD_O_PARFINDC_PAR
