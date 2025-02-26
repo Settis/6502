@@ -42,8 +42,8 @@ TMP_WORD_LENGTH:
     JMP (0,X)
 .endproc
 
-.export PULL_SP
-.proc PULL_SP ; data in A
+.export PULL_DS
+.proc PULL_DS ; data in A
     LDA (SP)  ; 6
     LDX SP    ; 4
     INX       ; 2
@@ -52,8 +52,8 @@ TMP_WORD_LENGTH:
     RTS       ; 6 + 6 for JSR
 .endproc      ; total 30
 
-.export PUSH_SP
-.proc PUSH_SP ; data in A
+.export PUSH_DS
+.proc PUSH_DS ; data in A
     LDX SP    ; 4
     DEX       ; 2
     DEX       ; 2

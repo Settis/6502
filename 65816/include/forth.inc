@@ -1,7 +1,7 @@
 .importzp SP
 .importzp IP
-.import PUSH_SP
-.import PULL_SP
+.import PUSH_DS
+.import PULL_DS
 .import DOCOL
 .import FORTH_WORD_DOSEMICOL
 .import FORTH_WORD_LIT

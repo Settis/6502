@@ -6,7 +6,7 @@ HIDE
 
 CODE LIT ( -- n ) \ reads next two bytes and put them to stack
     LDA (IP)
-    JSR PUSH_SP
+    JSR PUSH_DS
     LDA IP
     INC A
     INC A
@@ -15,7 +15,7 @@ END-CODE
 HIDE
 
 CODE EXECUTE ( cfa -- )
-    JSR PULL_SP
+    JSR PULL_DS
     TAX
     INC A
     INC A
@@ -82,7 +82,7 @@ END-CODE
 HIDE
 
 CODE 0BRANCH ( F -- )
-    JSR PULL_SP
+    JSR PULL_DS
     TAX ; for Z flag
     BNE @SKIP
     JMP FORTH_WORD_BRANCH_CODE
@@ -96,16 +96,16 @@ HIDE
 
 CODE R>
     PLA
-    JSR PUSH_SP
+    JSR PUSH_DS
 END-CODE
 
 CODE R
     LDA 1,S
-    JSR PUSH_SP
+    JSR PUSH_DS
 END-CODE
 
 CODE >R
-    JSR PULL_SP
+    JSR PULL_DS
     PHA
 END-CODE
 
@@ -135,7 +135,7 @@ END-CODE
 
 CODE DUP ( n -- n n )
     LDA (SP)
-    JSR PUSH_SP
+    JSR PUSH_DS
 END-CODE
 
 CODE SWAP ( a b -- b a )
@@ -151,7 +151,7 @@ END-CODE
 CODE OVER ( a b -- a b a )
     LDY #2
     LDA (SP),Y
-    JSR PUSH_SP
+    JSR PUSH_DS
 END-CODE
 
 CODE ROT ( a b c -- b c a )
@@ -179,27 +179,27 @@ CODE NOT
 END-CODE
 
 CODE OR
-    JSR PULL_SP
+    JSR PULL_DS
     ORA (SP)
     STA (SP)
 END-CODE
 
 CODE AND
-    JSR PULL_SP
+    JSR PULL_DS
     AND (SP)
     STA (SP)
 END-CODE
 
 CODE XOR
-    JSR PULL_SP
+    JSR PULL_DS
     EOR (SP)
     STA (SP)
 END-CODE
 
 CODE (FIND) ( NAME_ADDR DICTIONARY_RECORD_ADDR -- CFA NFA_FIRST_BYTE TF / FF )
-    JSR PULL_SP
+    JSR PULL_DS
     STA NFA_ADDR
-    JSR PULL_SP
+    JSR PULL_DS
     STA NAME_ADDR
     A8_IND8
     ; Check name max length
@@ -235,12 +235,12 @@ CODE (FIND) ( NAME_ADDR DICTIONARY_RECORD_ADDR -- CFA NFA_FIRST_BYTE TF / FF )
     CLC
     ADC NFA_ADDR
     PHX
-    JSR PUSH_SP
+    JSR PUSH_DS
     PLX
     TXA
-    JSR PUSH_SP
+    JSR PUSH_DS
     LDA #$FFFF
-    JSR PUSH_SP
+    JSR PUSH_DS
     JMP NEXT
 
 @nextRecord:
@@ -254,7 +254,7 @@ CODE (FIND) ( NAME_ADDR DICTIONARY_RECORD_ADDR -- CFA NFA_FIRST_BYTE TF / FF )
     LDA (NFA_ADDR),Y
     BNE @nextExists
     LDA #0
-    JSR PUSH_SP
+    JSR PUSH_DS
     JMP NEXT
 @nextExists:
     STA NFA_ADDR
@@ -318,5 +318,5 @@ END-CODE
 
 CODE I
     LDA 1,S
-    JSR PUSH_SP
+    JSR PUSH_DS
 END-CODE
