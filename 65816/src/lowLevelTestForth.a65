@@ -113,6 +113,8 @@ TEST_LIST:
 .word TEST_FORTH_FIND_SKIP_SMUDGE_WORD
 .word TEST_FORTH_FIND_NOTHING
 .word TEST_FORTH_FIND_READ_WORD
+.word TEST_DO_LOOP
+.word TEST_DO_LOOP_LEAVE
 TEST_LIST_END:
 
 .A16
@@ -626,14 +628,79 @@ EXECUTE_WORD:
     JMP MARK_TEST_PASSED
 .endproc
 
+; : TEST_FUNCTION ( BOUNDARY INDEX -- SUM )
+;     0 ROT ROT \ for stack: sum boundary index
+;     DO
+;       1 +
+;       I $FFFA + IF LEAVE THEN
+;       1 +
+;     LOOP
+;
+.proc T_DO_LOOP
+    .word DOCOL
+    .word FORTH_WORD_LIT
+    .word 0
+    .word FORTH_WORD_ROT
+    .word FORTH_WORD_ROT
+    .word FORTH_WORD_O_PARDOC_PAR
+    .word @AFTER_LOOP
+@LOOP_START:
+    .word FORTH_WORD_LIT
+    .word 1
+    .word FORTH_WORD_PLUS
+    .word FORTH_WORD_I
+    .word FORTH_WORD_LIT
+    .word $FFFA
+    .word FORTH_WORD_PLUS
+    .word FORTH_WORD_0EQ
+    .word FORTH_WORD_0BRANCH
+    .word @PROCEED
+    .word FORTH_WORD_LEAVE
+@PROCEED:
+    .word FORTH_WORD_LIT
+    .word 1
+    .word FORTH_WORD_PLUS
+    .word FORTH_WORD_O_PARLOOPC_PAR
+    .word @LOOP_START
+@AFTER_LOOP:
+    .word FORTH_WORD_DOSEMICOL
+.endproc
+.proc TEST_DO_LOOP
+    LDA #4
+    JSR PUSH_SP
+    LDA #0
+    JSR PUSH_SP
+    LDA #T_DO_LOOP ; DataStack: 4, 0
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: SUM
+    CMP #8
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_DO_LOOP_LEAVE
+    LDA #$A
+    JSR PUSH_SP
+    LDA #4
+    JSR PUSH_SP
+    LDA #T_DO_LOOP ; DataStack: A, 4
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_SP ; DataStack: SUM
+    CMP #5
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
 .proc PRINT_STACK
     A8_IND8
     JSR UART_PRINT_STRING
     .asciiz "Stack: "
-    LDA (SP)
-    JSR UART_PRINT_HEX
     LDY #1
     LDA (SP),Y
+    JSR UART_PRINT_HEX
+    LDA (SP)
     JSR UART_PRINT_HEX
     JSR UART_PRINT_NEW_LINE
     A16_IND16

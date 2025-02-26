@@ -264,3 +264,59 @@ CODE (FIND) ( NAME_ADDR DICTIONARY_RECORD_ADDR -- CFA NFA_FIRST_BYTE TF / FF )
     JMP @checkName ; this JMP is the last thing, and JMP NEXT will not be added
 END-CODE
 HIDE
+
+CODE (DO)
+    LDA (IP) ; Read address for LEAVE
+    PHA
+    LDA IP
+    INC A
+    INC A
+    STA IP
+
+    LDY #2 ; Read boundary
+    LDA (SP),Y
+    PHA
+
+    LDA (SP) ; Read index
+    PHA
+
+    CLC     ; Update stack pointer
+    LDA SP
+    ADC #4
+    STA SP
+END-CODE
+HIDE
+
+CODE (LOOP)
+    LDA 1,S
+    INC
+    STA 1,S
+    ; Here +LOOP can jump
+    CMP 3,S
+    BCC @PROCEED
+    PLA
+    PLA
+    PLA
+    LDA IP
+    INC A
+    INC A
+    STA IP
+    JMP NEXT
+@PROCEED:
+    LDA (IP)
+    STA IP
+    JMP NEXT
+END-CODE
+HIDE
+
+CODE LEAVE
+    PLA
+    PLA
+    PLA
+    STA IP
+END-CODE
+
+CODE I
+    LDA 1,S
+    JSR PUSH_SP
+END-CODE
