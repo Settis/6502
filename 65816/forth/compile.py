@@ -60,6 +60,57 @@ class ForthWord:
             self.lines.append(f"FORTH_BRANCH_{label}:")
             return
 
+        if word == 'BEGIN':
+            label = self.get_next_lablel()
+            self.lines.append(f"FORTH_BRANCH_{label}:")
+            self.labels_stack.append(label)
+            return
+
+        if word == 'UNTIL':
+            label = self.labels_stack.pop()
+            self.lines.append('    .word FORTH_WORD_0BRANCH')
+            self.lines.append(f"    .word FORTH_BRANCH_{label}")
+            return
+
+        if word == 'WHILE':
+            label = self.get_next_lablel()
+            self.lines.append('    .word FORTH_WORD_0BRANCH')
+            self.lines.append(f"    .word FORTH_BRANCH_{label}")
+            self.labels_stack.append(label)
+            return
+        
+        if word == 'REPEAT':
+            label_first = self.labels_stack.pop()
+            label_second = self.labels_stack.pop()
+            self.lines.append('    .word FORTH_WORD_BRANCH')
+            self.lines.append(f"    .word FORTH_BRANCH_{label_second}")
+            self.lines.append(f"FORTH_BRANCH_{label_first}:")
+            return
+        
+        if word == 'AGAIN':
+            label = self.labels_stack.pop()
+            self.lines.append('    .word FORTH_WORD_BRANCH')
+            self.lines.append(f"    .word FORTH_BRANCH_{label}")
+            return
+
+        if word == 'DO':
+            self.lines.append(f"    .word {print_name('FORTH_WORD_(DO)')}")
+            label = self.get_next_lablel()
+            self.lines.append(f"    .word FORTH_BRANCH_{label}")
+            self.labels_stack.append(label)
+            label = self.get_next_lablel()
+            self.lines.append(f"FORTH_BRANCH_{label}:")
+            self.labels_stack.append(label)
+            return
+
+        if word == 'LOOP':
+            label = self.labels_stack.pop()
+            self.lines.append(f"    .word {print_name('FORTH_WORD_(LOOP)')}")
+            self.lines.append(f"    .word FORTH_BRANCH_{label}")
+            label = self.labels_stack.pop()
+            self.lines.append(f"FORTH_BRANCH_{label}:")
+            return
+
         if is_digit(word) and not word in self.prog_state.defined_words:
             self.lines.append('    .word FORTH_WORD_LIT')
             self.lines.append(f"    .word {word}")

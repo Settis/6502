@@ -271,5 +271,118 @@ class TestWordCompilation(unittest.TestCase):
             LAST_WORD = FORTH_WORD_IF_TEST_H
             '''))
 
+    def test_begin_until(self):
+        self.assertEqual(compile.compile_lines(textwrap.dedent('''\
+            : TEST
+                A
+                BEGIN
+                    B
+                UNTIL
+                C
+            ;
+            ''')), textwrap.dedent('''\
+            FORTH_WORD_TEST_H:
+                .byte $80 | .strlen("TEST")
+                .byte "TEST"
+                .word 0
+            FORTH_WORD_TEST:
+                .word DOCOL
+                .word FORTH_WORD_A
+            FORTH_BRANCH_1:
+                .word FORTH_WORD_B
+                .word FORTH_WORD_0BRANCH
+                .word FORTH_BRANCH_1
+                .word FORTH_WORD_C
+                .word FORTH_WORD_DOSEMICOL
+            LAST_WORD = FORTH_WORD_TEST_H
+            '''))
+
+    def test_begin_while_repeat(self):
+        self.assertEqual(compile.compile_lines(textwrap.dedent('''\
+            : TEST
+                A
+                BEGIN
+                    B
+                WHILE
+                    C
+                REPEAT
+                D
+            ;
+            ''')), textwrap.dedent('''\
+            FORTH_WORD_TEST_H:
+                .byte $80 | .strlen("TEST")
+                .byte "TEST"
+                .word 0
+            FORTH_WORD_TEST:
+                .word DOCOL
+                .word FORTH_WORD_A
+            FORTH_BRANCH_1:
+                .word FORTH_WORD_B
+                .word FORTH_WORD_0BRANCH
+                .word FORTH_BRANCH_2
+                .word FORTH_WORD_C
+                .word FORTH_WORD_BRANCH
+                .word FORTH_BRANCH_1
+            FORTH_BRANCH_2:
+                .word FORTH_WORD_D
+                .word FORTH_WORD_DOSEMICOL
+            LAST_WORD = FORTH_WORD_TEST_H
+            '''))
+
+    def test_begin_again(self):
+        self.assertEqual(compile.compile_lines(textwrap.dedent('''\
+            : TEST
+                A
+                BEGIN
+                    B
+                AGAIN
+                C
+            ;
+            ''')), textwrap.dedent('''\
+            FORTH_WORD_TEST_H:
+                .byte $80 | .strlen("TEST")
+                .byte "TEST"
+                .word 0
+            FORTH_WORD_TEST:
+                .word DOCOL
+                .word FORTH_WORD_A
+            FORTH_BRANCH_1:
+                .word FORTH_WORD_B
+                .word FORTH_WORD_BRANCH
+                .word FORTH_BRANCH_1
+                .word FORTH_WORD_C
+                .word FORTH_WORD_DOSEMICOL
+            LAST_WORD = FORTH_WORD_TEST_H
+            '''))
+    
+    def test_do_loop(self):
+        self.assertEqual(compile.compile_lines(textwrap.dedent('''\
+            : TEST
+                A
+                DO
+                    B
+                LOOP
+                C
+            ;
+            ''')), textwrap.dedent('''\
+            FORTH_WORD_TEST_H:
+                .byte $80 | .strlen("TEST")
+                .byte "TEST"
+                .word 0
+            FORTH_WORD_TEST:
+                .word DOCOL
+                .word FORTH_WORD_A
+                .word FORTH_WORD_O_PARDOC_PAR
+                .word FORTH_BRANCH_1
+            FORTH_BRANCH_2:
+                .word FORTH_WORD_B
+                .word FORTH_WORD_O_PARLOOPC_PAR
+                .word FORTH_BRANCH_2
+            FORTH_BRANCH_1:
+                .word FORTH_WORD_C
+                .word FORTH_WORD_DOSEMICOL
+            LAST_WORD = FORTH_WORD_TEST_H
+            '''))
+
 if __name__ == '__main__':
     unittest.main()

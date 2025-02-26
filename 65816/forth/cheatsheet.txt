@@ -1,0 +1,10 @@
+BEGIN . . . UNTIL
+    UNTIL ( f - ) Loop back to BEGIN until f is true.
+BEGIN ... WHILE ... REPEAT
+    WHILE ( f - ) Exit loop immediately if f is false.
+    REPEAT ( - ) Loop back to BEGIN unconditionally.
+BEGIN ... AGAIN 
+    Endless loop
+
+DO . . . LOOP
+    DO ( end+1 start - ) Set up loop, given index range.
