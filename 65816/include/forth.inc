@@ -33,3 +33,5 @@
 .import FORTH_WORD_LEAVE
 .import FORTH_WORD_I
 .import FORTH_WORD_O_PARDOC_PAR
+.import DOCON
+.import DOVAR

@@ -62,6 +62,20 @@ TMP_WORD_LENGTH:
     RTS       ; 6 + 6 for JSR
 .endproc      ; total 30
 
+.export DOCON
+.proc DOCON
+    LDA (W)
+    JSR PUSH_DS
+    JMP NEXT
+.endproc
+
+.export DOVAR
+.proc DOVAR
+    LDA W
+    JSR PUSH_DS
+    JMP NEXT
+.endproc
+
 .include "../forth/core.a65"
 .export FORTH_WORD_DOSEMICOL
 .export FORTH_WORD_LIT
