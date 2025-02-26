@@ -1,5 +1,16 @@
 .include "../include/std.inc"
 
+; Memory map:
+;   0000..00FF pseudo registers
+;   0100..D0-1  Return stack `R0` & `RP` 
+;    D0 ..      dictionary `DP`
+;       ..       PAD
+;       ..??FF data stack `S0` & `SP`
+;              Line input buffer
+;              SD card buffer
+;              UART/keyboard buffer
+;       .. ??  User variables
+
 .A16
 .I16
 
@@ -18,7 +29,35 @@ NFA_ADDR:
     .res 2
 TMP_WORD_LENGTH:
     .res 1
+
+R0_INIT_VALUE = $1FF ; for return stack
+; in case of running from RAM nere will be the code
+.import D0_INIT_VALUE ; for Dictionary
+S0_INIT_VALUE = LINE_INPUT_BUFFER - 1 ; for Data stack
+LINE_INPUT_BUFFER = SD_CARD_BUFFER - 200
+SD_CARD_BUFFER = USER_IO_BUFFER - 512
+USER_IO_BUFFER = USER_VARIABLES - $20
+USER_VARIABLES = MAX_RAM - (END_INITIAL_USER_VARIABLES - INITIAL_USER_VARIABLES)
+MAX_RAM = $8000
+
 .code
+
+INITIAL_USER_VARIABLES:
+UV_R0:
+    .word R0_INIT_VALUE
+UV_D0:
+    .word D0_INIT_VALUE
+UV_S0:
+    .word S0_INIT_VALUE
+UV_LIB:
+    .word LINE_INPUT_BUFFER
+UV_SD_BUF:
+    .word SD_CARD_BUFFER
+UV_KEY:
+    .word 0 ; UART input reader
+UV_EMIT:
+    .word 0 ; UART emitter
+END_INITIAL_USER_VARIABLES:
 
 .export DOCOL
 .proc DOCOL

@@ -6,6 +6,7 @@
 ; Libs: uart, delay, uartDebugMsg, forth
 
 .export UART_ADDR = UART_51
+.export D0_INIT_VALUE = $7000
 
 .zeropage
 TESTS:

@@ -384,5 +384,27 @@ class TestWordCompilation(unittest.TestCase):
             LAST_WORD = FORTH_WORD_TEST_H
             '''))
 
+    def test_constant(self):
+        self.assertEqual(compile.compile_lines(textwrap.dedent('''\
+            56 CONSTANT FOO
+            SOME_LABEL CONSTANT BAR
+            ''')), textwrap.dedent('''\
+            FORTH_WORD_FOO_H:
+                .byte $80 | .strlen("FOO")
+                .byte "FOO"
+                .word 0
+            FORTH_WORD_FOO:
+                .word DOCON
+                .word 56
+            FORTH_WORD_BAR_H:
+                .byte $80 | .strlen("BAR")
+                .byte "BAR"
+                .word FORTH_WORD_FOO_H
+            FORTH_WORD_BAR:
+                .word DOCON
+                .word SOME_LABEL
+            LAST_WORD = FORTH_WORD_BAR_H
+            '''))
+
 if __name__ == '__main__':
     unittest.main()

@@ -146,7 +146,22 @@ class AsmWord:
         if not self.lines[-1].strip().startswith('JMP'):
             output_lines.append('    JMP NEXT')
         return "\n".join(output_lines)
-    
+
+class ConstantWord:
+    def __init__(self, line: str):
+        values = line.split(' CONSTANT ')
+        self.name = values[1]
+        self.value = values[0]
+        self.immediate = False
+        self.hide = False
+        self.ended = True
+
+    def get_content(self) -> str:
+        output_lines = [f"FORTH_WORD_{print_name(self.name)}:", 
+                        '    .word DOCON',
+                        f"    .word {self.value}"]
+        return "\n".join(output_lines)
+
 def print_name(name: str) -> str:
     return (name.replace('!', 'EXCL')
         .replace('@', 'AT')
@@ -173,6 +188,10 @@ class Program:
                 self.prog_state.defined_words.add(self.current_word.name)
                 self.current_word = None
             return
+
+        if 'CONSTANT' in line:
+            self.words.append(ConstantWord(line))
+            return
         
         if line.startswith(': '):
             name = line.split(' ')[1]
@@ -198,7 +217,7 @@ class Program:
 
         raise Exception(f"Unknown thing: {line}")
 
-    def get_header(self, word: AsmWord | ForthWord) -> str:
+    def get_header(self, word: AsmWord | ForthWord | ConstantWord) -> str:
         flags = '$80'
         if word.immediate:
             flags += ' | $40'
