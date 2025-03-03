@@ -327,3 +327,146 @@ CODE I
     LDA 1,S
     JSR PUSH_DS
 END-CODE
+
+CODE CMOVE ( from to u -- )
+    LDY #4
+    LDA (SP),Y
+    TAX
+    
+    DEY
+    DEY
+    LDA (SP),Y
+    TAY
+
+    LDA (SP)
+    DEC A
+
+    MVN 0, 0
+
+    CLC
+    LDA SP
+    ADC #6
+    STA SP
+END-CODE
+
+CODE LOW_LEVEL_COLD_INIT
+    A8_IND8
+    ; INIT UART
+    ; JSR UART_INIT
+    STZ USER_IO_BUFFER_START
+    STZ USER_IO_BUFFER_END
+    
+    A16_IND16
+    ; INIT USER VARIABLES
+    LDY #INITIAL_USER_VARIABLES
+    LDX #USER_VARIABLES
+    LDA #END_INITIAL_USER_VARIABLES-INITIAL_USER_VARIABLES-1
+    MVN 0, 0
+END-CODE
+HIDE
+
+: COLD
+    TEST
+    LOW_LEVEL_COLD_INIT
+    \ DISK BUFFER INIT
+    ABORT
+;
+
+: ABORT
+    SP!
+    TEST
+    CR
+    TEST
+    $46 EMIT \ here should be the sign-on message
+    QUIT    
+;
+
+: QUIT
+    \ [ for set STATE to 0
+    BEGIN
+        RP!
+        CR
+        QUERY
+        INTERPRET
+    AGAIN
+;
+
+CODE RP!
+    LDX USER_VARIABLES-INITIAL_USER_VARIABLES+UV_R0
+    TXS
+END-CODE
+HIDE
+
+CODE SP!
+    LDA USER_VARIABLES-INITIAL_USER_VARIABLES+UV_S0
+    STA SP
+END-CODE
+HIDE
+
+: QUERY 
+    BEGIN
+        KEY
+        EMIT
+    AGAIN
+;
+HIDE
+
+: INTERPRET
+;
+HIDE
+
+: CR
+    $A EMIT
+;
+
+: SPACE
+    $20 EMIT
+;
+
+: KEY
+    UART_KEY
+    \ (KEY) @ EXECUTE
+;
+
+: EMIT
+    UART_EMIT
+    \ (EMIT) @ EXECUTE
+;
+
+CODE UART_KEY
+    A8_IND8
+@WAIT_LOOP:
+    LDX USER_IO_BUFFER_START
+    CPX USER_IO_BUFFER_END
+    BEQ @WAIT_LOOP
+    LDA USER_IO_BUFFER,X
+    TAY ; CHAR in Y
+    INX
+    TXA
+    AND #USER_IO_BUFFER_MASK
+    STA USER_IO_BUFFER_START
+    A16_IND16
+    TYA
+    JSR PUSH_DS
+END-CODE
+
+CODE UART_EMIT
+    JSR PULL_DS
+    A8_IND8
+    JSR UART_WRITE
+    A16_IND16
+END-CODE
+
+: TEST
+    $46 UART_EMIT
+    LL_TEST
+;
+
+CODE LL_TEST
+    A8_IND8
+    LDA #'n'
+    JSR UART_WRITE
+    A16_IND16
+
+    STP
+END-CODE

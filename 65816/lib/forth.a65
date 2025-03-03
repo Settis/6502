@@ -1,4 +1,5 @@
 .include "../include/std.inc"
+.include "../include/uartImport.inc"
 
 ; Memory map:
 ;   0000..00FF pseudo registers
@@ -29,6 +30,10 @@ NFA_ADDR:
     .res 2
 TMP_WORD_LENGTH:
     .res 1
+USER_IO_BUFFER_START:
+    .res 1
+USER_IO_BUFFER_END:
+    .res 1
 
 R0_INIT_VALUE = $1FF ; for return stack
 ; in case of running from RAM nere will be the code
@@ -56,10 +61,54 @@ UV_LIB:
 UV_SD_BUF:
     .word SD_CARD_BUFFER
 UV_KEY:
-    .word 0 ; UART input reader
+    .word FORTH_WORD_UART_KEY ; UART input reader
 UV_EMIT:
-    .word 0 ; UART emitter
+    .word FORTH_WORD_UART_EMIT ; UART emitter
 END_INITIAL_USER_VARIABLES:
+
+INIT_PTR:
+    .word FORTH_WORD_COLD
+.export FORTH_MAIN
+.proc FORTH_MAIN
+    ENABNE_NATIVE_MODE
+    A8_IND8
+    LDA #'M'
+    JSR UART_WRITE
+
+    A16_IND16
+
+    CLI
+
+    LDA #FORTH_WORD_COLD+2
+    STA W
+    JMP (FORTH_WORD_COLD)
+.endproc
+
+.import UART_ADDR
+.export FORTH_INTERRUPT_HANDLER
+.proc FORTH_INTERRUPT_HANDLER
+    A16_IND16
+    ; assume only UART interrupt
+    PHA
+    PHX
+
+    A8_IND8
+    LDX USER_IO_BUFFER_END
+    LDA UART_ADDR + W65C51::dataReg
+    STA USER_IO_BUFFER,X
+
+    INX
+    TXA
+    AND #USER_IO_BUFFER_MASK
+    STA USER_IO_BUFFER_END
+
+    A16_IND16
+    PLX
+    PLA
+    RTI
+.endproc
+.A16
+.I16
 
 .export DOCOL
 .proc DOCOL
@@ -148,3 +197,4 @@ END_INITIAL_USER_VARIABLES:
 .export FORTH_WORD_LEAVE
 .export FORTH_WORD_I
 .export FORTH_WORD_O_PARDOC_PAR
+.export FORTH_WORD_CMOVE

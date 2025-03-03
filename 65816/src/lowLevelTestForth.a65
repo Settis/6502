@@ -22,6 +22,21 @@ REUSLT_OK = $AA
 SP_HEAD = $F0 ; assuming that I have some space in ZP
 
 .code
+
+.macro DEC_INC memory
+    LDA memory
+    JSR INC_DECIMAL
+    STA memory
+.endmacro
+
+.proc INC_DECIMAL
+    SED
+    CLC
+    ADC #1
+    CLD
+    RTS
+.endproc
+
 .export MAIN
 .proc MAIN
     A8_IND8
@@ -41,16 +56,16 @@ SP_HEAD = $F0 ; assuming that I have some space in ZP
     STA SP
     JSR (TEST_LIST,X)
     A8_IND8
-    INC TESTS
+    DEC_INC TESTS
     LDA RESULT
     CMP #REUSLT_OK
         BNE @NOT_OK
-        INC OK
+        DEC_INC OK
         LDA #'.'
         JSR UART_WRITE
         BRA @LOOP_TAIL
 @NOT_OK:
-    INC FAILS
+    DEC_INC FAILS
     LDA #'F'
     JSR UART_WRITE
 
@@ -119,6 +134,7 @@ TEST_LIST:
 .word TEST_CONSTANT_CALLING
 .word TEST_CONSTANT
 .word TEST_VARIABLE
+.word TEST_CMOVE
 TEST_LIST_END:
 
 .A16
@@ -733,6 +749,56 @@ VAR_ADDR:
     CMP #T_SIMPLE_VARIABLE::VAR_ADDR
     FAIL_IF_NOT_EQ
     CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+CMOVE_DIST:
+    .byte 0, 0, 0, 0, 0
+.proc TEST_CMOVE
+    LDA #T_WORD_FOO
+    JSR PUSH_DS
+    LDA #CMOVE_DIST
+    JSR PUSH_DS
+    LDA #4
+    JSR PUSH_DS
+    LDA #FORTH_WORD_CMOVE
+    JSR EXECUTE_FORTH_FOR_TEST
+    CHECK_SP
+    A8_IND8
+    LDX #0
+    LDA CMOVE_DIST
+    CMP #3
+    BEQ @NEXT_1
+    INX
+@NEXT_1:
+
+    LDA CMOVE_DIST+1
+    CMP #'F'
+    BEQ @NEXT_2
+    INX
+@NEXT_2:
+
+    LDA CMOVE_DIST+2
+    CMP #'O'
+    BEQ @NEXT_3
+    INX
+@NEXT_3:
+
+    LDA CMOVE_DIST+3
+    CMP #'O'
+    BEQ @NEXT_4
+    INX
+@NEXT_4:
+
+    LDA CMOVE_DIST+4
+    BEQ @NEXT_5
+    INX
+@NEXT_5:
+    A16_IND16
+    TXA
+    BEQ @OK
+    RTS
+@OK:
     JMP MARK_TEST_PASSED
 .endproc
 

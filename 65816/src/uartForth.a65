@@ -1,0 +1,18 @@
+.include "../include/std.inc"
+.include "../include/forth.inc"
+
+; Libs: uart, delay, forth
+
+.import FORTH_MAIN
+.import FORTH_INTERRUPT_HANDLER
+.export UART_ADDR = UART_51
+.export D0_INIT_VALUE = $7000
+
+.export MAIN
+.proc MAIN
+    A16_IND16
+    LDA #FORTH_INTERRUPT_HANDLER
+    STA $FE ; set interrupt handler
+
+    JMP FORTH_MAIN
+.endproc

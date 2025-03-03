@@ -35,3 +35,4 @@
 .import FORTH_WORD_O_PARDOC_PAR
 .import DOCON
 .import DOVAR
+.import FORTH_WORD_CMOVE
