@@ -1,6 +1,8 @@
 .include "../include/std.inc"
 .include "../include/uartImport.inc"
 
+; Libs: uart, delay
+
 .export UART_ADDR = UART_51
 
 INTERRUPT_INDIRECT = $FE ; word
@@ -13,11 +15,8 @@ UART_WRITE_COMMAND = 2
 UART_READ_COMMAND = 3
 UART_RUN_COMMAND = 4
 
-.segment "runner"
-.word $0200
-    JMP main
-
 .code
+.export main
 .proc main
     SEI ; it's not needed here, but in order to work with old uartMonitor
     LDX $FF

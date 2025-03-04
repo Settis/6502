@@ -3,12 +3,10 @@
 .include "../include/uartDebugMsg.inc"
 .include "../include/delayImport.inc"
 
+; Libs: uart, delay, uartDebugMsg, atariWriter
+
 .import COPY_ATARI_DATA
 .export UART_ADDR = UART_51
-
-.segment "runner"
-.word $0200
-    JMP main
 
 .code
 .export ATARI_DATA_START
@@ -17,6 +15,7 @@ ATARI_DATA_START:
 .export ATARI_DATA_END
 ATARI_DATA_END:
 
+.export main
 .proc main
     ENABNE_NATIVE_MODE
     SEI ; no interrupts
