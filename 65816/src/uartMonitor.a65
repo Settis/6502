@@ -40,8 +40,10 @@ UART_RUN_COMMAND = 4
 .endproc
 
 .proc read_uart_byte
+@WAIT:
     WAI ; wait for command
-    LDA UART_51 + W65C51::statusReg
+    BIT UART_51 + W65C51::statusReg
+    BPL @WAIT
     LDA UART_51 + W65C51::dataReg
     RTS
 .endproc
@@ -54,8 +56,7 @@ JUMP_TABLE:
 
 .proc ping_handler
     JSR read_uart_byte
-    CLC
-    ADC #1
+    INC
     JMP UART_WRITE
 .endproc
 
