@@ -6,10 +6,6 @@
 .import COPY_ATARI_DATA
 .export UART_ADDR = UART_51
 
-.segment "runner"
-.word $0200
-    JMP main
-
 .code
 .proc main
     JSR UART_INIT
@@ -45,7 +41,4 @@
     ; expected Ticks: 312584
 .endproc
 
-.segment "resetVector"
-    .word main ; NMI
-    .word main ; RESET
-    .word main ; IRQ
+    RESET_VECTOR main, main

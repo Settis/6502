@@ -150,7 +150,4 @@ JUMP_TABLE:
     STP ; guard
 .endproc
 
-.segment "resetVector"
-    .word irq ; NMI
-    .word main ; RESET
-    .word irq ; IRQ
+    RESET_VECTOR irq, main
