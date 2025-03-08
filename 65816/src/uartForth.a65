@@ -11,8 +11,9 @@
 .export MAIN
 .proc MAIN
     A16_IND16
+
     LDA #FORTH_INTERRUPT_HANDLER
-    STA $FE ; set interrupt handler
+    STA $FE
 
     JMP FORTH_MAIN
 .endproc
