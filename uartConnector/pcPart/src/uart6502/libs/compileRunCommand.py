@@ -10,6 +10,7 @@ def register_compile_and_run(subparsers):
     cr_parser = subparsers.add_parser('cr')
     cr_parser.set_defaults(func=run_compile_and_run_command)
     cr_parser.add_argument('src', help='the source file')
+    cr_parser.add_argument('-s', '--send', help='Send the content of given test file')
 
 
 def run_compile_and_run_command(args):
