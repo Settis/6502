@@ -20,6 +20,7 @@ USER_VARIABLES-INITIAL_USER_VARIABLES+UV_S0 CONSTANT S0
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_LIB CONSTANT LIB
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_KEY CONSTANT (KEY)
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_EMIT CONSTANT (EMIT)
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_STATE CONSTANT STATE
 
 CODE EXECUTE ( cfa -- )
     JSR PULL_DS
@@ -126,6 +127,12 @@ CODE +
     INX
     INX
     STX SP
+END-CODE
+
+CODE 1+
+    LDA (SP)
+    INC
+    STA (SP)
 END-CODE
 
 CODE 2*
@@ -365,6 +372,44 @@ CODE LOW_LEVEL_COLD_INIT
 END-CODE
 HIDE
 
+: (.") ( -- )
+    R       \ Copy EP from the return stack, which points to the beginning of the in-
+            \ line text string.
+    COUNT   \ Get the length byte of the string, preparing for TYPE.
+    DUP 1+  \ Length+1
+    R> + >R \ Increment EP on the return stack by length+l, thus skip the text string
+            \ and point to the next word after ", which is the next word to be
+            \ executed.
+    TYPE    \ Now type out the text string.
+;
+
+: COUNT ( addr1 -- addr2 n )
+    DUP 1+  \ addr2=addr1+1
+    SWAP    \ Swap addr1 over addr2 and
+    C@      \ fetch the byte count to the stack.
+;
+
+CODE -DUP ( n - n ? )
+    LDA (SP)
+    BEQ @SKIP
+    JSR PUSH_DS
+@SKIP:
+END-CODE
+
+: TYPE ( addr n - )
+    -DUP            \ Copy n if it is not zero.
+    IF              \ n is non-zero, do the following.
+        OVER +      \ addr+n, the end of the text
+        SWAP        \ addr, start of text
+        DO          \ Loop to type n characters
+            I C@    \ Fetch one character from text
+            EMIT    \ Type it out
+        LOOP
+    ELSE            \ n=0, no output necessary.
+        DROP        \ Discard addr
+    THEN
+;
+
 : COLD
     LOW_LEVEL_COLD_INIT
     \ DISK BUFFER INIT
@@ -374,18 +419,34 @@ HIDE
 : ABORT
     SP!
     CR
-    $46 EMIT \ here should be the sign-on message
+    ." Marcus-Forth"
+    \ FORTH
+    \ DEFINITIONS
     QUIT    
 ;
 
 : QUIT
-    \ [ for set STATE to 0
+    \ [COMPILE] \ I don't need it here
+    [ \ for set STATE to 0
     BEGIN
         RP!
         CR
         QUERY
         INTERPRET
+        STATE @ 0=
+        IF
+            ." ok"
+        THEN
     AGAIN
+;
+
+: [
+    0 STATE !
+;
+IMMEDIATE
+
+: ]
+    $C0 STATE !
 ;
 
 CODE RP!

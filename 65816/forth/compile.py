@@ -21,6 +21,7 @@ class ForthWord:
         self.hide = False
         self.ended = False
         self.labels_stack = []
+        self.string_literal = False
 
     def add_line(self, line: str):
         if line == ';':
@@ -39,6 +40,19 @@ class ForthWord:
         return label
 
     def process_word(self, word):
+        if word == '."':
+            self.string_literal = True
+            executor = print_name('(.")')
+            self.lines.append(f"    .word FORTH_WORD_{executor}")
+            return
+
+        if self.string_literal:
+            literal = word[:-1]
+            self.lines.append(f"    .byte .strlen(\"{literal}\")")
+            self.lines.append(f"    .byte \"{literal}\"")
+            self.string_literal = False
+            return
+
         if word == 'IF':
             label = self.get_next_lablel()
             self.lines.append('    .word FORTH_WORD_0BRANCH')
@@ -167,10 +181,15 @@ def print_name(name: str) -> str:
         .replace('@', 'AT')
         .replace('>', 'GT')
         .replace('+', 'PLUS')
+        .replace('-', 'MINUS')
         .replace('*', 'MUL')
         .replace('=', 'EQ')
         .replace('(', 'O_PAR')
-        .replace(')', 'C_PAR'))
+        .replace(')', 'C_PAR')
+        .replace('[', 'O_SB')
+        .replace(']', 'C_SB')
+        .replace('.', 'DOT')
+        .replace('"', 'QUOTE'))
 
 class Program:
     def __init__(self):
@@ -221,10 +240,11 @@ class Program:
         flags = '$80'
         if word.immediate:
             flags += ' | $40'
+        name_string_literal = '"' + word.name.replace('"', '\\\"') + '"'
         return textwrap.dedent(f"""\
             FORTH_WORD_{print_name(word.name)}_H:
-                .byte {flags} | .strlen("{word.name}")
-                .byte "{word.name}\"""")
+                .byte {flags} | .strlen({name_string_literal})
+                .byte {name_string_literal}""")
 
     def print_asm(self) -> str:
         if self.current_word:

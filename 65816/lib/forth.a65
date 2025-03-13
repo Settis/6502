@@ -64,6 +64,8 @@ UV_KEY:
     .word FORTH_WORD_UART_KEY ; UART input reader
 UV_EMIT:
     .word FORTH_WORD_UART_EMIT ; UART emitter
+UV_STATE:
+    .word 0
 END_INITIAL_USER_VARIABLES:
 
 .export FORTH_MAIN
@@ -163,6 +165,7 @@ END_INITIAL_USER_VARIABLES:
     JMP NEXT
 .endproc
 
+.feature string_escapes
 .include "../forth/core.a65"
 .export FORTH_WORD_DOSEMICOL
 .export FORTH_WORD_LIT

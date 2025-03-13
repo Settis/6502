@@ -219,7 +219,23 @@ class TestWordCompilation(unittest.TestCase):
             '''))
 
     def test_string_literal(self):
-        pass
+        self.assertEqual(compile.compile_lines(textwrap.dedent('''\
+            : SOME
+                ." String"
+            ;
+            ''')), textwrap.dedent('''\
+            FORTH_WORD_SOME_H:
+                .byte $80 | .strlen("SOME")
+                .byte "SOME"
+                .word 0
+            FORTH_WORD_SOME:
+                .word DOCOL
+                .word FORTH_WORD_O_PARDOTQUOTEC_PAR
+                .byte .strlen("String")
+                .byte "String"
+                .word FORTH_WORD_DOSEMICOL
+            LAST_WORD = FORTH_WORD_SOME_H
+            '''))
 
     def test_if(self):
         self.assertEqual(compile.compile_lines(textwrap.dedent('''\
@@ -404,6 +420,23 @@ class TestWordCompilation(unittest.TestCase):
                 .word DOCON
                 .word SOME_LABEL
             LAST_WORD = FORTH_WORD_BAR_H
+            '''))
+
+    def test_name_with_quote(self):
+        self.assertEqual(compile.compile_lines(textwrap.dedent('''\
+            : ."
+                BAZ
+            ;
+            ''')), textwrap.dedent('''\
+            FORTH_WORD_DOTQUOTE_H:
+                .byte $80 | .strlen(".\\\"")
+                .byte ".\\\""
+                .word 0
+            FORTH_WORD_DOTQUOTE:
+                .word DOCOL
+                .word FORTH_WORD_BAZ
+                .word FORTH_WORD_DOSEMICOL
+            LAST_WORD = FORTH_WORD_DOTQUOTE_H
             '''))
 
 if __name__ == '__main__':
