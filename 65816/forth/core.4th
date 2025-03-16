@@ -15,12 +15,21 @@ END-CODE
 HIDE
 
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_R0 CONSTANT R0
-USER_VARIABLES-INITIAL_USER_VARIABLES+UV_D0 CONSTANT D0
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_S0 CONSTANT S0
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_LIB CONSTANT LIB
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_KEY CONSTANT (KEY)
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_EMIT CONSTANT (EMIT)
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_STATE CONSTANT STATE
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_IN CONSTANT IN
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_CURRENT CONSTANT CURRENT
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_CONTEXT CONSTANT CONTEXT
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_FORTH_LINK CONSTANT FORTH-LINK
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_ERROR CONSTANT (ERROR)
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_DP CONSTANT DP
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_HLD CONSTANT HLD
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_BASE CONSTANT BASE
+
+$20 CONSTANT BL
 
 CODE EXECUTE ( cfa -- )
     JSR PULL_DS
@@ -74,6 +83,20 @@ CODE C@ ( addr -- b )
     STA (SP)
 END-CODE
 
+CODE +! ( n addr -- ) \ add number to the content by address
+    LDA (SP)
+    TAX
+    LDY #2
+    LDA (SP),Y
+    CLC
+    ADC 0,X
+    STA 0,X
+    CLC
+    LDA SP
+    ADC #4
+    STA SP
+END-CODE
+
 CODE 0= ( N -- F )
     LDA (SP)
     BEQ @SKIP
@@ -82,6 +105,55 @@ CODE 0= ( N -- F )
     EOR #$FFFF
     STA (SP)
 END-CODE
+
+CODE = ( N N -- F )
+    LDY #2
+    LDA (SP),Y
+    CMP (SP)
+    BEQ @EQ
+    LDA #0
+    BRA @END
+@EQ:
+    LDA #$FFFF
+@END:
+    STA (SP),Y
+    LDX SP
+    INX
+    INX
+    STX SP
+END-CODE
+
+: <> ( N N -- F )
+    = NOT
+;
+
+CODE < ( N N -- F)
+    LDY #2
+    LDA (SP),Y
+    CMP (SP)
+    BCC @LESS
+    LDA #0
+    BRA @END
+@LESS:
+    LDA #$FFFF
+@END:
+    STA (SP),Y
+    LDX SP
+    INX
+    INX
+    STX SP
+END-CODE
+
+: > ( N N -- F)
+    \ not (less or eqal)
+    2DUP < >R
+    = R>
+    OR NOT
+;
+
+: 0<
+    0 <
+;
 
 CODE BRANCH ( -- )
     LDA (IP)
@@ -129,9 +201,41 @@ CODE +
     STX SP
 END-CODE
 
+CODE -
+    LDY #2
+    SEC
+    LDA (SP),Y
+    SBC (SP)
+    STA (SP),Y
+    LDX SP
+    INX
+    INX
+    STX SP
+END-CODE
+
 CODE 1+
     LDA (SP)
     INC
+    STA (SP)
+END-CODE
+
+CODE 2+
+    LDA (SP)
+    INC
+    INC
+    STA (SP)
+END-CODE
+
+CODE 1-
+    LDA (SP)
+    DEC
+    STA (SP)
+END-CODE
+
+CODE 2-
+    LDA (SP)
+    DEC
+    DEC
     STA (SP)
 END-CODE
 
@@ -140,6 +244,26 @@ CODE 2*
     ASL 0,X
 END-CODE
 
+: -2
+    $FFFE
+;
+
+: -1
+    $FFFF
+;
+
+: 0
+    0
+;
+
+: 1
+    1
+;
+
+: 2
+    2
+;
+
 CODE DROP ( n -- )
     LDX SP
     INX
@@ -147,9 +271,33 @@ CODE DROP ( n -- )
     STX SP
 END-CODE
 
+CODE 2DROP ( d -- )
+    CLC
+    LDA SP
+    ADC #4
+    STA SP
+END-CODE
+
 CODE DUP ( n -- n n )
     LDA (SP)
     JSR PUSH_DS
+END-CODE
+
+CODE 2DUP ( d -- d d )
+    SEC       ; decrease pointer
+    LDA SP
+    SBC #4
+    STA SP
+    LDY #2
+
+    LDY #6
+    LDA (SP),Y
+    LDY #2
+    STA (SP),Y
+
+    LDY #4
+    LDA (SP),Y
+    STA (SP)
 END-CODE
 
 CODE SWAP ( a b -- b a )
@@ -356,6 +504,23 @@ CODE CMOVE ( from to u -- )
     STA SP
 END-CODE
 
+: FILL ( addr n b -- )
+    SWAP >R \ store n on the return stack
+    OVER C! \ store b in addr
+    DUP 1+  \ addr+1, to be filled with b
+    R> 1-   \ n-1, number of butes to be filled by CMOVE
+    CMOVE   \ A primitive. Copy (addr) to (addr+1), (addr+1) to (addr+2),
+            \ etc, until all n locations are filled with b.
+;
+
+: ERASE 
+    0 FILL
+;
+
+: BLANKS 
+    BL FILL
+;
+
 CODE LOW_LEVEL_COLD_INIT
     A8_IND8
     ; INIT UART
@@ -420,9 +585,19 @@ END-CODE
     SP!
     CR
     ." Marcus-Forth"
-    \ FORTH
-    \ DEFINITIONS
+    FORTH
+    DEFINITIONS
     QUIT    
+;
+
+: FORTH
+    FORTH-LINK
+    CONTEXT !
+;
+
+: DEFINITIONS ( -- )
+    CONTEXT @
+    CURRENT !
 ;
 
 : QUIT
@@ -438,6 +613,28 @@ END-CODE
             ." ok"
         THEN
     AGAIN
+;
+
+: ERROR ( n -- )
+    ." ERROR!"
+    \ add more here
+    QUIT
+;
+
+: ?ERROR ( f n -- )
+    SWAP
+    IF 
+        (ERROR) @ EXECUTE
+    ELSE
+        DROP
+    THEN
+;
+
+: ?STACK ( -- )
+    SP@ S0 >        \ SP is out of upper bound, stack underflow
+    1 ?ERROR        \ Error 1.
+    SP@ HERE 80 + < \ SP is out of lower bound, stack overflow
+    7 ?ERROR        \ Error 7.
 ;
 
 : [
@@ -461,24 +658,199 @@ CODE SP!
 END-CODE
 HIDE
 
+CODE SP@
+    LDA SP
+    JSR PUSH_DS
+END-CODE
+HIDE
+
 : QUERY 
-    BEGIN
-        KEY
-        EMIT
-    AGAIN
+    LIB @      \ Read from key to line input buffer
+    190 EXPECT \ Read 190 symbols
+    LIB @ IN ! \ Init IN pointer
 ;
 HIDE
 
-: INTERPRET
+: EXPECT ( addr n -- )
+    2DUP + LINE_INPUT_GUARD \ guard at the end
+    OVER +  \ addr+n, the end of text
+    OVER    \ Start of text buffer
+    DO      \ start address on the stack
+        KEY   \ Get character from user input
+        DUP 8 =  \ Check if it was the backspace
+        IF
+            OVER I <> \ is it the middle?
+            DUP     \ for second check
+            R> \ get iterator
+            + 1-
+            >R \ update iterator
+            NOT + \ if it the start character will be decreased 
+                  \ from backspabe to bell
+        ELSE
+            DUP $A = \ is it a line feed?
+            IF
+                DROP BL \ change it for space
+                EMIT
+                I LINE_INPUT_GUARD \ put the guard
+                LEAVE
+            ELSE
+                DUP  \ save one for emit
+                I C! \ put it to the buffer
+            THEN
+        THEN
+        EMIT  \ Echo the key
+    LOOP
+    DROP \ drop buffer start
 ;
 HIDE
+
+: LINE_INPUT_GUARD ( addr -- )
+    \ put at the address: space, backslash, space, zero
+    BL OVER C!
+    1+
+    $5C OVER C! \ Backslash
+    1+ 
+    BL OVER C!
+    1+ 
+    0 SWAP C! 
+;
+HIDE
+
+: \  special case for going to the next line
+    R> DROP
+;
+IMMEDIATE
+
+: INTERPRET
+    BEGIN  \ interpret loop
+        -FIND  \ read the word and try to find it
+        IF     \ word is found
+            STATE @ <  \ If the length byte < state , the word is to be compiled.
+            IF
+                ,
+            ELSE
+                EXECUTE
+            THEN
+        ELSE
+            ." not_implemented"
+            QUIT
+        THEN
+        ?STACK  \ Check the data stach overflow or underflow
+    AGAIN  \ unconditional repeat, exit by backslash
+;
+HIDE
+
+: -FIND ( -- cfa b tf , or ff )
+    BL WORD     \ Move text string delimited by blanks from input string to the top of
+                \ dictionary HERE .
+    HERE        \ The address of text to be matched.
+    CONTEXT @ @ \ Fetch the name field address of the last word defined in the CONTEXT
+                \ vocabulary and begin the dictionary search.
+    (FIND)      \ A primitive. Search the dictionary starting at the address on stack for
+                \ a name matching the text at the address second on stack. Return the
+                \ parameter field address of the matching name, its length byte, and a
+                \ boolean true flag on stack for a match. If no match is possible, only a
+                \ boolean false flag is left on stack.
+    DUP 0=      \ Look at the flag on stack
+    IF          \ No match in CONTEXT vocabulary
+        DROP    \ Discard the false flag
+        HERE    \ Get the address of text again
+        CURRENT @ @  \ The name field address of the last word defined in the CURRENT vocabulary
+        (FIND)  \ Search again through the CURRENT vocabulary.
+    THEN
+;
+
+CODE ENCLOSE ( addr c --- addr n1 n2 n3 )
+    JSR PULL_DS
+    TAX   ; X - delimenter
+    LDA (SP)
+    STA ENCLOSE_ADDR
+    TXA
+    LDY #$FFFF
+
+    A8
+@FIRST_DELIM:
+    INY
+    CMP (ENCLOSE_ADDR),Y
+    BEQ @FIRST_DELIM
+    
+    PHA
+    PHY
+    A16
+    TYA
+    JSR PUSH_DS
+    PLY
+
+    A8
+    PLA
+@WORD:
+    INY
+    CMP (ENCLOSE_ADDR),Y
+    BNE @WORD
+
+    PHA
+    PHY
+    A16
+    TYA
+    JSR PUSH_DS
+    PLY
+
+    A8
+    PLA
+@SECOND_DELIM:
+    INY
+    CMP (ENCLOSE_ADDR),Y
+    BEQ @SECOND_DELIM
+
+    A16
+    TYA
+    JSR PUSH_DS
+
+END-CODE
+
+: WORD ( c -- )
+    IN @            \ IN contains the text buffer pointer
+    SWAP            \ Get delimiter c over the string address.
+    ENCLOSE         \ A primitive word to scan the text. From the byte address and the
+                    \ delimiter c , it determines the byte offset to the first non-delimiter
+                    \ character, the offset to the first delimiter after the text string,
+                    \ and the offset to the next character after the delimiter.
+                    \ ( addr c --- addr n1 n2 n3 )
+    IN +!           \ Increment IN by the character count, pointing to the next text string to
+                    \ be parsed.
+    OVER - >R       \ Save n2-n1 on return stack.
+    R HERE C!       \ Store character count as the length byte at HERE .
+    +               \ Buffer address + nl, starting point of the text string in the text
+                    \ buffer.
+    HERE 1+         \ Address after the length byte on dictionary.
+    R>              \ Get the character count back from the return stack.
+    CMOVE           \ Move the string from input buffer to top of dictionary.
+;
+
+: HERE ( -- addr )
+    DP @   \ Fetch the address of the next available memory location above the dictionary.
+;
+
+: ALLOT ( n -- )
+    DP +!  \ Increment dictionary pointer
+;
+
+: , ( n -- ) 
+    HERE ! \ store n into the dictionary
+    2 ALLOT
+;
+
+: C, ( b -- )
+    HERE C!
+    1 ALLOT
+;
 
 : CR
     $A EMIT
 ;
 
 : SPACE
-    $20 EMIT
+    BL EMIT
 ;
 
 : KEY
@@ -512,3 +884,86 @@ CODE UART_EMIT
     JSR UART_WRITE
     A16_IND16
 END-CODE
+
+: PAD ( -- n )
+    HERE 68 +
+;
+
+: <# ( -- )
+    PAD HLD !
+;
+
+: HOLD ( c -- )
+    -1 HLD +!   \ Decrement HLD
+    HLD @ C!    \ Store character c into PAD
+;
+
+: # ( d1 -- d2 )
+    BASE @          \ Get the current base.
+    M/MOD           \ Divide d1 by base. Double integer quotient is on top of data
+                    \ stack and the remainder below it.
+    ROT             \ Get the remainder over to top.
+    9 OVER <        \ If remainder is greater than 9,
+    IF 7 + THEN     \ make it an alphabet.
+    $30 +           \ Add 30H to form the ASCII representation of a digit. 0 to 9 and A
+                    \ to F (or above).
+    HOLD            \ Put the digit in PAD in a reversed order. HLD is decremented
+                    \ before the digit is moved.
+;
+
+CODE M/MOD ( d n -- r d ) \ return modulo and double quotient 
+    ; stub implemenation: divide only by 16 
+    JSR PULL_DS
+    JSR PULL_DS
+    STA DIV_HIGH
+    JSR PULL_DS
+    STA DIV_LOW
+    STZ DIV_MOD
+
+    LDX #4
+@LOOP:
+    LSR DIV_HIGH
+    ROR DIV_LOW
+    ROR DIV_MOD
+    DEX
+    BNE @LOOP
+
+    LDX #12
+@LOOP2:
+    LSR DIV_MOD
+    DEX
+    BNE @LOOP2
+
+    LDA DIV_MOD
+    JSR PUSH_DS
+    LDA DIV_LOW
+    JSR PUSH_DS
+    LDA DIV_HIGH
+    JSR PUSH_DS
+END-CODE
+HIDE
+
+: #S ( d1 -- d2 )
+    BEGIN
+        #           \ Convert one digit.
+        2DUP OR 0=  \ d2=0?
+    UNTIL           \ Exit if d2=0, conversion done.  Otherwise repeat.
+;
+
+: SIGN ( n d -– d )
+    ROT 0<       \ Is n negative?
+    IF
+        $2D HOLD \ Add - sign to text string.
+    THEN
+;
+
+: #> ( d -- addr count )
+    DROP DROP    \ Discard d.
+    HLD @        \ Fetch the address of the last character in the text string.
+    PAD OVER -   \ Calculate the character count of the text string.
+;
+
+: H. ( n -- )
+    0
+    <# #S #> TYPE
+;

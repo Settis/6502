@@ -439,5 +439,22 @@ class TestWordCompilation(unittest.TestCase):
             LAST_WORD = FORTH_WORD_DOTQUOTE_H
             '''))
 
+    def test_backslash_word(self):
+        self.assertEqual(compile.compile_lines(textwrap.dedent('''\
+            : \\
+                BAZ
+            ;
+            ''')), textwrap.dedent('''\
+            FORTH_WORD_BACKSLASH_H:
+                .byte $80 | .strlen("\\\\")
+                .byte "\\\\"
+                .word 0
+            FORTH_WORD_BACKSLASH:
+                .word DOCOL
+                .word FORTH_WORD_BAZ
+                .word FORTH_WORD_DOSEMICOL
+            LAST_WORD = FORTH_WORD_BACKSLASH_H
+            '''))
+
 if __name__ == '__main__':
     unittest.main()

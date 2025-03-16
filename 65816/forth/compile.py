@@ -26,7 +26,7 @@ class ForthWord:
     def add_line(self, line: str):
         if line == ';':
             if len(self.labels_stack) != 0:
-                raise Exception("label stack is not empty")
+                raise Exception(f"label stack is not empty in {self.name}")
             self.ended = True
             return
 
@@ -180,6 +180,7 @@ def print_name(name: str) -> str:
     return (name.replace('!', 'EXCL')
         .replace('@', 'AT')
         .replace('>', 'GT')
+        .replace('<', 'LT')
         .replace('+', 'PLUS')
         .replace('-', 'MINUS')
         .replace('*', 'MUL')
@@ -189,7 +190,18 @@ def print_name(name: str) -> str:
         .replace('[', 'O_SB')
         .replace(']', 'C_SB')
         .replace('.', 'DOT')
-        .replace('"', 'QUOTE'))
+        .replace('"', 'QUOTE')
+        .replace('\\', 'BACKSLASH')
+        .replace('?', 'QM')
+        .replace(',', 'COMMA')
+        .replace('/', 'DIV')
+        .replace('#', 'SHARP'))
+
+def get_name_string_literal(name: str) -> str:
+    return ('"' + 
+            name.replace('\\', '\\\\')
+            .replace('"', '\\\"') + 
+            '"')
 
 class Program:
     def __init__(self):
@@ -212,6 +224,12 @@ class Program:
             self.words.append(ConstantWord(line))
             return
         
+        if line.startswith(': \\'):
+            word = ForthWord(self.prog_state, '\\')
+            self.words.append(word)
+            self.current_word = word
+            return
+
         if line.startswith(': '):
             name = line.split(' ')[1]
             word = ForthWord(self.prog_state, name)
@@ -240,7 +258,7 @@ class Program:
         flags = '$80'
         if word.immediate:
             flags += ' | $40'
-        name_string_literal = '"' + word.name.replace('"', '\\\"') + '"'
+        name_string_literal = get_name_string_literal(word.name)
         return textwrap.dedent(f"""\
             FORTH_WORD_{print_name(word.name)}_H:
                 .byte {flags} | .strlen({name_string_literal})

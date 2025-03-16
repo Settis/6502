@@ -24,9 +24,14 @@ IP:
     .res 2
 W:
     .res 2
+ENCLOSE_ADDR:
 NAME_ADDR:
+DIV_LOW:
     .res 2
+DIV_HIGH:
 NFA_ADDR:
+    .res 2
+DIV_MOD:
     .res 2
 TMP_WORD_LENGTH:
     .res 1
@@ -52,8 +57,6 @@ USER_IO_BUFFER_MASK = $1F
 INITIAL_USER_VARIABLES:
 UV_R0:
     .word R0_INIT_VALUE
-UV_D0:
-    .word D0_INIT_VALUE
 UV_S0:
     .word S0_INIT_VALUE
 UV_LIB:
@@ -66,6 +69,22 @@ UV_EMIT:
     .word FORTH_WORD_UART_EMIT ; UART emitter
 UV_STATE:
     .word 0
+UV_IN:
+    .word 0
+UV_CURRENT:
+    .word 0
+UV_CONTEXT:
+    .word 0
+UV_FORTH_LINK:
+    .word LAST_WORD
+UV_ERROR:
+    .word FORTH_WORD_CURRENT
+UV_DP:
+    .word D0_INIT_VALUE
+UV_HLD:
+    .word 0
+UV_BASE:
+    .word 10
 END_INITIAL_USER_VARIABLES:
 
 .export FORTH_MAIN
@@ -198,3 +217,11 @@ END_INITIAL_USER_VARIABLES:
 .export FORTH_WORD_I
 .export FORTH_WORD_O_PARDOC_PAR
 .export FORTH_WORD_CMOVE
+.export FORTH_WORD_PLUSEXCL
+.export FORTH_WORD_EQ
+.export FORTH_WORD_LT
+.export FORTH_WORD_MINUS
+.export FORTH_WORD_2DROP
+.export FORTH_WORD_2DUP
+.export FORTH_WORD_ENCLOSE
+.export FORTH_WORD_MDIVMOD

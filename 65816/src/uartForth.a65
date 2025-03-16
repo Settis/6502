@@ -6,7 +6,7 @@
 .import FORTH_MAIN
 .import FORTH_INTERRUPT_HANDLER
 .export UART_ADDR = UART_51
-.export D0_INIT_VALUE = $7000
+.export D0_INIT_VALUE = $6000
 
 .export MAIN
 .proc MAIN
