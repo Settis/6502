@@ -43,6 +43,8 @@ class ForthWord:
         return label
     
     def process_string_literal(self, line):
+        if re.match(r'^\s*\." .+".+', line):
+            raise Exception(f"Something after string literal in line: '{line}'")
         string_literal = re.search(r'\." (.+)"', line).group(1)
         executor = print_name('(.")')
         self.lines.append(f"    .word FORTH_WORD_{executor}")

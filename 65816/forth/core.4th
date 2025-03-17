@@ -634,7 +634,7 @@ END-CODE
 : ERROR ( n -- )
     CR
     HERE COUNT TYPE \ Print name of the offending word on top of the dictionary.
-    ." ? ERROR: " 
+    ." ? ERROR: "
     COUNT TYPE
     SP!             \ Clean the data stack.
     QUIT
