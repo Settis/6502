@@ -8,3 +8,15 @@ BEGIN ... AGAIN
 
 DO . . . LOOP
     DO ( end+1 start - ) Set up loop, given index range.
+
+Operand Keys for word description
+n 16-bit integer
+u 16-bit unsigned integer
+d 32-bit signed double integer
+addr 16-bit address
+b 8-bit byte
+c 7-bit ASCII character
+f boolean flag.
+
+Double integer stored in stack in a way: lower on the top.
+So in memory all 4 bytes lays normally.

@@ -24,15 +24,14 @@ IP:
     .res 2
 W:
     .res 2
-ENCLOSE_ADDR:
-NAME_ADDR:
-DIV_LOW:
+
+FORTH_TMP_1:
     .res 2
-DIV_HIGH:
-NFA_ADDR:
+FORTH_TMP_2:
     .res 2
-DIV_MOD:
+FORTH_TMP_3:
     .res 2
+
 TMP_WORD_LENGTH:
     .res 1
 USER_IO_BUFFER_START:
@@ -85,6 +84,8 @@ UV_HLD:
     .word 0
 UV_BASE:
     .word 10
+UV_WIDTH:
+    .word 31
 END_INITIAL_USER_VARIABLES:
 
 .export FORTH_MAIN

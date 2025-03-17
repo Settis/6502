@@ -21,13 +21,16 @@ class ForthWord:
         self.hide = False
         self.ended = False
         self.labels_stack = []
-        self.string_literal = False
 
     def add_line(self, line: str):
         if line == ';':
             if len(self.labels_stack) != 0:
                 raise Exception(f"label stack is not empty in {self.name}")
             self.ended = True
+            return
+
+        if re.match(r'^\s*\." ', line):
+            self.process_string_literal(line)
             return
 
         for word in line.split('\\')[0].split(' '):
@@ -38,21 +41,15 @@ class ForthWord:
         label = self.prog_state.last_label_number + 1
         self.prog_state.last_label_number = label
         return label
+    
+    def process_string_literal(self, line):
+        string_literal = re.search(r'\." (.+)"', line).group(1)
+        executor = print_name('(.")')
+        self.lines.append(f"    .word FORTH_WORD_{executor}")
+        self.lines.append(f"    .byte .strlen(\"{string_literal}\")")
+        self.lines.append(f"    .byte \"{string_literal}\"")
 
     def process_word(self, word):
-        if word == '."':
-            self.string_literal = True
-            executor = print_name('(.")')
-            self.lines.append(f"    .word FORTH_WORD_{executor}")
-            return
-
-        if self.string_literal:
-            literal = word[:-1]
-            self.lines.append(f"    .byte .strlen(\"{literal}\")")
-            self.lines.append(f"    .byte \"{literal}\"")
-            self.string_literal = False
-            return
-
         if word == 'IF':
             label = self.get_next_lablel()
             self.lines.append('    .word FORTH_WORD_0BRANCH')

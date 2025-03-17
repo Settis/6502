@@ -236,6 +236,25 @@ class TestWordCompilation(unittest.TestCase):
                 .word FORTH_WORD_DOSEMICOL
             LAST_WORD = FORTH_WORD_SOME_H
             '''))
+    
+    def test_string_literal_with_space(self):
+        self.assertEqual(compile.compile_lines(textwrap.dedent('''\
+            : SOME
+                ."  some thing "
+            ;
+            ''')), textwrap.dedent('''\
+            FORTH_WORD_SOME_H:
+                .byte $80 | .strlen("SOME")
+                .byte "SOME"
+                .word 0
+            FORTH_WORD_SOME:
+                .word DOCOL
+                .word FORTH_WORD_O_PARDOTQUOTEC_PAR
+                .byte .strlen(" some thing ")
+                .byte " some thing "
+                .word FORTH_WORD_DOSEMICOL
+            LAST_WORD = FORTH_WORD_SOME_H
+            '''))
 
     def test_if(self):
         self.assertEqual(compile.compile_lines(textwrap.dedent('''\

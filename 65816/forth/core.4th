@@ -28,8 +28,29 @@ USER_VARIABLES-INITIAL_USER_VARIABLES+UV_ERROR CONSTANT (ERROR)
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_DP CONSTANT DP
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_HLD CONSTANT HLD
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_BASE CONSTANT BASE
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_WIDTH CONSTANT WIDTH
 
 $20 CONSTANT BL
+
+: -2
+    $FFFE
+;
+
+: -1
+    $FFFF
+;
+
+: 0
+    0
+;
+
+: 1
+    1
+;
+
+: 2
+    2
+;
 
 CODE EXECUTE ( cfa -- )
     JSR PULL_DS
@@ -127,7 +148,7 @@ END-CODE
     = NOT
 ;
 
-CODE < ( N N -- F)
+CODE < ( N N -- F )
     LDY #2
     LDA (SP),Y
     CMP (SP)
@@ -144,7 +165,7 @@ CODE < ( N N -- F)
     STX SP
 END-CODE
 
-: > ( N N -- F)
+: > ( N N -- F )
     \ not (less or eqal)
     2DUP < >R
     = R>
@@ -174,22 +195,22 @@ CODE 0BRANCH ( F -- )
 END-CODE
 HIDE
 
-CODE R>
+CODE R> ( -- n )
     PLA
     JSR PUSH_DS
 END-CODE
 
-CODE R
+CODE R ( -- n )
     LDA 1,S
     JSR PUSH_DS
 END-CODE
 
-CODE >R
+CODE >R ( n -- )
     JSR PULL_DS
     PHA
 END-CODE
 
-CODE +
+CODE + ( n n -- n )
     LDY #2
     CLC
     LDA (SP),Y
@@ -201,7 +222,7 @@ CODE +
     STX SP
 END-CODE
 
-CODE -
+CODE - ( n n -- n )
     LDY #2
     SEC
     LDA (SP),Y
@@ -213,56 +234,36 @@ CODE -
     STX SP
 END-CODE
 
-CODE 1+
+CODE 1+ ( n -- n )
     LDA (SP)
     INC
     STA (SP)
 END-CODE
 
-CODE 2+
+CODE 2+ ( n -- n )
     LDA (SP)
     INC
     INC
     STA (SP)
 END-CODE
 
-CODE 1-
+CODE 1- ( n -- n )
     LDA (SP)
     DEC
     STA (SP)
 END-CODE
 
-CODE 2-
+CODE 2- ( n -- n )
     LDA (SP)
     DEC
     DEC
     STA (SP)
 END-CODE
 
-CODE 2*
+CODE 2* ( u -- u )
     LDX SP
     ASL 0,X
 END-CODE
-
-: -2
-    $FFFE
-;
-
-: -1
-    $FFFF
-;
-
-: 0
-    0
-;
-
-: 1
-    1
-;
-
-: 2
-    2
-;
 
 CODE DROP ( n -- )
     LDX SP
@@ -334,31 +335,35 @@ CODE ROT ( a b c -- b c a )
     STA (SP)   ; write a
 END-CODE
 
-CODE NOT
+CODE NOT ( u -- u )
     LDA (SP)
     EOR #$FFFF
     STA (SP)
 END-CODE
 
-CODE OR
+CODE OR ( u -- u )
     JSR PULL_DS
     ORA (SP)
     STA (SP)
 END-CODE
 
-CODE AND
+CODE AND ( u -- u )
     JSR PULL_DS
     AND (SP)
     STA (SP)
 END-CODE
 
-CODE XOR
+CODE XOR ( u -- u )
     JSR PULL_DS
     EOR (SP)
     STA (SP)
 END-CODE
 
 CODE (FIND) ( NAME_ADDR DICTIONARY_RECORD_ADDR -- CFA NFA_FIRST_BYTE TF / FF )
+    ; variables
+NFA_ADDR = FORTH_TMP_1
+NAME_ADDR = FORTH_TMP_2
+
     JSR PULL_DS
     STA NFA_ADDR
     JSR PULL_DS
@@ -478,7 +483,7 @@ CODE LEAVE
     STA IP
 END-CODE
 
-CODE I
+CODE I ( -- n )
     LDA 1,S
     JSR PUSH_DS
 END-CODE
@@ -513,11 +518,11 @@ END-CODE
             \ etc, until all n locations are filled with b.
 ;
 
-: ERASE 
+: ERASE ( addr n -- )
     0 FILL
 ;
 
-: BLANKS 
+: BLANKS ( addr n -- )
     BL FILL
 ;
 
@@ -547,6 +552,7 @@ HIDE
             \ executed.
     TYPE    \ Now type out the text string.
 ;
+HIDE
 
 : COUNT ( addr1 -- addr2 n )
     DUP 1+  \ addr2=addr1+1
@@ -610,13 +616,14 @@ END-CODE
         INTERPRET
         STATE @ 0=
         IF
-            ." ok"
+            ."  ok"
         THEN
     AGAIN
 ;
 
 : ERROR ( n -- )
-    ." ERROR!"
+    ." ERROR! "
+    H.
     \ add more here
     QUIT
 ;
@@ -759,8 +766,12 @@ HIDE
         (FIND)  \ Search again through the CURRENT vocabulary.
     THEN
 ;
+HIDE
 
 CODE ENCLOSE ( addr c --- addr n1 n2 n3 )
+    ; variables
+ENCLOSE_ADDR = FORTH_TMP_1
+
     JSR PULL_DS
     TAX   ; X - delimenter
     LDA (SP)
@@ -807,6 +818,7 @@ CODE ENCLOSE ( addr c --- addr n1 n2 n3 )
     JSR PUSH_DS
 
 END-CODE
+HIDE
 
 : WORD ( c -- )
     IN @            \ IN contains the text buffer pointer
@@ -877,6 +889,7 @@ CODE UART_KEY
     TYA
     JSR PUSH_DS
 END-CODE
+HIDE
 
 CODE UART_EMIT
     JSR PULL_DS
@@ -884,6 +897,7 @@ CODE UART_EMIT
     JSR UART_WRITE
     A16_IND16
 END-CODE
+HIDE
 
 : PAD ( -- n )
     HERE 68 +
@@ -913,6 +927,12 @@ END-CODE
 
 CODE M/MOD ( d n -- r d ) \ return modulo and double quotient 
     ; stub implemenation: divide only by 16 
+
+    ; variables
+DIV_LOW = FORTH_TMP_1
+DIV_HIGH = FORTH_TMP_2
+DIV_MOD = FORTH_TMP_3
+
     JSR PULL_DS
     JSR PULL_DS
     STA DIV_HIGH
