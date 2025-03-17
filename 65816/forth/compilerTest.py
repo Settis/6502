@@ -186,6 +186,24 @@ class TestWordCompilation(unittest.TestCase):
             LAST_WORD = FORTH_WORD_LITERALS_H
             '''))
 
+    def test_literal_from_label(self):
+        self.assertEqual(compile.compile_lines(textwrap.dedent('''\
+            : LITERALS
+                LABEL_FOO_BAR
+            ;
+            ''')), textwrap.dedent('''\
+            FORTH_WORD_LITERALS_H:
+                .byte $80 | .strlen("LITERALS")
+                .byte "LITERALS"
+                .word 0
+            FORTH_WORD_LITERALS:
+                .word DOCOL
+                .word FORTH_WORD_LIT
+                .word FOO_BAR
+                .word FORTH_WORD_DOSEMICOL
+            LAST_WORD = FORTH_WORD_LITERALS_H
+            '''))
+
     def test_literal_reusage(self):
         self.assertEqual(compile.compile_lines(textwrap.dedent('''\
             : 1

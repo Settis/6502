@@ -53,6 +53,10 @@ USER_IO_BUFFER_MASK = $1F
 
 .code
 
+.macro  FString Arg
+        .byte   .strlen(Arg), Arg
+.endmacro
+
 INITIAL_USER_VARIABLES:
 UV_R0:
     .word R0_INIT_VALUE
@@ -89,6 +93,16 @@ UV_WIDTH:
 UV_DPL:
     .word 0
 END_INITIAL_USER_VARIABLES:
+
+; Error messages:
+MSG_WRONG_NUMBER:
+    FString "wrong number format"
+MSG_STACK_UNDERFLOW:
+    FString "stack underflow"
+MSG_STACK_OVERFLOW:
+    FString "stack overflow"
+MSG_NOT_COMPILING:
+    FString "not compiling"
 
 .export FORTH_MAIN
 .proc FORTH_MAIN

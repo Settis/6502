@@ -122,8 +122,10 @@ class ForthWord:
             self.lines.append(f"FORTH_BRANCH_{label}:")
             return
 
-        if is_digit(word) and not word in self.prog_state.defined_words:
+        if word.startswith('LABEL_') or (is_digit(word) and not word in self.prog_state.defined_words):
             self.lines.append('    .word FORTH_WORD_LIT')
+            if word.startswith('LABEL_'):
+                word = word[6:]
             self.lines.append(f"    .word {word}")
         else:
             self.lines.append(f"    .word FORTH_WORD_{print_name(word)}")

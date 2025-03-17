@@ -632,9 +632,11 @@ END-CODE
 ;
 
 : ERROR ( n -- )
-    ." ERROR! "
-    H.
-    \ add more here
+    CR
+    HERE COUNT TYPE \ Print name of the offending word on top of the dictionary.
+    ." ? ERROR: " 
+    COUNT TYPE
+    SP!             \ Clean the data stack.
     QUIT
 ;
 
@@ -649,15 +651,15 @@ END-CODE
 
 : ?STACK ( -- )
     SP@ S0 >        \ SP is out of upper bound, stack underflow
-    1 ?ERROR        \ Error 1.
+    LABEL_MSG_STACK_UNDERFLOW ?ERROR        \ Error 1.
     SP@ HERE 80 + < \ SP is out of lower bound, stack overflow
-    7 ?ERROR        \ Error 7.
+    LABEL_MSG_STACK_OVERFLOW ?ERROR        \ Error 7.
 ;
 
 : ?COMP
     STATE @
     0=
-    11 ?ERROR
+    LABEL_MSG_NOT_COMPILING ?ERROR
 ;
 
 : [
@@ -1055,21 +1057,21 @@ HIDE
     0 0 ROT         \ Push two zero's on stack as the initial value of d .
     COUNT OVER +    \ stack: addrFrom addrTo
     SWAP            \ stack: addrTo addrFrom
-    DUP C@ $24 <> 0 ?ERROR \ it should start with '$' sing
+    DUP C@ $24 <> LABEL_MSG_WRONG_NUMBER ?ERROR \ it should start with '$' sing
     1+ \ skip '$' sing
     DO
         2* 2* 2* 2* \ shift the current number
         I C@
         $30 -
         DUP 0<      \ if it's lower than ASCII 0
-        0 ?ERROR 
+        LABEL_MSG_WRONG_NUMBER ?ERROR 
         DUP 9 >     \ is it from A to F?
         IF 
             7 -
             DUP $A < \ it's between ASCII 9 and A
-            0 ?ERROR
+            LABEL_MSG_WRONG_NUMBER ?ERROR
             DUP $F > \ it's bigger than ASCII F
-            0 ?ERROR
+            LABEL_MSG_WRONG_NUMBER ?ERROR
         THEN
         +           \ We can add it
     LOOP
