@@ -63,7 +63,7 @@ UV_LIB:
 UV_SD_BUF:
     .word SD_CARD_BUFFER
 UV_KEY:
-    .word FORTH_WORD_UART_KEY ; UART input reader
+    .word FORTH_WORD_UART_UPPER_KEY ; UART input reader
 UV_EMIT:
     .word FORTH_WORD_UART_EMIT ; UART emitter
 UV_STATE:

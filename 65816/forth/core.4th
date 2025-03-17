@@ -924,6 +924,17 @@ HIDE
     (EMIT) @ EXECUTE
 ;
 
+: UART_UPPER_KEY ( -- c )
+    UART_KEY
+    \ if it lower case c > 60 and c < 7B
+    DUP $60 >
+    OVER $7B < AND
+    IF
+        $20 -
+    THEN
+;
+HIDE
+
 CODE UART_KEY
     A8_IND8
 @WAIT_LOOP:
