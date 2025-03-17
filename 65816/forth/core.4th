@@ -29,6 +29,7 @@ USER_VARIABLES-INITIAL_USER_VARIABLES+UV_DP CONSTANT DP
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_HLD CONSTANT HLD
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_BASE CONSTANT BASE
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_WIDTH CONSTANT WIDTH
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_DPL CONSTANT DPL
 
 $20 CONSTANT BL
 
@@ -50,6 +51,14 @@ $20 CONSTANT BL
 
 : 2
     2
+;
+
+: HEX
+    $10 BASE ! 
+;
+
+: DECIMAL
+    10 BASE ! 
 ;
 
 CODE EXECUTE ( cfa -- )
@@ -589,6 +598,7 @@ END-CODE
 
 : ABORT
     SP!
+    DECIMAL
     CR
     ." Marcus-Forth"
     FORTH
@@ -642,6 +652,12 @@ END-CODE
     1 ?ERROR        \ Error 1.
     SP@ HERE 80 + < \ SP is out of lower bound, stack overflow
     7 ?ERROR        \ Error 7.
+;
+
+: ?COMP
+    STATE @
+    0=
+    11 ?ERROR
 ;
 
 : [
@@ -738,14 +754,49 @@ IMMEDIATE
             ELSE
                 EXECUTE
             THEN
-        ELSE
-            ." not_implemented"
-            QUIT
+        ELSE  \ No matching entry. Try to convert the text to a number.
+            HERE
+            NUMBER
+            DPL @ 1+  \ Is there a decimal point? If there is, DPL + 1 should be greater
+                      \ than zero, i. e., true.
+            IF
+                DLITERAL
+            ELSE
+                DROP
+                LITERAL
+            THEN
         THEN
         ?STACK  \ Check the data stach overflow or underflow
     AGAIN  \ unconditional repeat, exit by backslash
 ;
 HIDE
+
+: COMPILE ( -- )
+    ?COMP     \ Error if not compiling
+    R>        \ Top of return stack is pointing to the next word following
+    DUP 2+ >R \ Increment this pointer by 2 to point to the second word following
+              \ COMPILE , which will be the next word to be executed. The word
+              \ immediately following COMPILE should be compiled, not executed.
+    @ ,       \ Do the compilation at run-time.
+;
+
+: LITERAL 
+    STATE @
+    IF
+        COMPILE LIT ,
+    THEN
+;
+IMMEDIATE
+
+: DLITERAL 
+    STATE @
+    IF  
+        SWAP
+        LITERAL
+        LITERAL
+    THEN
+;
+IMMEDIATE
 
 : -FIND ( -- cfa b tf , or ff )
     BL WORD     \ Move text string delimited by blanks from input string to the top of
@@ -986,4 +1037,30 @@ HIDE
 : H. ( n -- )
     0
     <# #S #> TYPE
+;
+
+: NUMBER ( addr -- d ) \ simplified version
+    -1 DPL !      \ Set DPL to -1
+    0 0 ROT         \ Push two zero's on stack as the initial value of d .
+    COUNT OVER +    \ stack: addrFrom addrTo
+    SWAP            \ stack: addrTo addrFrom
+    DUP C@ $24 <> 0 ?ERROR \ it should start with '$' sing
+    1+ \ skip '$' sing
+    DO
+        2* 2* 2* 2* \ shift the current number
+        I C@
+        $30 -
+        DUP 0<      \ if it's lower than ASCII 0
+        0 ?ERROR 
+        DUP 9 >     \ is it from A to F?
+        IF 
+            7 -
+            DUP $A < \ it's between ASCII 9 and A
+            0 ?ERROR
+            DUP $F > \ it's bigger than ASCII F
+            0 ?ERROR
+        THEN
+        +           \ We can add it
+    LOOP
+    SWAP
 ;

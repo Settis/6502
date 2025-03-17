@@ -86,6 +86,8 @@ UV_BASE:
     .word 10
 UV_WIDTH:
     .word 31
+UV_DPL:
+    .word 0
 END_INITIAL_USER_VARIABLES:
 
 .export FORTH_MAIN
