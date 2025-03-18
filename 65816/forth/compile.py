@@ -196,7 +196,9 @@ def print_name(name: str) -> str:
         .replace('?', 'QM')
         .replace(',', 'COMMA')
         .replace('/', 'DIV')
-        .replace('#', 'SHARP'))
+        .replace('#', 'SHARP')
+        .replace(':', 'COLON')
+        .replace(';', 'SEMICOL'))
 
 def get_name_string_literal(name: str) -> str:
     return ('"' + 
@@ -220,10 +222,6 @@ class Program:
                 self.prog_state.defined_words.add(self.current_word.name)
                 self.current_word = None
             return
-
-        if 'CONSTANT' in line:
-            self.words.append(ConstantWord(line))
-            return
         
         if line.startswith(': \\'):
             word = ForthWord(self.prog_state, '\\')
@@ -236,6 +234,10 @@ class Program:
             word = ForthWord(self.prog_state, name)
             self.words.append(word)
             self.current_word = word
+            return
+
+        if 'CONSTANT' in line:
+            self.words.append(ConstantWord(line))
             return
         
         if line.startswith('CODE '):

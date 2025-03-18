@@ -30,6 +30,7 @@ USER_VARIABLES-INITIAL_USER_VARIABLES+UV_HLD CONSTANT HLD
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_BASE CONSTANT BASE
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_WIDTH CONSTANT WIDTH
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_DPL CONSTANT DPL
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_CSP CONSTANT CSP
 
 $20 CONSTANT BL
 
@@ -662,6 +663,11 @@ END-CODE
     LABEL_MSG_NOT_COMPILING ?ERROR
 ;
 
+: ?EXEC ( -- )
+    STATE @
+    LABEL_MSG_NOT_EXEC ?ERROR
+;
+
 : [
     0 STATE !
 ;
@@ -800,6 +806,10 @@ IMMEDIATE
 ;
 IMMEDIATE
 
+: LATEST ( -- addr )
+    CURRENT @ @
+;
+
 : -FIND ( -- cfa b tf , or ff )
     BL WORD     \ Move text string delimited by blanks from input string to the top of
                 \ dictionary HERE .
@@ -815,7 +825,7 @@ IMMEDIATE
     IF          \ No match in CONTEXT vocabulary
         DROP    \ Discard the false flag
         HERE    \ Get the address of text again
-        CURRENT @ @  \ The name field address of the last word defined in the CURRENT vocabulary
+        LATEST  \ The name field address of the last word defined in the CURRENT vocabulary
         (FIND)  \ Search again through the CURRENT vocabulary.
     THEN
 ;
@@ -1076,4 +1086,88 @@ HIDE
         +           \ We can add it
     LOOP
     SWAP
+;
+
+: !CSP ( -- )
+    SP@ CSP !
+;
+
+: ?CSP ( -- )
+    SP@         \ Current stack pointer
+    CSP @       \ Saved stack pointer
+    -           \ If not equal,
+    LABEL_MSG_WRONG_STACK_POINT ?ERROR   \ issue errro message 14.
+;
+
+: MIN ( n n -- n )
+    OVER OVER >
+    IF
+        SWAP
+    THEN
+    DROP
+;
+
+: TOGGLE ( addr c -- )
+    OVER C@ \ extract the byte
+    XOR 
+    SWAP C!
+;
+
+: CREATE ( -- )
+    BL WORD             \ Bring the next string delimited by blanks to the top of
+                        \ dictionary.
+    HERE                \ Save dictionary pointer as name field address to be linked.
+    DUP C@              \ Get the length byte of the string
+    WIDTH @             \ WIDTH has the maximum number of characters allowed in the name field.
+    MIN                 \ Use the smaller of the two, and
+                        \ FIX: I should update name length here
+    1+ ALLOT            \ allocate space for name field, and advance DP to link field.
+    DUP $A0 TOGGLE      \ byte of the name field. Make a 'smudged' head so that dictionary
+                        \ search will not find this name .
+    LATEST ,            \ Compile the name field address of the last word in the link field,
+                        \ extending the linking chain.
+    CURRENT @ !         \ Update contents of LATEST in the current vocabulary.
+    HERE 2+ ,           \ Compile the parameter field address into code field, for the
+                        \ convenience of a new code definition. For other types of
+                        \ definitions, proper code routine address will be compiled here.
+;
+
+: SMUDGE ( -- )
+    LATEST $20 TOGGLE
+;
+
+: ; ( -- )
+    ?CSP        \ Check the stack pointer with that saved in CSP . If they differ,
+                \ issue an error message.
+    COMPILE DOSEMICOL  \ Compile the code field address of the word ;S into the dictionary,
+                \ at run-time. ;S will return execution to the calling definition.
+    SMUDGE      \ Toggle the smudge bit back to zero. Restore the length byte in
+                \ the name field, thus completing the compilation of a new word.
+    [ \ Set STATE to zero and return to the executing state.
+;
+IMMEDIATE
+
+: : ( -- )
+    ?EXEC               \ Issue an error message if not executing.
+    !CSP                \ Save the stack pointer in CSP to be checked by ';' or ;CODE .
+    CURRENT @ CONTEXT ! \ Make CONTEXT vocabulary the same as the CURRENT vocabulary.
+    CREATE              \ Now create the header and establish linkage with the current
+                        \ vocabulary.
+    LABEL_DOCOL HERE 2- !  \ Set docol executor
+    ]                   \ Change STATE to non-zero. Enter compiling state and compile the
+                        \ words following till ';' or ;CODE .
+;
+
+: CONSTANT ( n -- )
+    CREATE
+    LABEL_DOCON HERE 2- ! \ Update CFA for CONSTANT runtime
+    ,
+    SMUDGE
+;
+
+: VARIABLE ( -- )
+    CREATE
+    LABEL_DOVAR HERE 2- ! \ Update CFA for VARIABLE runtime
+    0 ,
+    SMUDGE
 ;

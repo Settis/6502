@@ -58,6 +58,7 @@ USER_IO_BUFFER_MASK = $1F
 .endmacro
 
 INITIAL_USER_VARIABLES:
+; todo separate variables with inital value and one that can be zeroed
 UV_R0:
     .word R0_INIT_VALUE
 UV_S0:
@@ -92,6 +93,8 @@ UV_WIDTH:
     .word 31
 UV_DPL:
     .word 0
+UV_CSP:
+    .word 0
 END_INITIAL_USER_VARIABLES:
 
 ; Error messages:
@@ -103,6 +106,10 @@ MSG_STACK_OVERFLOW:
     FString "stack overflow"
 MSG_NOT_COMPILING:
     FString "not compiling"
+MSG_WRONG_STACK_POINT:
+    FString "stack pointer was changed"
+MSG_NOT_EXEC:
+    FString "not executing"
 
 .export FORTH_MAIN
 .proc FORTH_MAIN
