@@ -196,7 +196,7 @@ def print_name(name: str) -> str:
         .replace('>', 'GT')
         .replace('<', 'LT')
         .replace('+', 'PLUS')
-        .replace('-', 'MINUS')
+        .replace('-', 'MINUS_OP')
         .replace('*', 'MUL')
         .replace('=', 'EQ')
         .replace('(', 'O_PAR')

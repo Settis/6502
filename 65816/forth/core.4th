@@ -275,6 +275,10 @@ CODE 2* ( u -- u )
     ASL 0,X
 END-CODE
 
+: MINUS ( n -- -n) \ change sign
+    NOT 1+
+;
+
 CODE DROP ( n -- )
     LDX SP
     INX
@@ -944,6 +948,7 @@ HIDE
     IN +!
     2DROP    \ skip the comment
 ;
+IMMEDIATE
 
 : HERE ( -- addr )
     DP @   \ Fetch the address of the next available memory location above the dictionary.
