@@ -937,6 +937,14 @@ HIDE
     CMOVE           \ Move the string from input buffer to top of dictionary.
 ;
 
+: (
+    IN @
+    $29      \ ASCII ')'
+    ENCLOSE  \ return IN 0 PAR_offset after_par
+    IN +!
+    2DROP    \ skip the comment
+;
+
 : HERE ( -- addr )
     DP @   \ Fetch the address of the next available memory location above the dictionary.
 ;
