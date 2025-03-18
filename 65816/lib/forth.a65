@@ -110,6 +110,10 @@ MSG_WRONG_STACK_POINT:
     FString "stack pointer was changed"
 MSG_NOT_EXEC:
     FString "not executing"
+MSG_NOT_PAIRS:
+    FString "code block do not closed"
+MSG_COMPILE_NOT_FOUND:
+    FString "can't find word"
 
 .export FORTH_MAIN
 .proc FORTH_MAIN

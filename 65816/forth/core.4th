@@ -468,7 +468,7 @@ CODE (LOOP)
     LDA 1,S
     INC
     STA 1,S
-    ; Here +LOOP can jump
+LOOP_TAIL:
     CMP 3,S
     BCC @PROCEED
     PLA
@@ -483,6 +483,18 @@ CODE (LOOP)
     LDA (IP)
     STA IP
     JMP NEXT
+END-CODE
+HIDE
+
+CODE (+LOOP)
+INCREMENT_VAL = FORTH_TMP_1
+    JSR PULL_DS
+    STA INCREMENT_VAL
+    LDA 1,S
+    CLC
+    ADC INCREMENT_VAL
+    STA 1,S
+    JMP LOOP_TAIL
 END-CODE
 HIDE
 
@@ -666,6 +678,11 @@ END-CODE
 : ?EXEC ( -- )
     STATE @
     LABEL_MSG_NOT_EXEC ?ERROR
+;
+
+: ?PAIRS ( n n -- )
+    -
+    LABEL_MSG_NOT_PAIRS ?ERROR
 ;
 
 : [
@@ -1171,3 +1188,110 @@ IMMEDIATE
     0 ,
     SMUDGE
 ;
+
+: [COMPILE] ( -- )
+    -FIND       \ Accept next text string and search dictionary for a match.
+    NOT LABEL_MSG_COMPILE_NOT_FOUND ?ERROR \ No matching entry was found. Issue an error message.
+    DROP        \ Discard the length byte of the found name.
+    ,       \ compile it into the dictionary.
+; 
+IMMEDIATE
+
+: IF ( f -- ) \ at run-time
+    \ ( -- addr n ) \ at compile time
+    COMPILE 0BRANCH \ Compile the code field address of the run-time routine 0BRANCH into the
+                    \ dictionary when IF is executed.
+    HERE            \ Push dictionary address on stack to be used by ELSE or ENDIF to calculate
+                    \ branching offset.
+    0 ,             \ Compile a dummy zero here, later it is to be replaced by an offset value
+                    \ used by 0BRANCH to compute the next word address.
+    2               \ Error checking number.
+            \ IF in a colon definition must be executed, not compiled.
+;
+IMMEDIATE
+
+: THEN ( addr n -- ) \ at compile time
+    ?COMP          \ Issue an error message if not compiling.
+    2 ?PAIRS       \ ENDIF must be paired with IF or ELSE . If n is not 2, the structure was
+                   \ disturbed or improperly nested. Issue an error message.
+    HERE           \ Push the current dictionary address to stack.
+    SWAP !         \ Store the offset in addr , thus completing the IF-ENDIF or IF-ELSE-ENDIF
+                   \ construct.
+; 
+IMMEDIATE
+
+: ELSE ( addr1 n1 -- addr2 n2 ) \ at compile time
+    2 ?PAIRS        \ Error checking for proper nesting.
+    COMPILE BRANCH  \ Compile BRANCH at run-time when ELSE is executed.
+    HERE            \ Push HERE on stack as addr2 .
+    0 ,             \ Dummy zero reserving a cell for branching to ENDIF .
+    SWAP            \ Move addr1 to top of stack.
+    2               \ I need to put 2 here for check inside ENDIF
+    [COMPILE] THEN \ Call ENDIF to work on the offset for forward branching. ENDIF is an
+                    \ immediate word. To compile it the word [COMPILE] must be used.
+    2               \ Leave n2 on stack for error checking.
+; 
+IMMEDIATE
+
+: BEGIN ( -- addr n ) \ at compile time
+    ?COMP \ Issue an error message if not compiling.
+    HERE  \ Push dictionary pointer on stack to be used to compute backward branching offset.
+    1     \ Error checking number.
+; 
+IMMEDIATE
+
+: UNTIL ( addr n -- ) \ at compile time
+    1 ?PAIRS        \ If n is not 1, issue an error message.
+    COMPILE 0BRANCH \ Compile 0BRANCH at run-time.
+    ,               \ Compute backward branching offset and compile the offset.
+; 
+IMMEDIATE
+
+: AGAIN ( addr n -- ) \ at compile time
+    1 ?PAIRS       \ Error checking.
+    COMPILE BRANCH \ Compile BRANCH and an offset to BEGIN .
+    ,
+; 
+IMMEDIATE
+
+: WHILE ( addr1 n1 -- addr1 n1 addr2 n2 n3 ) \ at compile time
+    [COMPILE] IF \ Call IF to compile 0BRANCH and the offset.
+    4            \ Leave 4 as n2 to be checked by REPEAT.
+; 
+IMMEDIATE
+
+: REPEAT ( addr1 n1 addr2 n2 n3 -- ) \ at compile time
+    4 ?PAIRS        \ Error checking for WHILE
+    >R >R           \ Get addr2 and n2 out of the way.
+    [COMPILE] AGAIN \ Let AGAIN do the dirty work of compiling an unconditional branch back to BEGIN .
+    R> R>           \  Restore addr2 and n2 .
+    [COMPILE] THEN \  Use ENDIF to resolve the forward branching needed by WHILE .
+; 
+IMMEDIATE
+
+: DO ( n1 n2 -- ) \ at runtime
+    \ ( -- addr n ) \ at compile time
+    COMPILE (DO) \ Compile the run-time routine address of (DO) into dictionary.
+    HERE         \ Address addr for backward branching from LOOP or +LOOP.
+    0 ,          \ placeholder for loop end
+    3            \ Number for error checking.
+; 
+IMMEDIATE
+
+: LOOP ( addr n -- ) \ at runtime
+    3 ?PAIRS \ Check the number left by DO . If it is not 3, issue an error message.
+             \ The loop is not properly nested.
+    COMPILE (LOOP)
+    DUP      \ I need to put two links
+    2+ , \ put the backward branching
+    HERE SWAP ! \ patching leave address
+; 
+IMMEDIATE
+
+: +LOOP 
+    3 ?PAIRS \ Check the number left by DO . If it is not 3, issue an error message.
+             \ The loop is not properly nested.
+    COMPILE (+LOOP)
+    ,
+; 
+IMMEDIATE

@@ -21,21 +21,25 @@ class ForthWord:
         self.hide = False
         self.ended = False
         self.labels_stack = []
+        self.compile_next = False
 
     def add_line(self, line: str):
-        if line == ';':
-            if len(self.labels_stack) != 0:
-                raise Exception(f"label stack is not empty in {self.name}")
-            self.ended = True
-            return
+        try:
+            if re.match(r'\s*;\s*', line):
+                if len(self.labels_stack) != 0:
+                    raise Exception(f"label stack is not empty in {self.name}")
+                self.ended = True
+                return
 
-        if re.match(r'^\s*\." ', line):
-            self.process_string_literal(line)
-            return
+            if re.match(r'^\s*\." ', line):
+                self.process_string_literal(line)
+                return
 
-        for word in line.split('\\')[0].split(' '):
-            if word:
-                self.process_word(word)
+            for word in line.split('\\')[0].split(' '):
+                if word:
+                    self.process_word(word)
+        except Exception as e:
+            print(f"Exception: {e} on line '{line}'")
             
     def get_next_lablel(self):
         label = self.prog_state.last_label_number + 1
@@ -52,6 +56,15 @@ class ForthWord:
         self.lines.append(f"    .byte \"{string_literal}\"")
 
     def process_word(self, word):
+        if word == '[COMPILE]':
+            self.compile_next = True
+            return
+
+        if self.compile_next:
+            self.compile_next = False
+            self.lines.append(f"    .word FORTH_WORD_{print_name(word)}")
+            return
+
         if word == 'IF':
             label = self.get_next_lablel()
             self.lines.append('    .word FORTH_WORD_0BRANCH')
