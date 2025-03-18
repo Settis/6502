@@ -576,6 +576,24 @@ HIDE
 ;
 HIDE
 
+: ." ( -- )
+    $22                  \ hex ASCII value of the delimiter ".
+    STATE @             \ Compiling or executing?
+    IF                  \ Compiling state
+        COMPILE (.")    \ Compile the code field address of (") so it will type out text at runtime.
+        WORD            \ Fetch the text string delimited by " , and store it on top of dictionary,
+                        \ in-line with the compiled addresses.
+        HERE C@         \ Fetch the length of string
+        1+ ALLOT        \ Move the dictionary pointer parsing the text string. Ready to compile the
+                        \ next word in the same definition.
+    ELSE                \ Executing state
+        WORD            \ Get the text to HERE , on top of dictionary.
+        HERE            \ Start of text string, ready to be typed out.
+        COUNT TYPE
+    THEN
+;
+IMMEDIATE
+
 : COUNT ( addr1 -- addr2 n )
     DUP 1+  \ addr2=addr1+1
     SWAP    \ Swap addr1 over addr2 and
