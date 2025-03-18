@@ -9,6 +9,8 @@
 
 .export UART_INIT
 .proc UART_INIT
+    STZ W65C51::statusReg
+
     LDA #W65C51::controlReg::default
     STA UART_ADDR+W65C51::controlReg
 
