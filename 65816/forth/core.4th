@@ -377,6 +377,7 @@ CODE (FIND) ( NAME_ADDR DICTIONARY_RECORD_ADDR -- CFA NFA_FIRST_BYTE TF / FF )
     ; variables
 NFA_ADDR = FORTH_TMP_1
 NAME_ADDR = FORTH_TMP_2
+WORD_LENGTH = FORTH_TMP_3
 
     JSR PULL_DS
     STA NFA_ADDR
@@ -389,21 +390,21 @@ NAME_ADDR = FORTH_TMP_2
     BCC @normalSize
     LDA #31 ; the maximum size
 @normalSize:
-    STA TMP_WORD_LENGTH
+    STA WORD_LENGTH
 @checkName:
     LDY #0
     LDA (NFA_ADDR)
     BIT #$20 ; check smudge flag
     BNE @nextRecord
     AND #$1F ; extract size only
-    CMP TMP_WORD_LENGTH
+    CMP WORD_LENGTH
     BNE @nextRecord
 @nextChar:
     INY
     LDA (NAME_ADDR),Y
     CMP (NFA_ADDR),Y
     BNE @nextRecord
-    CPY TMP_WORD_LENGTH
+    CPY WORD_LENGTH
     BNE @nextChar
     ; found !
     LDA (NFA_ADDR)
@@ -732,7 +733,6 @@ CODE SP@
     LDA SP
     JSR PUSH_DS
 END-CODE
-HIDE
 
 : QUERY 
     LIB @      \ Read from key to line input buffer
@@ -870,6 +870,14 @@ IMMEDIATE
 ;
 HIDE
 
+: '
+    -FIND
+    NOT LABEL_MSG_COMPILE_NOT_FOUND ?ERROR
+    DROP
+    LITERAL
+;
+IMMEDIATE
+
 CODE ENCLOSE ( addr c --- addr n1 n2 n3 )
     ; variables
 ENCLOSE_ADDR = FORTH_TMP_1
@@ -993,7 +1001,6 @@ IMMEDIATE
         $20 -
     THEN
 ;
-HIDE
 
 CODE UART_KEY
     A8_IND8
@@ -1011,7 +1018,6 @@ CODE UART_KEY
     TYA
     JSR PUSH_DS
 END-CODE
-HIDE
 
 CODE UART_EMIT
     JSR PULL_DS
@@ -1019,7 +1025,6 @@ CODE UART_EMIT
     JSR UART_WRITE
     A16_IND16
 END-CODE
-HIDE
 
 : PAD ( -- n )
     HERE 68 +
@@ -1170,14 +1175,13 @@ HIDE
     MIN                 \ Use the smaller of the two, and
                         \ FIX: I should update name length here
     1+ ALLOT            \ allocate space for name field, and advance DP to link field.
-    DUP $A0 TOGGLE      \ byte of the name field. Make a 'smudged' head so that dictionary
-                        \ search will not find this name .
+    DUP $80 TOGGLE      \ byte of the name field. Make a 'smudged' head so that dictionary
+                          \ search will not find this name .
+        \ it will be smudged by : word
     LATEST ,            \ Compile the name field address of the last word in the link field,
                         \ extending the linking chain.
     CURRENT @ !         \ Update contents of LATEST in the current vocabulary.
-    HERE 2+ ,           \ Compile the parameter field address into code field, for the
-                        \ convenience of a new code definition. For other types of
-                        \ definitions, proper code routine address will be compiled here.
+    LABEL_DOVAR ,       \ put variable CFA here, for easy variable definitions    
 ;
 
 : SMUDGE ( -- )
@@ -1201,6 +1205,7 @@ IMMEDIATE
     CURRENT @ CONTEXT ! \ Make CONTEXT vocabulary the same as the CURRENT vocabulary.
     CREATE              \ Now create the header and establish linkage with the current
                         \ vocabulary.
+    SMUDGE  \ by default CREATE definition is searchable
     LABEL_DOCOL HERE 2- !  \ Set docol executor
     ]                   \ Change STATE to non-zero. Enter compiling state and compile the
                         \ words following till ';' or ;CODE .
@@ -1210,14 +1215,13 @@ IMMEDIATE
     CREATE
     LABEL_DOCON HERE 2- ! \ Update CFA for CONSTANT runtime
     ,
-    SMUDGE
 ;
 
 : VARIABLE ( -- )
     CREATE
-    LABEL_DOVAR HERE 2- ! \ Update CFA for VARIABLE runtime
+    \ CFA 
+    \ LABEL_DOVAR HERE 2- ! \ Update CFA for VARIABLE runtime
     0 ,
-    SMUDGE
 ;
 
 : [COMPILE] ( -- )

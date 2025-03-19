@@ -32,8 +32,6 @@ FORTH_TMP_2:
 FORTH_TMP_3:
     .res 2
 
-TMP_WORD_LENGTH:
-    .res 1
 USER_IO_BUFFER_START:
     .res 1
 USER_IO_BUFFER_END:

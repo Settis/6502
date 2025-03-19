@@ -211,7 +211,8 @@ def print_name(name: str) -> str:
         .replace('/', 'DIV')
         .replace('#', 'SHARP')
         .replace(':', 'COLON')
-        .replace(';', 'SEMICOL'))
+        .replace(';', 'SEMICOL')
+        .replace("'", 'TICK'))
 
 def get_name_string_literal(name: str) -> str:
     return ('"' + 
