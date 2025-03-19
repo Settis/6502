@@ -75,7 +75,7 @@ def from_file(dev, file):
             dev.write(expected_sequence)
 
         byte = dev.read(1)
-        if byte[0] == expected_sequence[0]:
+        if len(expected_sequence) > 0 and byte[0] == expected_sequence[0]:
             expected_sequence = expected_sequence[1:]
         if byte[0] == 4:
             if last_byte != 0xA and has_logs:  # Newline
