@@ -18,5 +18,4 @@ b 8-bit byte
 c 7-bit ASCII character
 f boolean flag.
 
-Double integer stored in stack in a way: lower on the top.
-So in memory all 4 bytes lays normally.
+Double integer stored in stack in a way: high on the top.
