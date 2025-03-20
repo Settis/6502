@@ -3,10 +3,15 @@
 .include "../include/uartImport.inc"
 .include "../include/uartDebugMsg.inc"
 
-; Libs: uart, delay, uartDebugMsg, forth
+; Libs: uart, delay, uartDebugMsg, charDisplay, forth
 
 .export UART_ADDR = UART_51
 .export D0_INIT_VALUE = $7000
+
+.export DISPLAY_IOR = VIA_22_FIRST + W65C22::RA
+.export DISPLAY_DDR = VIA_22_FIRST + W65C22::DDRA
+.export DISPLAY_PCR = VIA_22_FIRST + W65C22::PCR
+.exportzp DISPLAY_PCR_MASK = W65C22::PCR::CA2_lowOutput ^ W65C22::PCR::CA2_highOutput
 
 .zeropage
 TESTS:
@@ -141,13 +146,16 @@ TEST_LIST:
 .word TEST_LT_TRUE
 .word TEST_LT_GT
 .word TEST_LT_EQ
-.word TEST_MINUS
+.word TEST_MINUS_OP
 .word TEST_2DROP
 .word TEST_2DUP
 .word TEST_ENCLOSE_NO_SPACE
 .word TEST_ENCLOSE_ONE_SPACE
 .word TEST_ENCLOSE_SEVERAL_SPACES
 .word TEST_MDIVMOD_HEX
+.word TEST_UMUL_0_0
+.word TEST_UMUL_1_1
+.word TEST_UMUL_2_4
 TEST_LIST_END:
 
 .A16
@@ -901,12 +909,12 @@ TEST_ADD_AND_WRITE_CELL:
     JMP MARK_TEST_PASSED
 .endproc
 
-.proc TEST_MINUS
+.proc TEST_MINUS_OP
     LDA #$9
     JSR PUSH_DS
     LDA #$3
     JSR PUSH_DS
-    LDA #FORTH_WORD_MINUS
+    LDA #FORTH_WORD_MINUS_OP
     JSR EXECUTE_FORTH_FOR_TEST
     JSR PULL_DS
     CMP #6
@@ -1041,6 +1049,57 @@ TEST_LINE_SEVERAL_SPACES:
     FAIL_IF_NOT_EQ
     JSR PULL_DS
     CMP #$D
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_UMUL_0_0
+    LDA #$0
+    JSR PUSH_DS
+    LDA #$0
+    JSR PUSH_DS
+    LDA #FORTH_WORD_UMUL ; ( n n -- d )
+    JSR EXECUTE_FORTH_FOR_TEST 
+    JSR PULL_DS
+    CMP #$0
+    FAIL_IF_NOT_EQ
+    JSR PULL_DS
+    CMP #$0
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_UMUL_1_1
+    LDA #$1
+    JSR PUSH_DS
+    LDA #$1
+    JSR PUSH_DS
+    LDA #FORTH_WORD_UMUL ; ( n n -- d )
+    JSR EXECUTE_FORTH_FOR_TEST 
+    JSR PULL_DS
+    CMP #$0
+    FAIL_IF_NOT_EQ
+    JSR PULL_DS
+    CMP #$1
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_UMUL_2_4
+    LDA #$2
+    JSR PUSH_DS
+    LDA #$4
+    JSR PUSH_DS
+    LDA #FORTH_WORD_UMUL ; ( n n -- d )
+    JSR EXECUTE_FORTH_FOR_TEST 
+    JSR PULL_DS
+    CMP #$0
+    FAIL_IF_NOT_EQ
+    JSR PULL_DS
+    CMP #$8
     FAIL_IF_NOT_EQ
     CHECK_SP
     JMP MARK_TEST_PASSED

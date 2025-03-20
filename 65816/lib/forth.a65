@@ -1,5 +1,6 @@
 .include "../include/std.inc"
 .include "../include/uartImport.inc"
+.include "../include/charDisplayImport.inc"
 
 ; Memory map:
 ;   0000..00FF pseudo registers
@@ -14,6 +15,8 @@
 
 .A16
 .I16
+
+.import DISPLAY_PCR
 
 .zeropage
 .exportzp SP
@@ -246,8 +249,9 @@ MSG_COMPILE_NOT_FOUND:
 .export FORTH_WORD_PLUSEXCL
 .export FORTH_WORD_EQ
 .export FORTH_WORD_LT
-.export FORTH_WORD_MINUS
+.export FORTH_WORD_MINUS_OP
 .export FORTH_WORD_2DROP
 .export FORTH_WORD_2DUP
 .export FORTH_WORD_ENCLOSE
 .export FORTH_WORD_MDIVMOD
+.export FORTH_WORD_UMUL

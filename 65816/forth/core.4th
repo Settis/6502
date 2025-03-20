@@ -275,6 +275,48 @@ CODE 2* ( u -- u )
     ASL 0,X
 END-CODE
 
+CODE 2/ ( u -- u )
+    LDX SP
+    LSR 0,X
+END-CODE
+
+CODE U* ( u u -- d )
+GOES_LOW = FORTH_TMP_1
+GOES_HIGH_L = FORTH_TMP_2
+GOES_HIGH_H = FORTH_TMP_3
+
+    LDY #2
+    LDA (SP),Y
+    STA GOES_LOW
+    LDA (SP)
+    STA GOES_HIGH_L
+    LDA #0
+    STA GOES_HIGH_H
+    STA (SP)
+    STA (SP),Y
+
+    LDX #16
+@MUL_LOOP:
+    LSR GOES_LOW
+    BCC @SKIP
+    CLC
+    LDA GOES_HIGH_L
+    ADC (SP),Y
+    STA (SP),Y
+    LDA GOES_HIGH_H
+    ADC (SP)
+    STA (SP)
+@SKIP:
+    ASL GOES_HIGH_L
+    ROL GOES_HIGH_H
+    DEX
+    BNE @MUL_LOOP
+END-CODE
+
+: * ( u u -- u )
+    U* DROP
+;
+
 : MINUS ( n -- -n) \ change sign
     NOT 1+
 ;
@@ -559,6 +601,10 @@ CODE LOW_LEVEL_COLD_INIT
     JSR UART_INIT
     STZ USER_IO_BUFFER_START
     STZ USER_IO_BUFFER_END
+
+    LDA #(W65C22::PCR::CB2_lowOutput | W65C22::PCR::CA2_lowOutput)
+    STA DISPLAY_PCR
+    JSR DISPLAY_INIT
     
     A16_IND16
     ; INIT USER VARIABLES
@@ -598,6 +644,13 @@ HIDE
     THEN
 ;
 IMMEDIATE
+
+: S" \ Usage: CREATE ERROR-MSG S" Testing error"
+  $22
+  WORD
+  HERE C@
+  1+ ALLOT
+;
 
 : COUNT ( addr1 -- addr2 n )
     DUP 1+  \ addr2=addr1+1
@@ -1025,6 +1078,48 @@ CODE UART_EMIT
     JSR UART_WRITE
     A16_IND16
 END-CODE
+
+CODE DISP_PRINT
+    JSR PULL_DS
+    A8_IND8
+    JSR DISPLAY_PRINT_CHAR
+    A16_IND16
+END-CODE
+
+CODE DISP_CMD
+    JSR PULL_DS
+    A8_IND8
+    JSR DISPLAY_SEND_COMMAND
+    A16_IND16
+END-CODE
+
+: DISP_CLR
+    1 DISP_CMD
+;
+
+: DISP_CTL ( f f f --  ) \ display, cursor, blink
+    1 AND \ mask blink
+    SWAP 2 AND OR \ mask cursor and merge with blink
+    SWAP 4 AND OR \ mask display and merge
+    8 OR \ display control bit
+    DISP_CMD
+;
+
+: DISP_CUR ( n n -- ) \ line, column
+    SWAP 
+    $40 *
+    OR
+    $80 OR
+    DISP_CMD
+;
+
+: SET_CHAR ( addr n -- ) \ 8 bytes after addr
+    8 0 DO
+        DUP 8 * I + $40 OR DISP_CMD
+        OVER I + C@
+        DISP_PRINT
+    LOOP
+;
 
 : PAD ( -- n )
     HERE 68 +

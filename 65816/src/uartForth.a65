@@ -1,12 +1,17 @@
 .include "../include/std.inc"
 .include "../include/forth.inc"
 
-; Libs: uart, delay, forth
+; Libs: uart, delay, charDisplay, forth
 
 .import FORTH_MAIN
 .import FORTH_INTERRUPT_HANDLER
 .export UART_ADDR = UART_51
 .export D0_INIT_VALUE = $6000
+
+.export DISPLAY_IOR = VIA_22_FIRST + W65C22::RA
+.export DISPLAY_DDR = VIA_22_FIRST + W65C22::DDRA
+.export DISPLAY_PCR = VIA_22_FIRST + W65C22::PCR
+.exportzp DISPLAY_PCR_MASK = W65C22::PCR::CA2_lowOutput ^ W65C22::PCR::CA2_highOutput
 
 .export MAIN
 .proc MAIN
