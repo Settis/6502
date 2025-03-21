@@ -11,7 +11,7 @@ def register_run(subparsers):
     run_parser = subparsers.add_parser('run')
     run_parser.set_defaults(func=run_run_cmd)
     run_parser.add_argument('addr', help='The subroutine address')
-    run_parser.add_argument('-s', '--send', help='Send the content of given test file')
+    run_parser.add_argument('-s', '--send', action='append', help='Send the content of given test file')
 
 
 @timer("Run")
@@ -24,12 +24,12 @@ def handle_keyboard(device, proceed):
         keypress = sys.stdin.read(1)
         device.write(keypress.encode('UTF-8'))
 
-def run_run(dev, addr, send_file=None):
+def run_run(dev, addr, send_files=None):
     dev.write(bytes([COMMAND_RUN]))
     dev.write(convert_word_number_to_bytes(addr))
 
-    if send_file:
-        from_file(dev, send_file)
+    if send_files:
+        from_file(dev, send_files)
     else:
         interactive(dev)
 
@@ -56,14 +56,16 @@ def interactive(dev):
         last_byte = byte[0]
 
 
-def from_file(dev, file):
+def from_file(dev, files):
     # wait for the end
     # and print logs
     has_logs = False
     last_byte = None
     
-    with open(file, 'r') as text_file:
-        file_content = text_file.read()
+    file_content = ""
+    for file in files:
+        with open(file, 'r') as text_file:
+            file_content += text_file.read() + "\n"
 
     expected_sequence = []
 
