@@ -723,8 +723,23 @@ END-CODE
     AGAIN
 ;
 
-: ERROR ( n -- )
+: EMIT-SRC
     CR
+    ." SRC: "
+    LIB @
+    BEGIN
+        DUP C@
+        DUP $5C <>
+    WHILE
+        EMIT
+        1+
+    REPEAT
+    2DROP
+    CR
+;
+
+: ERROR ( n -- )
+    \ EMIT-SRC
     HERE COUNT TYPE \ Print name of the offending word on top of the dictionary.
     ." ? ERROR: "
     COUNT TYPE
@@ -1010,7 +1025,8 @@ HIDE
     $29      \ ASCII ')'
     ENCLOSE  \ return IN 0 PAR_offset after_par
     IN +!
-    2DROP    \ skip the comment
+    2DROP    \ drop other offsets
+    DROP     \ drop address
 ;
 IMMEDIATE
 

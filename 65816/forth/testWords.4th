@@ -1,5 +1,3 @@
-' UART_KEY (KEY) !
-
 CREATE ERROR-MSG S" Testing error"
 
 VARIABLE ACTUAL-SP \ stack record
@@ -10,7 +8,7 @@ VARIABLE T-ERROR
 VARIABLE T-PASSED
 
 : T{ \ ( -- ) record the pre-test depth.
-    T-STARTED 1 +!
+    1 T-STARTED +!
     SP@ START-SP !
 ;
 
@@ -30,17 +28,17 @@ VARIABLE T-PASSED
             SP@ START-SP @ SWAP - 0 DO     \ for each stack item
                 ACTUAL-RESULTS I + @    \ compare actual with expected
                 <> IF 
-                    T-ERROR 1 +!
+                    1 T-ERROR +!
                     ." INCORRECT RESULT: " ERROR-MSG ERROR LEAVE 
                 THEN
             R> 1+ >R LOOP
         THEN
     ELSE                                    \ depth mismatch
-        T-ERROR 1 +!
+        1 T-ERROR +!
         ." WRONG NUMBER OF RESULTS: " ERROR-MSG ERROR
     THEN
 
-    T-PASSED 1 +!
+    1 T-PASSED +!
 ;
 
 : PRINT-TEST-STAT ( -- )
