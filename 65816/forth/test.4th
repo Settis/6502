@@ -1,5 +1,3 @@
-' UART_KEY (KEY) !
-
 : EXIT
   $4 EMIT
 ;

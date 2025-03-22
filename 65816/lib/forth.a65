@@ -69,7 +69,7 @@ UV_LIB:
 UV_SD_BUF:
     .word SD_CARD_BUFFER
 UV_KEY:
-    .word FORTH_WORD_UART_UPPER_KEY ; UART input reader
+    .word FORTH_WORD_UART_KEY ; UART input reader
 UV_EMIT:
     .word FORTH_WORD_UART_EMIT ; UART emitter
 UV_STATE:
@@ -120,8 +120,6 @@ MSG_COMPILE_NOT_FOUND:
 .proc FORTH_MAIN
     ENABNE_NATIVE_MODE
     A16_IND16
-
-    CLI
 
     LDA #FORTH_WORD_COLD+2
     STA W
