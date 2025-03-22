@@ -213,6 +213,11 @@ MSG_COMPILE_NOT_FOUND:
 
 .feature string_escapes
 .include "../forth/core.a65"
+
+.export USER_IO_BUFFER_START
+.export USER_IO_BUFFER_END
+
+
 .export FORTH_WORD_DOSEMICOL
 .export FORTH_WORD_LIT
 .export FORTH_WORD_EXECUTE

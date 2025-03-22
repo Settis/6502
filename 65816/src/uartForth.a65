@@ -5,6 +5,8 @@
 
 .import FORTH_MAIN
 .import FORTH_INTERRUPT_HANDLER
+.import USER_IO_BUFFER_START
+.import USER_IO_BUFFER_END
 .export UART_ADDR = UART_51
 .export D0_INIT_VALUE = $6000
 
