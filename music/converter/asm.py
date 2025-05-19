@@ -6,13 +6,29 @@ BASE_FREQ = 1843200
 
 
 def print_asm(events: List[Event]):
-    for event in events:
+    for event in merge_waits(events):
         if isinstance(event, Tone):
             print_tone(event)
         elif isinstance(event, Mute):
             print_mute(event)
         elif isinstance(event, Wait):
             print_wait(event)
+
+def merge_waits(events: List[Event]) -> List[Event]:
+    result = []
+    last_wait = None
+    for event in events:
+        if isinstance(event, Wait):
+            if last_wait == None:
+                last_wait = event
+            else:
+                last_wait = Wait(last_wait.duration + event.duration)
+        else:
+            if last_wait != None:
+                result.append(last_wait)
+                last_wait = None
+            result.append(event)
+    return result
 
 def print_tone(tone: Tone):
     timer = int(BASE_FREQ/tone.frequency/32)

@@ -72,7 +72,7 @@ class Sequencer:
             self.sequence.append(Wait(note_length*7/8))
             self.sequence.append(Mute(0))
             self.sequence.append(Wait(note_length/8))
-        if note.rest != None:
+        if note.rest:
             self.sequence.append(Wait(note_length))
 
     def calc_note_length(self, timing: Timing):

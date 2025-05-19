@@ -55,8 +55,8 @@
     LDA #%00001100
     STA VIA_22_FIRST + W65C22::PCR
 
-    LDX #238   
-    LDY #3      
+    LDX #2
+    LDY #6
     JSR DELAY_LOOP
 
     LDA #%00001110
@@ -67,8 +67,8 @@
 .proc wait50msOfA
 @LOOP:
     PHA
-    LDX #255
-    LDY #244    
+    LDX #252
+    LDY #237   
     JSR DELAY_LOOP
     PLA
     DEA
@@ -79,7 +79,7 @@
 .proc wait1msOfA
 @LOOP:
     PHA
-    LDX #248
+    LDX #238
     LDY #5    
     JSR DELAY_LOOP
     PLA
