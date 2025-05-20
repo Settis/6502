@@ -55,7 +55,7 @@
     LDA #%00001100
     STA VIA_22_FIRST + W65C22::PCR
 
-    LDX #2
+    LDX #3
     LDY #6
     JSR DELAY_LOOP
 

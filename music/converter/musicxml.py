@@ -14,7 +14,8 @@ class Note:
     type: str
     pitch: Pitch = None
     rest: bool = False
-    dot: bool = False
+    dot: int = 0
+    duration: int = None
 
 @dataclass
 class Timing:
@@ -22,6 +23,7 @@ class Timing:
     beat_type: int
     beat_unit: str = None
     per_minute: int = None
+    divisions: int = None
 
 @dataclass
 class Measure:
@@ -52,6 +54,7 @@ def read_measure(measure_element: Element) -> Measure:
         if element.tag == 'attributes':
             time = element.find('time')
             measure.timing = Timing(int(time.find('beats').text), int(time.find('beat-type').text))
+            measure.timing.divisions = int(element.find('divisions').text)
         if element.tag == 'direction':
             metronome = element.find('direction-type').find('metronome')
             measure.timing.beat_unit = metronome.find('beat-unit').text
@@ -66,10 +69,10 @@ def read_note(note_elem: Element) -> Note:
     note = Note(note_elem.find('type').text)
     if note_elem.find('pitch') != None:
         note.pitch = read_pitch(note_elem.find('pitch'))
-    if note_elem.find('dot') != None:
-        note.dot = True
+    note.dot = len(note_elem.findall('dot'))
     if note_elem.find('rest') != None:
         note.rest = True
+    note.duration = int(note_elem.find('duration').text)
     return note
 
 def read_pitch(pitch: Element) -> Pitch:
