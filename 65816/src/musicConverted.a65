@@ -3,6 +3,15 @@
 
 ; Libs: delay
 
+SEND_COMMAND = $80
+WAIT_50_MS = $40
+WAIT_1_MS = 0
+VALUE_MASK = $3F
+
+.zeropage
+DATA_POINTER: .res 2
+COMMAND_SIZE: .res 1
+
 .code
 .export main
 .proc main
@@ -14,36 +23,72 @@
 
     JSR OFF_ALL
 
+    LDA #<MUSIC_DATA
+    STA DATA_POINTER
+    LDA #>MUSIC_DATA
+    STA DATA_POINTER+1
+
+@PLAY_LOOP:
+    LDA (DATA_POINTER)
+    BNE @TEST_SEND
+    JMP OFF_ALL
+@TEST_SEND:
+    TAX
+    AND #SEND_COMMAND
+    BEQ @TEST_WAIT_50
+    TXA
+    AND #VALUE_MASK
+    STA COMMAND_SIZE
+    LDY #0
+@COMMAND_LOOP:
+    INY
+    PHY
+    LDA (DATA_POINTER),Y
+    JSR send
+    PLY
+    CPY COMMAND_SIZE
+    BNE @COMMAND_LOOP
+    INY
+    TYA
+    CLC
+    ADC DATA_POINTER
+    STA DATA_POINTER
+    BCC @PLAY_LOOP
+    INC DATA_POINTER+1
+    BRA @PLAY_LOOP
+
+@TEST_WAIT_50:
+    TXA
+    AND #WAIT_50_MS
+    BEQ @RUN_WAIT_1
+    TXA
+    AND #VALUE_MASK
+    JSR wait50msOfA
+    BRA @INCREASE_POINTER
+@RUN_WAIT_1:
+    TXA
+    JSR wait1msOfA
+@INCREASE_POINTER:
+    INC DATA_POINTER
+    BNE @PLAY_LOOP
+    INC DATA_POINTER+1
+    BRA @PLAY_LOOP
+
+.endproc
+
+MUSIC_DATA:
 .include "../../music/music.a65"
-
-    RTS
-.endproc
-
-.proc OFF0
-    LDA #%11111001
-    JMP send
-.endproc
-
-.proc OFF1
-    LDA #%11111101
-    JMP send
-.endproc
-
-.proc OFF2
-    LDA #%11111011
-    JMP send
-.endproc
-
-.proc OFF3
-    LDA #%11111111
-    JMP send
-.endproc
+    .byte 0
 
 .proc OFF_ALL
-    JSR OFF0
-    JSR OFF1
-    JSR OFF2
-    JMP OFF3
+    LDA #%11111001
+    JSR send
+    LDA #%11111101
+    JSR send
+    LDA #%11111011
+    JSR send
+    LDA #%11111111
+    JMP send
 .endproc
 
 .proc send
@@ -87,4 +132,3 @@
     BNE @LOOP
     RTS
 .endproc
-

@@ -30,6 +30,7 @@ class Measure:
     number: int
     notes: List[Note]
     timing: Timing = None
+    percussion: bool = False
 
 @dataclass
 class Part:
@@ -55,6 +56,8 @@ def read_measure(measure_element: Element) -> Measure:
             time = element.find('time')
             measure.timing = Timing(int(time.find('beats').text), int(time.find('beat-type').text))
             measure.timing.divisions = int(element.find('divisions').text)
+            if element.find('clef').find('sign').text == 'percussion':
+                measure.percussion = True
         if element.tag == 'direction':
             metronome = element.find('direction-type').find('metronome')
             measure.timing.beat_unit = metronome.find('beat-unit').text
