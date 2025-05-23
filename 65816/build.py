@@ -57,7 +57,7 @@ def build(args):
     ensure_obj_file(args.src)
     libs = extract_libs(args.src)
     command = ['ld65', '-vm', '-m', args.map, '-C', args.config, '-o', args.output, 
-               '--obj', get_obj_file_name(args.src), '--obj-path', 'lib']
+               '--obj', get_obj_file_name(args.src), '--obj-path', 'lib', '--dbgfile', '/tmp/debug65.txt']
     for lib in libs:
         ensure_obj_file(f"lib/{lib}.a65")
         command.extend(['--obj', f"{lib}.o"])

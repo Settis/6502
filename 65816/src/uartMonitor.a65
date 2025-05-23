@@ -6,9 +6,10 @@
 .export UART_ADDR = UART_51
 
 INTERRUPT_INDIRECT = $FE ; word
-MEM_POINTER = $FC ; word
-DATA_LENGTH = $FB
-CRC_SUM = $FA
+NMI_INDIRECT = $FC ; word
+MEM_POINTER = $FA ; word
+DATA_LENGTH = $F9
+CRC_SUM = $F8
 
 UART_PING_COMMAND = 1
 UART_WRITE_COMMAND = 2
@@ -27,6 +28,9 @@ UART_RUN_COMMAND = 4
     ; put the interrupt guard
     LDX #stop
     STX INTERRUPT_INDIRECT
+    ; put the nmi guard
+    LDX #exit_nmi
+    STX NMI_INDIRECT
     IND8
 @LOOP:
     JSR read_uart_byte
@@ -146,8 +150,16 @@ JUMP_TABLE:
     JMP (INTERRUPT_INDIRECT)
 .endproc
 
+.proc nmi
+    JMP (NMI_INDIRECT)
+.endproc
+
 .proc stop
     STP ; guard
 .endproc
 
-    RESET_VECTOR irq, main
+.proc exit_nmi
+    RTI
+.endproc
+
+    RESET_VECTOR irq, nmi, main

@@ -2,6 +2,7 @@
 .include "../include/forth.inc"
 
 ; Libs: uart, delay, charDisplay, forth
+;; Libs: uart, delay, charDisplay, forth, uartDebugMsg
 
 .import FORTH_MAIN
 .import FORTH_INTERRUPT_HANDLER
@@ -14,6 +15,9 @@
 .export DISPLAY_DDR = VIA_22_FIRST + W65C22::DDRA
 .export DISPLAY_PCR = VIA_22_FIRST + W65C22::PCR
 .exportzp DISPLAY_PCR_MASK = W65C22::PCR::CA2_lowOutput ^ W65C22::PCR::CA2_highOutput
+
+.export TIMER_MS_VIA = VIA_22_FIRST
+.export TICKS_IN_MS = 6000
 
 .export MAIN
 .proc MAIN

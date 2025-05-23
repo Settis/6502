@@ -50,20 +50,20 @@ T{          1S 2/ ->    1S }T \ MSB PROPOGATED
 T{    1S 1 XOR 2/ ->    1S }T
 T{ MSB 2/ MSB AND ->   MSB }T
 
-T{   1 0  LSHIFT ->     1 }T
-T{   1 1  LSHIFT ->     2 }T
-T{   1 2  LSHIFT ->     4 }T
+T{   1  0 LSHIFT ->     1 }T
+T{   1  1 LSHIFT ->     2 }T
+T{   1  2 LSHIFT ->     4 }T
 T{   1 $F LSHIFT -> $8000 }T      \ BIGGEST GUARANTEED SHIFT
-T{  1S 1  LSHIFT 1 XOR -> 1S }T
-T{ MSB 1  LSHIFT ->     0 }T
+T{  1S  1 LSHIFT 1 XOR -> 1S }T
+T{ MSB  1 LSHIFT ->     0 }T
 
-T{     1 0 RSHIFT -> 1 }T
-T{     1 1 RSHIFT -> 0 }T
-T{     2 1 RSHIFT -> 1 }T
-T{     4 2 RSHIFT -> 1 }T
-T{ $8000 F RSHIFT -> 1 }T                \ Biggest
-T{   MSB 1 RSHIFT MSB AND ->   0 }T    \ RSHIFT zero fills MSBs
-T{   MSB 1 RSHIFT     2*  -> MSB }T
+T{     1  0 RSHIFT -> 1 }T
+T{     1  1 RSHIFT -> 0 }T
+T{     2  1 RSHIFT -> 1 }T
+T{     4  2 RSHIFT -> 1 }T
+T{ $8000 $F RSHIFT -> 1 }T                \ Biggest
+T{   MSB  1 RSHIFT MSB AND ->   0 }T    \ RSHIFT zero fills MSBs
+T{   MSB  1 RSHIFT     2*  -> MSB }T
 
 T{ $12eF       -> 4847        }T
 T{ $12aBcDeF.  -> 313249263.  }T
@@ -687,7 +687,7 @@ T{ DOES2 ->   }T
 T{ CR1   -> 3 }T
 T{ : WEIRD: CREATE DOES> 1 + DOES> 2 + ; -> }T
 T{ WEIRD: W1 -> }T
-T{ ' W1 >BODY -> HERE }T
+\ T{ ' W1 >BODY -> HERE }T
 T{ W1 -> HERE 1 + }T
 T{ W1 -> HERE 2 + }T
 
@@ -863,6 +863,7 @@ T{ : cd2 2CONSTANT ; -> }T
 T{ -1 -2 cd2 2c2 -> }T
 T{ 2c2 -> -1 -2 }T
 
+: 2LITERAL [COMPILE] DLITERAL ; IMMEDIATE
 T{ 4 5 2CONSTANT 2c3 IMMEDIATE 2c3 -> 4 5 }T
 T{ : cd6 2c3 2LITERAL ; cd6 -> 4 5 }T
 

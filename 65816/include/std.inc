@@ -42,13 +42,13 @@
     .I16
 .endmacro
 
-.macro RESET_VECTOR IRQ, RESET
+.macro RESET_VECTOR IRQ, NMI, RESET
     ; ORG: FFE4
 .segment "resetVector"
     .word IRQ   ; Coprocessor                       FFE4
     .word IRQ   ; Break                             FFE6
     .word IRQ   ; Abort                             FFE8
-    .word IRQ   ; Non-maskable interrupt            FFEA
+    .word NMI   ; Non-maskable interrupt            FFEA
     .word $AAAA ; Stub
     .word IRQ   ; Interrupt request                 FFEE
     .word $BBBB ; Stub
@@ -56,7 +56,7 @@
     .word IRQ   ; Emulation coprocessor             FFF4
     .word $DDDD ; Stub
     .word IRQ   ; Emulation Abort                   FFF8
-    .word IRQ   ; Emulation Non-maskable interrupt  FFFA
+    .word NMI   ; Emulation Non-maskable interrupt  FFFA
     .word RESET ; Reset                             FFFC
     .word IRQ   ; Emulation Interrupt requetst      FFFE
 .endmacro
