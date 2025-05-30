@@ -162,6 +162,9 @@ TEST_LIST:
 .word TEST_UMUL_0_0
 .word TEST_UMUL_1_1
 .word TEST_UMUL_2_4
+.word TEST_UDIV_1
+.word TEST_UDIV_2
+.word TEST_UDIV_10
 TEST_LIST_END:
 
 .A16
@@ -1106,6 +1109,63 @@ TEST_LINE_SEVERAL_SPACES:
     FAIL_IF_NOT_EQ
     JSR PULL_DS
     CMP #$8
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_UDIV_1
+    LDA #$123
+    JSR PUSH_DS
+    LDA #0
+    JSR PUSH_DS
+    LDA #1
+    JSR PUSH_DS
+    LDA #FORTH_WORD_UDIV ; ( ud u1 -- u2 u3 )
+    JSR EXECUTE_FORTH_FOR_TEST 
+    JSR PULL_DS
+    CMP #$123
+    FAIL_IF_NOT_EQ
+    JSR PULL_DS
+    CMP #0
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_UDIV_2
+    LDA #123
+    JSR PUSH_DS
+    LDA #0
+    JSR PUSH_DS
+    LDA #2
+    JSR PUSH_DS
+    LDA #FORTH_WORD_UDIV ; ( ud u1 -- u2 u3 )
+    JSR EXECUTE_FORTH_FOR_TEST
+    JSR PULL_DS
+    CMP #61
+    FAIL_IF_NOT_EQ
+    JSR PULL_DS
+    CMP #1
+    FAIL_IF_NOT_EQ
+    CHECK_SP
+    JMP MARK_TEST_PASSED
+.endproc
+
+.proc TEST_UDIV_10
+    LDA #123
+    JSR PUSH_DS
+    LDA #0
+    JSR PUSH_DS
+    LDA #10
+    JSR PUSH_DS
+    LDA #FORTH_WORD_UDIV ; ( ud u1 -- u2 u3 )
+    JSR EXECUTE_FORTH_FOR_TEST 
+    JSR PULL_DS
+    CMP #12
+    FAIL_IF_NOT_EQ
+    JSR PULL_DS
+    CMP #3
     FAIL_IF_NOT_EQ
     CHECK_SP
     JMP MARK_TEST_PASSED

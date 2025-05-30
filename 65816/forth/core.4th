@@ -322,6 +322,10 @@ END-CODE
     NOT 1+
 ;
 
+CODE DMINUS ( d -- -d ) \ change sign on double
+    ; \\ FIXME
+END-CODE
+
 CODE DROP ( n -- )
     LDX SP
     INX
@@ -1139,7 +1143,7 @@ END-CODE
     DISP_CMD
 ;
 
-: SET_CHAR ( addr n -- ) \ 8 bytes after addr
+: DISP_SET_CHAR ( addr n -- ) \ 8 bytes after addr
     8 0 DO
         DUP 8 * I + $40 OR DISP_CMD
         OVER I + C@
@@ -1173,43 +1177,53 @@ END-CODE
                     \ before the digit is moved.
 ;
 
-CODE M/MOD ( d n -- r d ) \ return modulo and double quotient 
-    ; stub implemenation: divide only by 16 
+: M/MOD ( d n -- r d ) \ return modulo and double quotient
+    >R 0 R U/
+    R> SWAP >R U/
+    R>
+;
 
-    ; variables
-DIV_LOW = FORTH_TMP_1
-DIV_HIGH = FORTH_TMP_2
-DIV_MOD = FORTH_TMP_3
+CODE U/ ( ud u1 -- u2 u3 ) \ return reminder and quotient
+
+MOVED_DIVIDENT = FORTH_TMP_1
+ORIG_DIVIDENT_HIGH = FORTH_TMP_2
+ORIG_DIVIDENT_LOW = FORTH_TMP_3
+QUOTIENT = FORTH_TMP_4
+    STZ QUOTIENT
+    STZ MOVED_DIVIDENT
+
+    JSR PULL_DS ; put divisor on stack
+    PHA
 
     JSR PULL_DS
+    STA ORIG_DIVIDENT_HIGH
     JSR PULL_DS
-    STA DIV_HIGH
-    JSR PULL_DS
-    STA DIV_LOW
-    STZ DIV_MOD
+    STA ORIG_DIVIDENT_LOW
 
-    LDX #4
+    LDY #32
 @LOOP:
-    LSR DIV_HIGH
-    ROR DIV_LOW
-    ROR DIV_MOD
-    DEX
+    ASL ORIG_DIVIDENT_LOW
+    ROL ORIG_DIVIDENT_HIGH
+    ROL MOVED_DIVIDENT
+
+    SEC
+    LDA MOVED_DIVIDENT
+    SBC 1,S
+    BCC @DONT_UPDATE
+    STA MOVED_DIVIDENT
+@DONT_UPDATE:
+    ROL QUOTIENT
+
+    DEY
     BNE @LOOP
 
-    LDX #12
-@LOOP2:
-    LSR DIV_MOD
-    DEX
-    BNE @LOOP2
+    PLA ; pull the divisor
 
-    LDA DIV_MOD
+    LDA MOVED_DIVIDENT
     JSR PUSH_DS
-    LDA DIV_LOW
-    JSR PUSH_DS
-    LDA DIV_HIGH
+    LDA QUOTIENT
     JSR PUSH_DS
 END-CODE
-HIDE
 
 : #S ( d1 -- d2 )
     BEGIN
