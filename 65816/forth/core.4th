@@ -163,7 +163,7 @@ CODE < ( N N -- F )
     LDY #2
     LDA (SP),Y
     CMP (SP)
-    BCC @LESS
+    BMI @LESS
     LDA #0
     BRA @END
 @LESS:
@@ -322,9 +322,40 @@ END-CODE
     NOT 1+
 ;
 
-CODE DMINUS ( d -- -d ) \ change sign on double
-    ; \\ FIXME
+CODE D+ ( d d -- d )
+D_LOW = FORTH_TMP_1
+D_HIGH = FORTH_TMP_2
+    JSR PULL_DS
+    STA D_HIGH
+    JSR PULL_DS
+    STA D_LOW
+    LDY #2
+    CLC
+    LDA (SP),Y
+    ADC D_LOW
+    STA (SP),Y
+    LDA (SP)
+    ADC D_HIGH
+    STA (SP)
 END-CODE
+
+: DMINUS ( d -- -d ) \ change sign on double
+    NOT >R NOT R>
+    1 0 D+
+;
+
+: D- ( d d -- d )
+    DMINUS D+
+;
+
+: DABS
+    DUP 0< 
+    IF DMINUS THEN
+;
+
+: S>D
+    DUP 0< 
+;
 
 CODE DROP ( n -- )
     LDX SP
@@ -1077,6 +1108,16 @@ IMMEDIATE
     BL EMIT
 ;
 
+: SPACES ( n -- )
+    0 MAX   \ If n<0, make it 0.
+    -DUP    \ DUP n only if n>0.
+    IF
+        0 DO
+            SPACE
+        LOOP
+    THEN
+;
+
 : KEY
     (KEY) @ EXECUTE
 ;
@@ -1245,9 +1286,32 @@ END-CODE
     PAD OVER -   \ Calculate the character count of the text string.
 ;
 
-: H. ( n -- )
-    0
-    <# #S #> TYPE
+: D.R ( d n -- )
+    >R              \ Store n on return stack.
+    SWAP OVER       \ Save the high order part of d under d, to be used by SIGN to add a -
+                    \ sign to a negative number.
+    DABS            \ Convert d to its absolute value.
+    <# #S SIGN #>   \ Convert the absolute value to ASCII text with proper sign.
+    R>              \ Retrieve n from the return stack.
+    OVER - SPACES   \ Fill the output field with preceding blanks.
+    TYPE            \ Type out the number.
+;
+
+: D. ( d -- )
+    0 \ 0 field width.
+    D.R
+;
+
+: .R ( n1 n2 -- )
+    >R      \ Save n2 on return stack.
+    S>D     \ Extend the single integer to a double integer
+            \ with the same sign.
+    R> D.R  \ Formatted output.
+;
+
+: . ( n -- )
+    S>D \ Sign-extend the single integer.
+    D.  \ Free format output.
 ;
 
 : NUMBER ( addr -- d ) \ simplified version
@@ -1288,7 +1352,15 @@ END-CODE
 ;
 
 : MIN ( n n -- n )
-    OVER OVER >
+    2DUP >
+    IF
+        SWAP
+    THEN
+    DROP
+;
+
+: MAX ( n n -- n )
+    2DUP <
     IF
         SWAP
     THEN
