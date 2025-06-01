@@ -47,3 +47,4 @@
 .import FORTH_WORD_UMUL
 .import FORTH_WORD_UDIV
 .import FORTH_WORD_DPLUS
+.import FORTH_WORD_DIGIT

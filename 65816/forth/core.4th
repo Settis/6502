@@ -937,6 +937,7 @@ IMMEDIATE
                 EXECUTE
             THEN
         ELSE  \ No matching entry. Try to convert the text to a number.
+            BL HERE DUP C@ + 1+ ! \ NUMBER convert string till the space, I have to put the space after the string
             HERE
             NUMBER
             DPL @ 1+  \ Is there a decimal point? If there is, DPL + 1 should be greater
@@ -1325,30 +1326,88 @@ END-CODE
     D.  \ Free format output.
 ;
 
-: NUMBER ( addr -- d ) \ simplified version
-    -1 DPL !      \ Set DPL to -1
-    0 0 ROT         \ Push two zero's on stack as the initial value of d .
-    COUNT OVER +    \ stack: addrFrom addrTo
-    SWAP            \ stack: addrTo addrFrom
-    DUP C@ $24 <> LABEL_MSG_WRONG_NUMBER ?ERROR \ it should start with '$' sing
-    1+ \ skip '$' sing
-    DO
-        2* 2* 2* 2* \ shift the current number
-        I C@
-        $30 -
-        DUP 0<      \ if it's lower than ASCII 0
-        LABEL_MSG_WRONG_NUMBER ?ERROR 
-        DUP 9 >     \ is it from A to F?
-        IF 
-            7 -
-            DUP $A < \ it's between ASCII 9 and A
-            LABEL_MSG_WRONG_NUMBER ?ERROR
-            DUP $F > \ it's bigger than ASCII F
-            LABEL_MSG_WRONG_NUMBER ?ERROR
+CODE DIGIT ( c n1 -- n2 tf or ff )
+DIGIT_BASE = FORTH_TMP_1
+    JSR PULL_DS
+    STA DIGIT_BASE
+    JSR PULL_DS
+    SEC
+    SBC #$30 ; - '0' ASCII
+    BMI @FAIL ; it should be positive
+    CMP #10 ; is it a 0-9?
+    BCC @CHECK_BASE
+    AND #$FFDF ; to upper case
+    ; SEC ; is here after the BCC check
+    SBC #7
+    CMP #10 ; it should >= 10
+    BCC @FAIL
+@CHECK_BASE:
+    CMP DIGIT_BASE
+    BCS @FAIL
+    JSR PUSH_DS
+    LDA #$FFFF
+    JSR PUSH_DS
+    JMP NEXT
+@FAIL:
+    LDA #$0
+    JSR PUSH_DS
+END-CODE
+
+: (NUMBER) ( d1 addr1 -- d2 addr2 )
+    BEGIN
+        1+ DUP >R       \ Save addr1+1, address of the first digit, on return stack.
+        C@              \ Get a digit
+        BASE @          \ Get the current base
+        DIGIT           \ A primitive. ( c n1 -- n2 tf or ff ) Convert the character c
+                        \ according to base n1 to a binary number n2 with a true flag on top
+                        \ of stack. If the digit is an invalid character, only a false flag
+                        \ is left on stack.
+    WHILE               \ Successful conversion, accumulate into d1.
+        SWAP            \ Get the high order part of d1 to the top.
+        BASE @ U*       \ Multiply by base value
+        DROP            \ Drop the high order part of the product
+        ROT             \ Move the low order part of d1 to top of stack
+        BASE @ U*       \ Multiply by base value
+        D+              \ Accumulate result into d1
+        DPL @ 1+        \ See if DPL is other than -1
+        IF              \ DPL is not -1, a decimal point was encountered
+            1 DPL +!    \ Increment DPL, one more digit to right of decimal point
         THEN
-        +           \ We can add it
-    LOOP
-    SWAP
+        R>              \ Pop addr1+1 back to convert the next digit.
+    REPEAT              \ If an invalid digit was found, exit the loop here. Otherwise
+                        \ repeat the conversion until the string is exhausted.
+    R>                  \ Pop return stack which contains the address of the first non-
+                        \ convertable digit, addr2.
+;
+HIDE
+
+: NUMBER ( addr -- d )
+    0 0 ROT                             \ Push two zero's on stack as the initial value of d .
+    DUP 1+ C@                           \ Get the first digit
+    $2D =                               \ Is it a - sign?
+    DUP >R                              \ Save the flag on return stack.
+    -                                   \ If the first digit is -, the flag is FFFF, and addr-1 points to the
+                                        \ second digit. If the first digit is not -, the flag is 0. addr+0
+                                        \ remains the same, pointing to the first digit.
+    -1                                  \ The initial value of DPL
+    BEGIN                               \ Start the conversion process
+        DPL !                           \ Store the decimal point counter
+        (NUMBER)                        \ Convert one digit after another until an invalid char occurs.
+                                        \ Result is accumulated into d .
+        DUP C@                          \ Fetch the invalid digit
+        BL -                            \ Is it a blank?
+    WHILE                               \ Not a blank, see if it is a decimal point
+        DUP C@                          \ Get the digit again
+        $2E -                           \ Is it a decimal point?
+        LABEL_MSG_WRONG_NUMBER ?ERROR   \ Not a decimal point. It is an illegal character for a number.
+                                        \ Issue an error message and quit.
+        0                               \ A decimal point was found. Set DPL to 0 the next time.
+    REPEAT                              \ Exit here if a blank was detected. Otherwise repeat the
+                                        \ conversion process.
+    DROP                                \ Discard addr on stack
+    R>                                  \ Pop the flag of - sign back
+    IF DMINUS THEN                      \ Negate d if the first digit is a - sign.
+    \ All done. A double integer is on stack.
 ;
 
 : !CSP ( -- )
