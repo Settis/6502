@@ -1641,3 +1641,12 @@ IMMEDIATE
     HERE SWAP ! \ patching leave address
 ; 
 IMMEDIATE
+
+CODE UPTIMEMS ( -- d ) \ put ms since start
+    SEI
+    LDA TIMER_MS
+    JSR PUSH_DS
+    LDA TIMER_MS+2
+    JSR PUSH_DS
+    CLI
+END-CODE
