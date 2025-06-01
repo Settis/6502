@@ -339,10 +339,21 @@ D_HIGH = FORTH_TMP_2
     STA (SP)
 END-CODE
 
-: DMINUS ( d -- -d ) \ change sign on double
-    NOT >R NOT R>
-    1 0 D+
-;
+CODE DMINUS ( d -- -d ) \ change sign on double
+    LDY #2
+    LDA (SP)
+    EOR #$FFFF
+    STA (SP)
+    LDA (SP),Y
+    EOR #$FFFF
+    INC
+    STA (SP),Y
+    BNE @SKIP
+    LDA (SP)
+    INC
+    STA (SP)
+@SKIP:
+END-CODE
 
 : D- ( d d -- d )
     DMINUS D+
@@ -433,19 +444,19 @@ CODE NOT ( u -- u )
     STA (SP)
 END-CODE
 
-CODE OR ( u -- u )
+CODE OR ( u u -- u )
     JSR PULL_DS
     ORA (SP)
     STA (SP)
 END-CODE
 
-CODE AND ( u -- u )
+CODE AND ( u u -- u )
     JSR PULL_DS
     AND (SP)
     STA (SP)
 END-CODE
 
-CODE XOR ( u -- u )
+CODE XOR ( u u -- u )
     JSR PULL_DS
     EOR (SP)
     STA (SP)
