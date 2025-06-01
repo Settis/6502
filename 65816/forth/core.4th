@@ -63,6 +63,10 @@ $20 CONSTANT BL
     10 BASE ! 
 ;
 
+: BIN
+    2 BASE !
+;
+
 CODE EXECUTE ( cfa -- )
     JSR PULL_DS
     TAX
@@ -1382,7 +1386,20 @@ END-CODE
 HIDE
 
 : NUMBER ( addr -- d )
+    BASE @ >R                           \ BASE is recognized from the number. Preserve the current BASE
     0 0 ROT                             \ Push two zero's on stack as the initial value of d .
+    DUP 1+ C@                           \ Get the first digit
+    DUP $24 = \ Is it a $ sign?
+    IF
+        HEX DROP 1+
+    ELSE
+        $25 = \ Is it a % sign?
+        IF 
+            BIN 1+
+        ELSE
+            DECIMAL
+        THEN
+    THEN
     DUP 1+ C@                           \ Get the first digit
     $2D =                               \ Is it a - sign?
     DUP >R                              \ Save the flag on return stack.
@@ -1407,7 +1424,8 @@ HIDE
     DROP                                \ Discard addr on stack
     R>                                  \ Pop the flag of - sign back
     IF DMINUS THEN                      \ Negate d if the first digit is a - sign.
-    \ All done. A double integer is on stack.
+                                        \ All done. A double integer is on stack.
+    R> BASE !                           \ return BASE back
 ;
 
 : !CSP ( -- )
