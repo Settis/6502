@@ -630,12 +630,20 @@ CODE CMOVE ( from to u -- )
 END-CODE
 
 : FILL ( addr n b -- )
-    SWAP >R \ store n on the return stack
-    OVER C! \ store b in addr
-    DUP 1+  \ addr+1, to be filled with b
-    R> 1-   \ n-1, number of butes to be filled by CMOVE
-    CMOVE   \ A primitive. Copy (addr) to (addr+1), (addr+1) to (addr+2),
-            \ etc, until all n locations are filled with b.
+    SWAP 
+    0 MAX   \ If n<0, make it 0.
+    -DUP    \ DUP n only if n>0. 
+    IF \ guard for not overwrite everything
+        >R \ store n on the return stack
+        OVER C! \ store b in addr
+        DUP 1+  \ addr+1, to be filled with b
+        R> 1-   \ n-1, number of butes to be filled by CMOVE
+        -DUP
+        IF 
+            CMOVE   \ A primitive. Copy (addr) to (addr+1), (addr+1) to (addr+2),
+                    \ etc, until all n locations are filled with b.
+        THEN
+    THEN
 ;
 
 : ERASE ( addr n -- )
@@ -987,6 +995,12 @@ IMMEDIATE
 
 : LATEST ( -- addr )
     CURRENT @ @
+;
+
+: IMMEDIATE 
+    LATEST C@ 
+    $40 OR
+    LATEST C!
 ;
 
 : -FIND ( -- cfa b tf , or ff )
@@ -1622,6 +1636,8 @@ IMMEDIATE
     3 ?PAIRS \ Check the number left by DO . If it is not 3, issue an error message.
              \ The loop is not properly nested.
     COMPILE (+LOOP)
-    ,
+    DUP      \ I need to put two links
+    2+ , \ put the backward branching
+    HERE SWAP ! \ patching leave address
 ; 
 IMMEDIATE

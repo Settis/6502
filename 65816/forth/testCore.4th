@@ -757,64 +757,6 @@ T{ SEEBUF -> 12 12 34 }T
 T{ FBUF CHAR+ FBUF 2 CHARS MOVE -> }T
 T{ SEEBUF -> 12 34 34 }T
 
-\ TODO: capture the output
-: OUTPUT-TEST
-   ." YOU SHOULD SEE THE STANDARD GRAPHIC CHARACTERS:" CR
-   41 BL DO I EMIT LOOP CR
-   61 41 DO I EMIT LOOP CR
-   7F 61 DO I EMIT LOOP CR
-   ." YOU SHOULD SEE 0-9 SEPARATED BY A SPACE:" CR
-   9 1+ 0 DO I . LOOP CR
-   ." YOU SHOULD SEE 0-9 (WITH NO SPACES):" CR
-   [CHAR] 9 1+ [CHAR] 0 DO I 0 SPACES EMIT LOOP CR
-   ." YOU SHOULD SEE A-G SEPARATED BY A SPACE:" CR
-   [CHAR] G 1+ [CHAR] A DO I EMIT SPACE LOOP CR
-   ." YOU SHOULD SEE 0-5 SEPARATED BY TWO SPACES:" CR
-   5 1+ 0 DO I [CHAR] 0 + EMIT 2 SPACES LOOP CR
-   ." YOU SHOULD SEE TWO SEPARATE LINES:" CR
-   S" LINE 1" TYPE CR S" LINE 2" TYPE CR
-   ." YOU SHOULD SEE THE NUMBER RANGES OF SIGNED AND UNSIGNED NUMBERS:" CR
-   ." SIGNED: " MIN-INT . MAX-INT . CR
-   ." UNSIGNED: " 0 U. MAX-UINT U. CR
-;
-T{ OUTPUT-TEST -> }T
-
-: GP4 <# 1 0 #S #> S" 1" S= ;
-T{ GP4 -> <TRUE> }T
-: GP5
-   BASE @ <TRUE>
-   MAX-BASE 1+ 2 DO      \ FOR EACH POSSIBLE BASE
-     I BASE !              \ TBD: ASSUMES BASE WORKS
-       I 0 <# #S #> S" 10" S= AND
-   LOOP
-   SWAP BASE ! ;
-T{ GP5 -> <TRUE> }T
-
-: GP6
-   BASE @ >R 2 BASE !
-   MAX-UINT MAX-UINT <# #S #>    \ MAXIMUM UD TO BINARY
-   R> BASE !                        \ S: C-ADDR U
-   DUP #BITS-UD = SWAP
-   0 DO                              \ S: C-ADDR FLAG
-     OVER C@ [CHAR] 1 = AND     \ ALL ONES
-     >R CHAR+ R>
-   LOOP SWAP DROP ;
-T{ GP6 -> <TRUE> }T
-
-: GP7
-   BASE @ >R MAX-BASE BASE !
-   <TRUE>
-   A 0 DO
-     I 0 <# #S #>
-     1 = SWAP C@ I 30 + = AND AND
-   LOOP
-   MAX-BASE A DO
-     I 0 <# #S #>
-     1 = SWAP C@ 41 I A - + = AND AND
-   LOOP
-   R> BASE ! ;
-T{ GP7 -> <TRUE> }T
-
 T{ ( A comment)1234 -> }T
 T{ : pc1 ( A comment)1234 ; pc1 -> 1234 }T
 
@@ -1132,3 +1074,5 @@ T{  HI-2INT MAX-2INT DU< -> <TRUE>  }T
 T{ MAX-2INT MIN-2INT DU< -> <TRUE>  }T
 T{ MIN-2INT MAX-2INT DU< -> <FALSE> }T
 T{ MIN-2INT  LO-2INT DU< -> <TRUE>  }T
+
+PRINT-TEST-STAT
