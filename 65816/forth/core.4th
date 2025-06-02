@@ -1030,6 +1030,14 @@ IMMEDIATE
     LATEST C!
 ;
 
+: RECURSE ( -- addr )
+    ?COMP     \ Error if not compiling  
+    LATEST
+    COUNT $1F AND + 2+
+    ,
+;
+IMMEDIATE
+
 : -FIND ( -- cfa b tf , or ff )
     BL WORD     \ Move text string delimited by blanks from input string to the top of
                 \ dictionary HERE .

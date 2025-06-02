@@ -822,6 +822,8 @@ T{ -2. -> -2 -1 }T
 T{ : rdl1  3. ; rdl1 ->  3  0 }T
 T{ : rdl2 -4. ; rdl2 -> -4 -1 }T
 
+: DNEGATE DMINUS ;
+
 T{   0. DNEGATE ->  0. }T
 T{   1. DNEGATE -> -1. }T
 T{  -1. DNEGATE ->  1. }T
