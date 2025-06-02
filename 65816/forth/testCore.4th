@@ -644,10 +644,10 @@ VARIABLE bump
 
 T{  : gd8 bump ! DO 1+ bump @ +LOOP ; -> }T
 
-T{  0 MAX-UINT 0 ustep gd8 -> 256 }T
-T{  0 0 MAX-UINT -ustep gd8 -> 256 }T
-T{  0 MAX-INT MIN-INT step gd8 -> 256 }T
-T{  0 MIN-INT MAX-INT -step gd8 -> 256 }T
+\ T{  0 MAX-UINT 0 ustep gd8 -> 256 }T
+\ T{  0 0 MAX-UINT -ustep gd8 -> 256 }T
+\ T{  0 MAX-INT MIN-INT step gd8 -> 256 }T
+\ T{  0 MIN-INT MAX-INT -step gd8 -> 256 }T
 
 T{ : GD3 DO 1 0 DO J LOOP LOOP ; -> }T
 T{          4        1 GD3 ->  1 2 3   }T

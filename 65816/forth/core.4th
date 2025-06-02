@@ -275,15 +275,37 @@ CODE 2- ( n -- n )
     STA (SP)
 END-CODE
 
-CODE 2* ( u -- u )
+CODE << ( u u -- u )
+    JSR PULL_DS
+    TAY
+    BEQ @END
     LDX SP
+@LOOP:
     ASL 0,X
+    DEY
+    BNE @LOOP
+@END:
 END-CODE
 
-CODE 2/ ( u -- u )
+CODE >> ( u u -- u )
+    JSR PULL_DS
+    TAY
+    BEQ @END
     LDX SP
+@LOOP:
     LSR 0,X
+    DEY
+    BNE @LOOP
+@END:
 END-CODE
+
+: 2* ( u -- u )
+    1 <<
+;
+
+: 2/ ( u -- u )
+    1 >>
+;
 
 CODE U* ( u u -- d )
 GOES_LOW = FORTH_TMP_1
