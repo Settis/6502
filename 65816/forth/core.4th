@@ -326,6 +326,11 @@ END-CODE
     NOT 1+
 ;
 
+: ABS ( n -- n )
+    DUP 0< 
+    IF MINUS THEN
+;
+
 CODE D+ ( d d -- d )
 D_LOW = FORTH_TMP_1
 D_HIGH = FORTH_TMP_2
@@ -363,12 +368,12 @@ END-CODE
     DMINUS D+
 ;
 
-: DABS
+: DABS ( d -- d )
     DUP 0< 
     IF DMINUS THEN
 ;
 
-: S>D
+: S>D ( n -- d )
     DUP 0< 
 ;
 
@@ -1650,3 +1655,7 @@ CODE UPTIMEMS ( -- d ) \ put ms since start
     JSR PUSH_DS
     CLI
 END-CODE
+
+: ? ( addr -- )
+    @ . \ Fetch the number and type it out.
+;

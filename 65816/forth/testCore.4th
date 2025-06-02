@@ -34,6 +34,9 @@ T{ 0S 1S XOR -> 1S }T
 T{ 1S 0S XOR -> 1S }T
 T{ 1S 1S XOR -> 0S }T
 
+: RSHIFT >> ;
+: LSHIFT << ;
+
 1S 1 RSHIFT INVERT CONSTANT MSB
 T{ MSB BITSSET? -> 0 0 }T
 
@@ -210,7 +213,7 @@ T{  0 -DUP ->  0    }T
 T{  1 -DUP ->  1  1 }T
 
 T{ : GR1 >R R> ; -> }T
-T{ : GR2 >R R@ R> DROP ; -> }T
+T{ : GR2 >R R R> DROP ; -> }T
 T{ 123 GR1 -> 123 }T
 T{ 123 GR2 -> 123 }T
 T{  1S GR1 ->  1S }T      ( Return stack holds cells )
@@ -698,7 +701,7 @@ T{ BL GS3
    DROP -> 0 }T \ Blank lines return zero-length strings
 
 : S= \ ( ADDR1 C1 ADDR2 C2 -- T/F ) Compare two strings.
-   >R SWAP R@ = IF            \ Make sure strings have same length
+   >R SWAP R = IF            \ Make sure strings have same length
      R> ?DUP IF               \ If non-empty strings
        0 DO
          OVER C@ OVER C@ - IF 2DROP <FALSE> UNLOOP EXIT THEN

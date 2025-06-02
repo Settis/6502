@@ -43,7 +43,8 @@ VARIABLE T-PASSED
 
 : PRINT-TEST-STAT ( -- )
     CR
-    ." Total tests: " T-STARTED @ . CR
+    ." Total tests: " T-STARTED ? CR
+    ." Passed tests: " T-PASSED ? CR
     ." Failed tests: " T-STARTED @ T-PASSED @ - T-ERROR @ - . CR
-    ." Test error: " T-ERROR @ . CR
+    ." Test error: " T-ERROR ? CR
 ;
