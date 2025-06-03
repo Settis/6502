@@ -180,6 +180,23 @@ CODE < ( N N -- F )
     STX SP
 END-CODE
 
+CODE U< ( u u -- f )
+    LDY #2
+    LDA (SP),Y
+    CMP (SP)
+    BCC @LESS
+    LDA #0
+    BRA @END
+@LESS:
+    LDA #$FFFF
+@END:
+    STA (SP),Y
+    LDX SP
+    INX
+    INX
+    STX SP
+END-CODE
+
 : > ( N N -- F )
     \ not (less or eqal)
     2DUP < >R
@@ -187,9 +204,14 @@ END-CODE
     OR NOT
 ;
 
-: 0<
-    0 <
-;
+CODE 0< ( n -- f )
+    LDA (SP)
+    AND #$8000
+    BEQ @SKIP
+    LDA #$FFFF
+@SKIP:
+    STA (SP)
+END-CODE
 
 CODE BRANCH ( -- )
     LDA (IP)
@@ -299,12 +321,14 @@ CODE >> ( u u -- u )
 @END:
 END-CODE
 
-: 2* ( u -- u )
+: 2* ( n -- n )
     1 <<
 ;
 
-: 2/ ( u -- u )
+: 2/ ( n -- n )
+    DUP $8000 AND >R
     1 >>
+    R> OR
 ;
 
 CODE U* ( u u -- d )
@@ -344,13 +368,30 @@ END-CODE
     U* DROP
 ;
 
-: MINUS ( n -- -n) \ change sign
+: M* ( n n -- d ) 
+    2DUP XOR >R
+    ABS SWAP ABS U*
+    R> D+-
+;
+
+: D+- ( d d -- d )
+    0< IF
+        DMINUS
+    THEN
+;
+
+: MINUS ( n -- -n ) \ change sign
     NOT 1+
 ;
 
+: +- ( n n -- n )
+    0< IF
+        MINUS
+    THEN
+;
+
 : ABS ( n -- n )
-    DUP 0< 
-    IF MINUS THEN
+    DUP +-
 ;
 
 CODE D+ ( d d -- d )
@@ -391,8 +432,7 @@ END-CODE
 ;
 
 : DABS ( d -- d )
-    DUP 0< 
-    IF DMINUS THEN
+    DUP D+-
 ;
 
 : S>D ( n -- d )
@@ -445,8 +485,38 @@ CODE SWAP ( a b -- b a )
     STA (SP)
 END-CODE
 
+CODE 2SWAP ( a b c d -- c d a b )
+    LDY #4
+    LDA (SP),Y
+    TAX
+    LDA (SP)
+    STA (SP),Y
+    TXA
+    STA (SP)
+    LDY #6
+    LDA (SP),Y
+    TAX
+    LDY #2
+    LDA (SP),Y
+    LDY #6
+    STA (SP),Y
+    TXA
+    LDY #2
+    STA (SP),Y
+END-CODE
+
 CODE OVER ( a b -- a b a )
     LDY #2
+    LDA (SP),Y
+    JSR PUSH_DS
+END-CODE
+
+CODE 2OVER ( a b c d -- a b c d a b )
+    LDY #6
+    LDA (SP),Y
+    PHY
+    JSR PUSH_DS
+    PLY
     LDA (SP),Y
     JSR PUSH_DS
 END-CODE
@@ -1287,6 +1357,26 @@ END-CODE
     >R 0 R U/
     R> SWAP >R U/
     R>
+;
+
+: M/ ( d n -- rem quot )
+    OVER >R >R DABS R ABS U/ R> R XOR +- SWAP R> +- SWAP
+;
+
+: /MOD ( n n -- rem quot )
+    >R S>D R> M/
+;
+
+: / ( n n -- quot )
+    /MOD SWAP DROP
+;
+
+: */ ( n n n -- n )
+    */MOD SWAP DROP
+;
+
+: */MOD ( n n n -- n n )
+    >R M* R> M/
 ;
 
 CODE U/ ( ud u1 -- u2 u3 ) \ return reminder and quotient
