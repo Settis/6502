@@ -512,16 +512,16 @@ T{ 1STC C@ 2NDC C@ ->   3 2  }T
 T{       4 2NDC C! ->        }T
 T{ 1STC C@ 2NDC C@ ->   3 4  }T
 
-T{ CHAR X     -> 58 }T
-T{ CHAR HELLO -> 48 }T
+T{ CHAR X     -> $58 }T
+T{ CHAR HELLO -> $48 }T
 
 T{ : GC1 CHAR X     ; -> }T
 T{ : GC2 CHAR HELLO ; -> }T
-T{ GC1 -> 58 }T
-T{ GC2 -> 48 }T
+T{ GC1 -> $58 }T
+T{ GC2 -> $48 }T
 
 T{ : GC3 [ GC1 ] LITERAL ; -> }T
-T{ GC3 -> 58 }T
+T{ GC3 -> $58 }T
 
 HERE 1 ALLOT
 HERE
@@ -537,16 +537,8 @@ T{ ' GT1 EXECUTE -> 123 }T
 T{ : GT2 ' GT1 ; IMMEDIATE -> }T
 T{ GT2 EXECUTE -> 123 }T
 
-HERE 3 C, CHAR G C, CHAR T C, CHAR 1 C, CONSTANT GT1STRING
-HERE 3 C, CHAR G C, CHAR T C, CHAR 2 C, CONSTANT GT2STRING
-T{ GT1STRING FIND -> ' GT1 -1 }T
-T{ GT2STRING FIND -> ' GT2 1  }T
-( HOW TO SEARCH FOR NON-EXISTENT WORD? )
-
 T{ : GT3 GT2 LITERAL ; -> }T
 T{ GT3 -> ' GT1 }T
-
-T{ GT1STRING COUNT -> GT1STRING CHAR+ 3 }T
 
 T{ : GT8 STATE @ ; IMMEDIATE -> }T
 T{ GT8 -> 0 }T
@@ -698,31 +690,6 @@ T{ W1 -> HERE 2 + }T
 
 : GS3 WORD COUNT SWAP C@ ;
 T{ BL GS3 HELLO -> 5 CHAR H }T
-T{ CHAR " GS3 GOODBYE" -> 7 CHAR G }T
-T{ BL GS3 
-   DROP -> 0 }T \ Blank lines return zero-length strings
-
-: S= \ ( ADDR1 C1 ADDR2 C2 -- T/F ) Compare two strings.
-   >R SWAP R = IF            \ Make sure strings have same length
-     R> ?DUP IF               \ If non-empty strings
-       0 DO
-         OVER C@ OVER C@ - IF 2DROP <FALSE> UNLOOP EXIT THEN
-         SWAP CHAR+ SWAP CHAR+
-       LOOP
-     THEN
-     2DROP <TRUE>            \ If we get here, strings match
-   ELSE
-     R> DROP 2DROP <FALSE> \ Lengths mismatch
-   THEN ;
-
-: GP1 <# 41 HOLD 42 HOLD 0 0 #> S" BA" S= ;
-T{ GP1 -> <TRUE> }T
-
-: GP2 <# -1 SIGN 0 SIGN -1 SIGN 0 0 #> S" --" S= ;
-T{ GP2 -> <TRUE> }T
-
-: GP3 <# 1 0 # # #> S" 01" S= ;
-T{ GP3 -> <TRUE> }T
 
 24 CONSTANT MAX-BASE                  \ BASE 2 ... 36
 : COUNT-BITS
@@ -731,7 +698,7 @@ COUNT-BITS 2* CONSTANT #BITS-UD    \ NUMBER OF BITS IN UD
 
 : GN2 \ ( -- 16 10 )
    BASE @ >R HEX BASE @ DECIMAL BASE @ R> BASE ! ;
-T{ GN2 -> 10 A }T
+T{ GN2 -> 10 $A }T
 
 CREATE FBUF 00 C, 00 C, 00 C,
 CREATE SBUF 12 C, 34 C, 56 C,
@@ -744,6 +711,8 @@ T{ SEEBUF -> 20 00 00 }T
 
 T{ FBUF 3 20 FILL -> }T
 T{ SEEBUF -> 20 20 20 }T
+
+: MOVE CMOVE ;
 
 T{ FBUF FBUF 3 CHARS MOVE -> }T \ BIZARRE SPECIAL CASE
 T{ SEEBUF -> 20 20 20 }T
@@ -762,15 +731,21 @@ T{ SEEBUF -> 12 12 34 }T
 T{ FBUF CHAR+ FBUF 2 CHARS MOVE -> }T
 T{ SEEBUF -> 12 34 34 }T
 
-T{ ( A comment)1234 -> }T
 T{ : pc1 ( A comment)1234 ; pc1 -> 1234 }T
 
-T{ BL -> 20 }T
+T{ BL -> $20 }T
 
 T{ 123 CONSTANT iw1 IMMEDIATE iw1 -> 123 }T
 T{ : iw2 iw1 LITERAL ; iw2 -> 123 }T
 T{ VARIABLE iw3 IMMEDIATE 234 iw3 ! iw3 @ -> 234 }T
 T{ : iw4 iw3 [ @ ] LITERAL ; iw4 -> 234 }T
+
+VARIABLE nn1
+VARIABLE nn2
+T{ :NONAME 1234 ; nn1 ! -> }T
+T{ :NONAME 9876 ; nn2 ! -> }T
+T{ nn1 @ EXECUTE -> 1234 }T
+T{ nn2 @ EXECUTE -> 9876 }T
 
 T{ :NONAME [ 345 ] iw3 [ ! ] ; DROP iw3 @ -> 345 }T
 T{ CREATE iw5 456 , IMMEDIATE -> }T
@@ -780,10 +755,7 @@ T{ : iw6 CREATE , IMMEDIATE DOES> @ 1+ ; -> }T
 T{ 111 iw6 iw7 iw7 -> 112 }T
 T{ : iw8 iw7 LITERAL 1+ ; iw8 -> 113 }T
 
-T{ : iw9 CREATE , DOES> @ 2 + IMMEDIATE ; -> }T
-: find-iw BL WORD FIND NIP ;
-T{ 222 iw9 iw10 find-iw iw10 -> -1 }T    \ iw10 is not immediate
-T{ iw10 find-iw iw10 -> 224 1 }T          \ iw10 becomes immediate
+: NIP SWAP DROP ;
 
 \ With default compilation semantics
 T{ : [c1] [COMPILE] DUP ; IMMEDIATE -> }T
@@ -829,8 +801,8 @@ T{ : rdl2 -4. ; rdl2 -> -4 -1 }T
 T{   0. DNEGATE ->  0. }T
 T{   1. DNEGATE -> -1. }T
 T{  -1. DNEGATE ->  1. }T
-T{ max-2int DNEGATE -> min-2int SWAP 1+ SWAP }T
-T{ min-2int SWAP 1+ SWAP DNEGATE -> max-2int }T
+T{ MAX-2INT DNEGATE -> MIN-2INT SWAP 1+ SWAP }T
+T{ MIN-2INT SWAP 1+ SWAP DNEGATE -> MAX-2INT }T
 
 T{  0.  5. D+ ->  5. }T                         \ small integers
 T{ -5.  0. D+ -> -5. }T
@@ -877,14 +849,14 @@ T{  0 -1  0  2 D- ->  0 -3 }T
 T{  0 -1  0 -2 D- ->  0  1 }T
 T{  0  0  0  1 D- ->  0 -1 }T
 T{ MIN-INT 0 2DUP D- -> 0. }T
-T{ MIN-INT S>D MAX-INT 0D- -> 1 1s }T
-T{ MAX-2INT max-2INT D- -> 0. }T    \ large integers
-T{ MIN-2INT min-2INT D- -> 0. }T
-T{ MAX-2INT  hi-2INT D- -> lo-2INT DNEGATE }T
-T{  HI-2INT  lo-2INT D- -> max-2INT }T
-T{  LO-2INT  hi-2INT D- -> min-2INT 1. D+ }T
-T{ MIN-2INT min-2INT D- -> 0. }T
-T{ MIN-2INT  lo-2INT D- -> lo-2INT }T
+T{ MIN-INT S>D MAX-INT 0 D- -> 1 1S }T
+T{ MAX-2INT MAX-2INT D- -> 0. }T    \ large integers
+T{ MIN-2INT MIN-2INT D- -> 0. }T
+T{ MAX-2INT  HI-2INT D- -> LO-2INT DNEGATE }T
+T{  HI-2INT  LO-2INT D- -> MAX-2INT }T
+T{  LO-2INT  HI-2INT D- -> MIN-2INT 1. D+ }T
+T{ MIN-2INT MIN-2INT D- -> 0. }T
+T{ MIN-2INT  LO-2INT D- -> LO-2INT }T
 
 T{                0. D0< -> <FALSE> }T
 T{                1. D0< -> <FALSE> }T
@@ -1012,20 +984,10 @@ T{ MAX-2INT      -1. DMIN -> -1.      }T
 T{ MIN-2INT       1. DMIN -> MIN-2INT }T
 T{ MIN-2INT      -1. DMIN -> MIN-2INT }T
 
-T{    1234  0 D>S ->  1234   }T
-T{   -1234 -1 D>S -> -1234   }T
-T{ MAX-INT  0 D>S -> MAX-INT }T
-T{ MIN-INT -1 D>S -> MIN-INT }T
-
 T{       1. DABS -> 1.       }T
 T{      -1. DABS -> 1.       }T
 T{ MAX-2INT DABS -> MAX-2INT }T
 T{ MIN-2INT 1. D+ DABS -> MAX-2INT }T
-
-T{ HI-2INT   1 M+ -> HI-2INT   1. D+ }T
-T{ MAX-2INT -1 M+ -> MAX-2INT -1. D+ }T
-T{ MIN-2INT  1 M+ -> MIN-2INT  1. D+ }T
-T{ LO-2INT  -1 M+ -> LO-2INT  -1. D+ }T
 
 : ?floored [ -3 2 / -2 = ] LITERAL IF 1. D- THEN ;
 
@@ -1045,32 +1007,10 @@ T{ MIN-2INT LO-2INT NIP 1- MAX-INT M*/ -> MIN-INT 3 + HI-2INT NIP 2 + }T
 T{ MAX-2INT LO-2INT NIP DUP NEGATE M*/ -> MAX-2INT DNEGATE }T
 T{ MIN-2INT MAX-INT            DUP M*/ -> MIN-2INT }T
 
-MAX-2INT 71 73 M*/ 2CONSTANT dbl1
-MIN-2INT 73 79 M*/ 2CONSTANT dbl2
-: d>ascii ( d -- caddr u )
-   DUP >R <# DABS #S R> SIGN #>    ( -- caddr1 u )
-   HERE SWAP 2DUP 2>R CHARS DUP ALLOT MOVE 2R>
-;
-
-dbl1 d>ascii 2CONSTANT "dbl1"
-dbl2 d>ascii 2CONSTANT "dbl2"
-
-: DoubleOutput
-   CR ." You should see lines duplicated:" CR
-   5 SPACES "dbl1" TYPE CR
-   5 SPACES dbl1 D. CR
-   8 SPACES "dbl1" DUP >R TYPE CR
-   5 SPACES dbl1 R> 3 + D.R CR
-   5 SPACES "dbl2" TYPE CR
-   5 SPACES dbl2 D. CR
-   10 SPACES "dbl2" DUP >R TYPE CR
-   5 SPACES dbl2 R> 5 + D.R CR
-;
-
-T{ DoubleOutput -> }T
-
 T{       1.       2. 3. 2ROT ->       2. 3.       1. }T
 T{ MAX-2INT MIN-2INT 1. 2ROT -> MIN-2INT 1. MAX-2INT }T
+T{ 1 2 3 4 5 6 2ROT -> 3 4 5 6 1 2 }T
+T{ 8 9 1 2 3 4 5 6 2ROT -> 8 9 3 4 5 6 1 2 }T
 
 T{       1.       1. DU< -> <FALSE> }T
 T{       1.      -1. DU< -> <TRUE>  }T

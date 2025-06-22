@@ -288,6 +288,15 @@ MSG_COMPILE_NOT_FOUND:
     JMP NEXT
 .endproc
 
+.proc DO2CON
+    LDA (W)
+    JSR PUSH_DS
+    LDY #2
+    LDA (W),Y
+    JSR PUSH_DS
+    JMP NEXT
+.endproc
+
 .export DOVAR
 .proc DOVAR
     LDA W

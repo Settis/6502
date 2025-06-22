@@ -164,20 +164,22 @@ END-CODE
 ;
 
 CODE < ( N N -- F )
-    LDY #2
-    LDA (SP),Y
-    CMP (SP)
-    BMI @LESS
-    LDA #0
-    BRA @END
-@LESS:
+    JSR PULL_DS
+    SEC
+    SBC (SP)
+    BEQ @L_VC
+    BMI @LESS_1
+    BVS @L_VC
+    BRA @TRUE
+@LESS_1:
+    BVC @L_VC
+@TRUE:
     LDA #$FFFF
-@END:
-    STA (SP),Y
-    LDX SP
-    INX
-    INX
-    STX SP
+    BRA @END_1
+@L_VC:
+    LDA #0
+@END_1:
+    STA (SP)
 END-CODE
 
 CODE U< ( u u -- f )
@@ -198,10 +200,7 @@ CODE U< ( u u -- f )
 END-CODE
 
 : > ( N N -- F )
-    \ not (less or eqal)
-    2DUP < >R
-    = R>
-    OR NOT
+    SWAP <
 ;
 
 CODE 0< ( n -- f )
@@ -325,11 +324,15 @@ END-CODE
     1 <<
 ;
 
-: 2/ ( n -- n )
-    DUP $8000 AND >R
-    1 >>
-    R> OR
-;
+CODE 2/ ( n -- n )
+    CLC
+    LDA (SP)
+    BPL @SKIP
+    SEC
+@SKIP:
+    ROR
+    STA (SP)
+END-CODE
 
 CODE U* ( u u -- d )
 GOES_LOW = FORTH_TMP_1
@@ -539,6 +542,39 @@ CODE ROT ( a b c -- b c a )
     STA (SP)   ; write a
 END-CODE
 
+CODE 2ROT ( d1 d2 d3 -- d2 d3 d1 )
+D_1_LOW = FORTH_TMP_1
+D_1_HIGH = FORTH_TMP_2
+
+    LDA SP
+    CLC
+    ADC #8
+    TAX
+    TAY
+
+    LDA 0,X
+    STA D_1_HIGH
+    INX
+    INX
+    LDA 0,X
+    STA D_1_LOW
+    INX
+
+    TXA
+    TYX
+    DEX
+    TAY
+    
+    LDA #7
+    MVP 0, 0
+
+    LDY #2
+    LDA D_1_LOW
+    STA (SP),Y
+    LDA D_1_HIGH
+    STA (SP)
+END-CODE
+
 CODE NOT ( u -- u )
     LDA (SP)
     EOR #$FFFF
@@ -705,6 +741,11 @@ CODE I ( -- n )
     JSR PUSH_DS
 END-CODE
 
+CODE J ( -- n )
+    LDA 7,S
+    JSR PUSH_DS
+END-CODE
+
 CODE CMOVE ( from to u -- )
     LDY #4
     LDA (SP),Y
@@ -716,10 +757,12 @@ CODE CMOVE ( from to u -- )
     TAY
 
     LDA (SP)
+    BEQ @END
     DEC A
 
     MVN 0, 0
 
+@END:
     CLC
     LDA SP
     ADC #6
@@ -735,11 +778,10 @@ END-CODE
         OVER C! \ store b in addr
         DUP 1+  \ addr+1, to be filled with b
         R> 1-   \ n-1, number of butes to be filled by CMOVE
-        -DUP
-        IF 
-            CMOVE   \ A primitive. Copy (addr) to (addr+1), (addr+1) to (addr+2),
-                    \ etc, until all n locations are filled with b.
-        THEN
+        CMOVE   \ A primitive. Copy (addr) to (addr+1), (addr+1) to (addr+2),
+                \ etc, until all n locations are filled with b.
+    ELSE
+        2DROP
     THEN
 ;
 
@@ -827,6 +869,14 @@ IMMEDIATE
   HERE C@
   1+ ALLOT
 ;
+
+: CHAR ( -- c )
+  BL IN @ SWAP ENCLOSE \ get offsets for next word
+  IN +!                \ move IN after the word
+  DROP + C@            \ load the first character
+  LITERAL  \ it should be [COMPILE] LITERAL
+;
+IMMEDIATE
 
 : COUNT ( addr1 -- addr2 n )
     DUP 1+  \ addr2=addr1+1
@@ -1457,6 +1507,10 @@ END-CODE
     D.R
 ;
 
+: U. ( u -- )
+    0 D.
+;
+
 : .R ( n1 n2 -- )
     >R      \ Save n2 on return stack.
     S>D     \ Extend the single integer to a double integer
@@ -1645,6 +1699,13 @@ IMMEDIATE
                         \ words following till ';' or ;CODE .
 ;
 
+: :NONAME ( -- addr ) 
+    ?EXEC
+    HERE
+    !CSP
+    LABEL_DOCOL , ]
+;
+
 : CONSTANT ( n -- )
     CREATE
     LABEL_DOCON HERE 2- ! \ Update CFA for CONSTANT runtime
@@ -1778,4 +1839,94 @@ END-CODE
 
 : ? ( addr -- )
     @ . \ Fetch the number and type it out.
+;
+
+: 2@ ( addr -- d )
+    DUP 2+ @ 
+    SWAP @
+;
+
+: 2! ( d addr -- )
+    >R R !
+    R> 2+ !
+;
+
+CODE D2* ( d -- d )
+    LDX SP
+    INX
+    INX
+    ASL 0,X
+    DEX
+    DEX
+    ROL 0,X
+END-CODE
+
+CODE D2/ ( d -- d )
+    LDX SP
+    CLC
+    LDA (SP)
+    BPL @SKIP
+    SEC
+@SKIP:
+    ROR 0,X
+    INX
+    INX
+    ROR 0,X
+END-CODE
+
+: DU< ( d d -- f )
+    ROT 2DUP = IF
+        2DROP U<
+    ELSE
+        SWAP U< 
+        >R 2DROP R>
+    THEN
+;
+
+: D< ( d d  -- f )
+    ROT 2DUP = IF
+        2DROP <
+    ELSE
+        SWAP < 
+        >R 2DROP R>
+    THEN
+;
+
+: D0< ( d -- f )
+    >R DROP R> 0<
+;
+
+: D0= ( d -- f )
+    0= SWAP 0= AND
+;
+
+: D= ( d d -- f )
+    ROT = >R
+    = R> AND
+;
+
+: DMAX ( d d -- d )
+    2OVER 2OVER D<
+    IF 
+        2SWAP
+    THEN
+    2DROP
+;
+
+: DMIN ( d d -- d )
+    2OVER 2OVER D< NOT
+    IF 
+        2SWAP
+    THEN
+    2DROP
+;
+
+: 2VARIABLE ( -- )
+    VARIABLE 0 ,
+; 
+
+: 2CONSTANT ( d -- )
+    CREATE
+    LABEL_DO2CON HERE 2- ! \ Update CFA for CONSTANT runtime
+    SWAP , ,
 ;
