@@ -219,7 +219,7 @@
 			(in_bom yes)
 			(on_board yes)
 			(property "Reference" "U"
-				(at -1.27 11.43 0)
+				(at -0.508 14.478 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -275,6 +275,14 @@
 				)
 			)
 			(symbol "SN74HCT125_1_1"
+				(text "SN74HCT125"
+					(at -0.254 11.684 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
 				(pin input inverted
 					(at -8.89 7.62 0)
 					(length 2.54)
@@ -1957,6 +1965,7 @@
 					(size 1.27 1.27)
 				)
 				(justify left)
+				(hide yes)
 			)
 		)
 		(property "Footprint" ""
@@ -2609,6 +2618,7 @@
 				(font
 					(size 1.27 1.27)
 				)
+				(hide yes)
 			)
 		)
 		(property "Footprint" ""

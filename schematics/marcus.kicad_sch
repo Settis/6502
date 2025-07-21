@@ -1124,6 +1124,48 @@
 			)
 		)
 	)
+	(sheet
+		(at 57.15 162.56)
+		(size 53.34 13.97)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "f9647204-b3ae-4023-a777-ef2bb21d3f6b")
+		(property "Sheetname" "All peripherals"
+			(at 57.15 161.8484 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "peripherals.kicad_sch"
+			(at 57.15 177.1146 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "marcus"
+				(path "/03a78ca6-eaff-4f05-be7b-36cd15f8b56d"
+					(page "14")
+				)
+			)
+		)
+	)
 	(sheet_instances
 		(path "/"
 			(page "1")
