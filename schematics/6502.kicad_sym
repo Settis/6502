@@ -3420,7 +3420,7 @@
 						)
 					)
 				)
-				(number "8"
+				(number "14"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -3438,7 +3438,7 @@
 						)
 					)
 				)
-				(number "9"
+				(number "13"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -3456,7 +3456,7 @@
 						)
 					)
 				)
-				(number "10"
+				(number "12"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -3492,7 +3492,7 @@
 						)
 					)
 				)
-				(number "12"
+				(number "10"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -3510,7 +3510,7 @@
 						)
 					)
 				)
-				(number "13"
+				(number "9"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -3528,7 +3528,7 @@
 						)
 					)
 				)
-				(number "14"
+				(number "8"
 					(effects
 						(font
 							(size 1.27 1.27)
