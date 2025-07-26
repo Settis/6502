@@ -1,6 +1,12 @@
 .include "../include/std.inc"
 .include "../include/forth.inc"
 
+; Peripherals:
+;   First VIA A - sound
+;   First VIA B - SD card
+;   Second VIA A - PC/2
+;   Second VIA B - Display
+
 ; Libs: uart, delay, charDisplay, forth
 ;; Libs: uart, delay, charDisplay, forth, uartDebugMsg
 
@@ -11,10 +17,10 @@
 .export UART_ADDR = UART_51
 .export D0_INIT_VALUE = $6000
 
-.export DISPLAY_IOR = VIA_22_FIRST + W65C22::RA
-.export DISPLAY_DDR = VIA_22_FIRST + W65C22::DDRA
-.export DISPLAY_PCR = VIA_22_FIRST + W65C22::PCR
-.exportzp DISPLAY_PCR_MASK = W65C22::PCR::CA2_lowOutput ^ W65C22::PCR::CA2_highOutput
+.export DISPLAY_IOR = VIA_22_SECOND + W65C22::RB
+.export DISPLAY_DDR = VIA_22_SECOND + W65C22::DDRB
+.export DISPLAY_PCR = VIA_22_SECOND + W65C22::PCR
+.exportzp DISPLAY_PCR_MASK = W65C22::PCR::CB2_lowOutput ^ W65C22::PCR::CB2_highOutput
 
 .export TIMER_MS_VIA = VIA_22_FIRST
 .export TICKS_IN_MS = 6000

@@ -27,7 +27,7 @@ class ForthWord:
         try:
             if re.match(r'\s*;\s*', line):
                 if len(self.labels_stack) != 0:
-                    raise Exception(f"label stack is not empty in {self.name}")
+                    raise Exception(f"label stack is not empty in {self.name}: {self.labels_stack}")
                 self.ended = True
                 return
 
@@ -132,6 +132,14 @@ class ForthWord:
         if word == 'LOOP':
             label = self.labels_stack.pop()
             self.lines.append(f"    .word {print_name('FORTH_WORD_(LOOP)')}")
+            self.lines.append(f"    .word FORTH_BRANCH_{label}")
+            label = self.labels_stack.pop()
+            self.lines.append(f"FORTH_BRANCH_{label}:")
+            return
+
+        if word == '+LOOP':
+            label = self.labels_stack.pop()
+            self.lines.append(f"    .word {print_name('FORTH_WORD_(+LOOP)')}")
             self.lines.append(f"    .word FORTH_BRANCH_{label}")
             label = self.labels_stack.pop()
             self.lines.append(f"FORTH_BRANCH_{label}:")

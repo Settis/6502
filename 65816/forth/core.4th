@@ -32,6 +32,8 @@ USER_VARIABLES-INITIAL_USER_VARIABLES+UV_BASE CONSTANT BASE
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_WIDTH CONSTANT WIDTH
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_DPL CONSTANT DPL
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_CSP CONSTANT CSP
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_DISP_LINE CONSTANT DISP_LINE
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_PC2_STATUS CONSTANT PC2_STATUS
 
 $20 CONSTANT BL
 
@@ -800,9 +802,31 @@ CODE LOW_LEVEL_COLD_INIT
     STZ USER_IO_BUFFER_START
     STZ USER_IO_BUFFER_END
 
+    ; setup port directions
+    STZ VIA_22_SECOND + W65C22::DDRA
+    STZ PC_2_BUFFER_START
+    STZ PC_2_BUFFER_END
+
 .ifdef FORTH_TRACE
     STZ DEBUG_INIT_STATUS
 .endif
+
+    LDA #%01111111 ; disapble interrupts
+    STA VIA_22_SECOND + W65C22::IER
+
+    ; Enable CA1 interrupt
+    LDA #$82
+    STA VIA_22_SECOND + W65C22::IER
+
+    ;LDA #1
+    STZ VIA_22_SECOND + W65C22::ACR
+
+    ; Setup handshakes for CA1 Interrupt Control on positive edge
+    LDA #%11000001
+    STA VIA_22_SECOND + W65C22::PCR
+
+    LDA VIA_22_SECOND + W65C22::IFR
+    LDA VIA_22_SECOND + W65C22::RA
 
     LDA #(W65C22::PCR::CB2_lowOutput | W65C22::PCR::CA2_lowOutput)
     STA DISPLAY_PCR
@@ -907,6 +931,9 @@ END-CODE
 
 : COLD
     LOW_LEVEL_COLD_INIT
+    1 DISP_LINE C!
+    0 DISP_LINE 1+ C!
+    0 PC2_STATUS !
     \ DISK BUFFER INIT
     ABORT
 ;
@@ -1311,12 +1338,27 @@ IMMEDIATE
     (EMIT) @ EXECUTE
 ;
 
-CODE UART_KEY
+: ANY_KEY
+    BEGIN
+        UART_KEY?
+        DUP NOT IF
+            DROP
+            PC2_KEY?
+        THEN
+    UNTIL
+;
+
+: UART_KEY
+    BEGIN
+        UART_KEY?
+    UNTIL
+;
+
+CODE UART_KEY?
     A8_IND8
     LDX USER_IO_BUFFER_START
-@WAIT_LOOP:
     CPX USER_IO_BUFFER_END
-    BEQ @WAIT_LOOP
+    BEQ @NOTHING
     LDA USER_IO_BUFFER,X
     TAY ; CHAR in Y
     INX
@@ -1326,7 +1368,131 @@ CODE UART_KEY
     A16_IND16
     TYA
     JSR PUSH_DS
+    LDA #$FFFF
+    JSR PUSH_DS
+    JMP NEXT
+@NOTHING:
+    A16_IND16
+    LDA #0
+    JSR PUSH_DS
 END-CODE
+
+: PC2_FLAG ( flag -- ) \ apply flag
+    PC2_STATUS @
+    DUP 1 AND IF \ releasing
+        SWAP 1 OR NOT AND \ also reset releasing flag
+    ELSE \ pressing
+        OR
+    THEN
+    PC2_STATUS !
+    DROP 0 \ for PC2_KEY? return status
+;
+HIDE
+
+: PC2_KEY?
+    \ release key = 1
+    \ shift flag = 2
+    \ alt flag = 4
+    \ ctrl flag = 8
+    \ caps look flag = $10
+    PC2_SCAN? IF
+        DUP $E0 = IF
+            DROP 0 \ ignore this
+        ELSE
+            DUP $F0 = IF
+                PC2_STATUS @ 1 OR PC2_STATUS !
+                DROP 0
+            ELSE
+                \ handle shift, etc
+                DUP $12 = OVER $59 = OR IF \ check rigth or left shift
+                    2 PC2_FLAG
+                ELSE
+                    DUP $11 = IF \ check alt
+                        4 PC2_FLAG
+                    ELSE
+                        DUP $14 = IF \ check ctrl
+                            8 PC2_FLAG
+                        ELSE
+                            PC2_STATUS @ 1 AND IF
+                                PC2_STATUS @ 1 XOR PC2_STATUS !
+                                DROP 0
+                            ELSE
+                                DUP $58 = IF \ Caps lock
+                                    PC2_STATUS @ $10 XOR PC2_STATUS !
+                                    DROP 0
+                                ELSE
+                                    PC2_STATUS @ DUP 2 AND 0= SWAP $10 AND 0= XOR IF
+                                        $80 OR
+                                    THEN
+                                    LABEL_KEYMAP + C@ -DUP
+                                THEN
+                            THEN
+                        THEN
+                    THEN
+                THEN
+            THEN
+        THEN
+    ELSE
+        0
+    THEN
+;
+
+CODE PC2_SCAN?
+    A8_IND8
+    LDX PC_2_BUFFER_START
+    CPX PC_2_BUFFER_END
+    BEQ @NOTHING_PC2
+    LDA PC_2_BUFFER,X
+    TAY ; CHAR in Y
+    INX
+    TXA
+    AND #PC_2_BUFFER_MASK
+    STA PC_2_BUFFER_START
+    A16_IND16
+    TYA
+    JSR PUSH_DS
+    LDA #$FFFF
+    JSR PUSH_DS
+    JMP NEXT
+@NOTHING_PC2:
+    A16_IND16
+    LDA #0
+    JSR PUSH_DS
+END-CODE
+
+: EMIT_BOTH
+    DUP UART_EMIT DISPLAY_EMIT
+;
+
+: DISPLAY_EMIT
+    \ 8 - backspace
+    DUP 8 = IF
+        DROP
+        DISP_LINE 1+ DUP C@ 1- 0 MAX >R 
+        R SWAP C!
+        DISP_LINE C@ R> 2DUP
+        DISP_CUR
+        BL DISP_PRINT
+        DISP_CUR
+    ELSE
+        \ A - new line
+        DUP $A = IF
+            DROP
+            DISP_LINE C@
+            1+ 1 AND
+            DUP 0 DISP_CUR
+            20 0 DO
+                BL DISP_PRINT
+            LOOP
+            DUP 0 DISP_CUR
+            DISP_LINE C!
+            0 DISP_LINE 1+ C!
+        ELSE
+            DISP_PRINT
+            DISP_LINE 1+ DUP C@ 1+ SWAP C!
+        THEN
+    THEN
+;
 
 CODE UART_EMIT
     JSR PULL_DS
@@ -1349,6 +1515,15 @@ CODE DISP_CMD
     A16_IND16
 END-CODE
 
+CODE DISP_READ ( -- b )
+    A8_IND8
+DISP_READ_AGAIN:
+    JSR READ_FROM_DISPLAY
+    BMI DISP_READ_AGAIN
+    A16_IND16
+    JSR PUSH_DS
+END-CODE
+
 : DISP_CLR
     1 DISP_CMD
 ;
@@ -1367,6 +1542,10 @@ END-CODE
     OR
     $80 OR
     DISP_CMD
+;
+
+: DISP_GET_CUR ( -- n n ) \ line, column
+    DISP_READ $40 /MOD
 ;
 
 : DISP_SET_CHAR ( addr n -- ) \ 8 bytes after addr
@@ -1929,4 +2108,37 @@ END-CODE
     CREATE
     LABEL_DO2CON HERE 2- ! \ Update CFA for CONSTANT runtime
     SWAP , ,
+;
+
+: DUMP_HL ( addr -- addr )
+    >R R 8 + DUP R>
+    DO
+        I C@ 0 3 D.R
+    LOOP
+;
+
+: DUMP ( addr n -- )
+    BASE @ >R
+    HEX
+    CR
+    0 DO
+        DUP DUP 0 4 D.R 
+        
+        SPACE DUMP_HL
+        SPACE DUMP_HL
+        SPACE SPACE DROP 
+
+        >R R 16 + DUP R> 
+        DO
+            I C@ 
+            DUP $20 < OVER $7E > OR
+            IF
+                DROP $2E
+            THEN
+            EMIT
+        LOOP
+
+        CR
+    16 +LOOP
+    R> BASE !
 ;

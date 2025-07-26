@@ -49,6 +49,10 @@ USER_IO_BUFFER_START:
     .res 1
 USER_IO_BUFFER_END:
     .res 1
+PC_2_BUFFER_START:
+    .res 1
+PC_2_BUFFER_END:
+    .res 1
 
 .ifdef FORTH_TRACE
 DEBUG_INIT_STATUS:
@@ -65,10 +69,12 @@ R0_INIT_VALUE = $1FF ; for return stack
 S0_INIT_VALUE = LINE_INPUT_BUFFER - 1 ; for Data stack
 LINE_INPUT_BUFFER = SD_CARD_BUFFER - 200
 SD_CARD_BUFFER = USER_VARIABLES - 512
-USER_VARIABLES = USER_IO_BUFFER - (END_INITIAL_USER_VARIABLES - INITIAL_USER_VARIABLES)
+USER_VARIABLES = PC_2_BUFFER - (END_INITIAL_USER_VARIABLES - INITIAL_USER_VARIABLES)
+PC_2_BUFFER = USER_IO_BUFFER - $20
 USER_IO_BUFFER = MAX_RAM - $20
 MAX_RAM = $8000
 
+PC_2_BUFFER_MASK = $1F
 USER_IO_BUFFER_MASK = $1F
 
 .export USER_IO_BUFFER
@@ -90,9 +96,11 @@ UV_LIB:
 UV_SD_BUF:
     .word SD_CARD_BUFFER
 UV_KEY:
-    .word FORTH_WORD_UART_KEY ; UART input reader
+    .word FORTH_WORD_ANY_KEY
+    ; .word FORTH_WORD_UART_KEY ; UART input reader
 UV_EMIT:
-    .word FORTH_WORD_UART_EMIT ; UART emitter
+    .word FORTH_WORD_EMIT_BOTH ; UART emitter
+    ; .word FORTH_WORD_UART_EMIT ; UART emitter
 UV_STATE:
     .word 0
 UV_IN:
@@ -117,6 +125,10 @@ UV_DPL:
     .word 0
 UV_CSP:
     .word 0
+UV_DISP_LINE: ; delete when I can properly read from display
+    .word 0
+UV_PC2_STATUS:
+    .word 0
 END_INITIAL_USER_VARIABLES:
 
 ; Error messages:
@@ -136,6 +148,9 @@ MSG_NOT_PAIRS:
     FString "code block do not closed"
 MSG_COMPILE_NOT_FOUND:
     FString "can't find word"
+
+KEYMAP:
+    .incbin "keymap.bin"
 
 .export FORTH_MAIN
 .proc FORTH_MAIN
@@ -164,7 +179,7 @@ MSG_COMPILE_NOT_FOUND:
 
     LDA TIMER_MS_VIA + W65C22::IFR
     AND #%01000000
-    BEQ @UART
+    BEQ @KEYBOARD
     LDA TIMER_MS_VIA + W65C22::T1C_L
     A16
     INC TIMER_MS
@@ -173,6 +188,19 @@ MSG_COMPILE_NOT_FOUND:
     BRA @END
 
 .a8
+@KEYBOARD:
+    LDA VIA_22_SECOND + W65C22::IFR
+    AND #2
+    BEQ @UART
+    LDX PC_2_BUFFER_END
+    LDA VIA_22_SECOND + W65C22::RA
+    STA PC_2_BUFFER,X
+    INX
+    TXA
+    AND #PC_2_BUFFER_MASK
+    STA PC_2_BUFFER_END
+    BRA @END
+
 @UART:
     LDA UART_ADDR + W65C51::statusReg
     AND #8

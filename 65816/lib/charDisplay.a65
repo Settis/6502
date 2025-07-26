@@ -105,6 +105,7 @@
     RTS
 .endproc
 
+.export READ_FROM_DISPLAY
 .proc READ_FROM_DISPLAY ; result in A
     ; Set port to input
     LDA #$03
