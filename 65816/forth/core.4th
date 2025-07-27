@@ -822,13 +822,14 @@ CODE LOW_LEVEL_COLD_INIT
     STZ VIA_22_SECOND + W65C22::ACR
 
     ; Setup handshakes for CA1 Interrupt Control on positive edge
-    LDA #%11000001
-    STA VIA_22_SECOND + W65C22::PCR
+    ; LDA #%11000001
+    ; STA VIA_22_SECOND + W65C22::PCR
+    ; Set before DISPLAY
 
     LDA VIA_22_SECOND + W65C22::IFR
     LDA VIA_22_SECOND + W65C22::RA
 
-    LDA #(W65C22::PCR::CB2_lowOutput | W65C22::PCR::CA2_lowOutput)
+    LDA #(W65C22::PCR::CB2_lowOutput | W65C22::PCR::CA1_interruptPositiveActiveEdge)
     STA DISPLAY_PCR
     JSR DISPLAY_INIT
 
