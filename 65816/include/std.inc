@@ -1,4 +1,4 @@
-.P816 
+.P816
 
 .macro ENABNE_NATIVE_MODE
     CLC

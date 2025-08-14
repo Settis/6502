@@ -802,6 +802,18 @@ CODE LOW_LEVEL_COLD_INIT
     STZ USER_IO_BUFFER_START
     STZ USER_IO_BUFFER_END
 
+    ; SD card init
+    ; Setup output pins
+    LDA #%11100000
+    STA VIA_22_FIRST + W65C22::DDRB
+    ; Disable SD
+    LDA #%11100000
+    STA VIA_22_FIRST + W65C22::RB
+    ; Set CLOCK divider
+    STZ VIA_22_FIRST + W65C22::T2C_H
+    LDA #25
+    STA VIA_22_FIRST + W65C22::T2C_L
+
     ; setup port directions
     STZ VIA_22_SECOND + W65C22::DDRA
     STZ PC_2_BUFFER_START
@@ -836,7 +848,7 @@ CODE LOW_LEVEL_COLD_INIT
     LDA #%11000000
     STA TIMER_MS_VIA + W65C22::IER
 
-    LDA #%01000000
+    LDA #%01000000 ; with shift control
     STA TIMER_MS_VIA + W65C22::ACR
 
     LDA #<TICKS_IN_MS-2
@@ -2141,5 +2153,223 @@ END-CODE
 
         CR
     16 +LOOP
+    DROP
     R> BASE !
+;
+
+: UPTIME ( -- ) \ prints current uptime
+    UPTIMEMS 1000 M/MOD \ stack: rem(ms) d_quot 
+    60 M/MOD \ stack: rem(ms) rem(s) d_quot
+    2DUP D0= IF
+        2DROP
+    ELSE
+        60 M/MOD \ stack: rem(ms) rem(s) rem(m) d_quot
+        2DUP D0= IF
+            2DROP
+        ELSE
+            24 M/MOD \ stack: rem(ms) rem(s) rem(m) rem(h) d(days)
+            2DUP D0= IF
+                2DROP
+            ELSE
+                D. $64 EMIT
+            THEN
+            . $68 EMIT
+        THEN
+        . $6D EMIT
+    THEN
+    . $73 EMIT
+    DROP
+;
+
+: S? ( -- )
+    SP@ S0 @ < IF
+        S0 @ SP@ - 2 DO
+            SPACE S0 @ I - @ .
+        2 +LOOP
+    THEN
+;
+
+CODE WRITE_TO_SD ( addr n -- )
+    JSR PULL_DS
+    TAY
+    JSR PULL_DS
+    TAX
+    A8
+    LDA #%01010100 ; shift out with timer control
+    STA VIA_22_FIRST + W65C22::ACR
+    LDA #%01000000
+    STA VIA_22_FIRST + W65C22::RB
+@loop:
+    LDA 0,X
+    STA VIA_22_FIRST + W65C22::SR
+    JSR WAIT_FOR_SD_SHIFT
+    INX
+    DEY
+    BNE @loop
+    A16
+END-CODE
+HIDE
+
+CODE READ_FROM_SD ( addr n -- )
+    JSR PULL_DS
+    TAY
+    JSR PULL_DS
+    TAX
+    A8
+    LDA #%01000100 ; shift in with timer control
+    STA VIA_22_FIRST + W65C22::ACR
+    LDA #%00100000
+    STA VIA_22_FIRST + W65C22::RB
+    LDA VIA_22_FIRST + W65C22::SR ; for init clock in
+    DEY
+    BEQ @end
+@loop:
+    JSR WAIT_FOR_SD_SHIFT
+    LDA VIA_22_FIRST + W65C22::SR
+    STA 0,X
+    INX
+    DEY
+    BNE @loop
+@end:
+    JSR WAIT_FOR_SD_SHIFT
+    LDA #%01000000 ; off shifting
+    STA VIA_22_FIRST + W65C22::ACR
+    LDA VIA_22_FIRST + W65C22::SR
+    STA 0,X
+    A16
+END-CODE
+HIDE
+
+: RETRY ( addr u -- funcResult )
+    0 ROT ROT
+    0 DO
+        >R DROP R 
+        EXECUTE
+        DUP IF 
+            R> 
+            LEAVE
+        THEN
+        R>
+    LOOP
+    DROP
+;
+HIDE
+
+: READ_SD_R1 ( -- b true / false )
+    PAD 
+    DUP 1 READ_FROM_SD
+    DUP C@ $FF = IF
+        DROP 0
+    ELSE
+        C@ -1
+    THEN
+;
+HIDE
+
+: WAIT_FOR_SD_R1 ( -- b true / false )
+    LABEL_FORTH_WORD_READ_SD_R1 $f0 RETRY
+;
+HIDE
+
+CODE DISABLE_SD ( -- )
+    A8
+    ; Disable SD
+    LDA #%11100000
+    STA VIA_22_FIRST + W65C22::RB
+    LDA #%01000100 ; shift in with timer control
+    STA VIA_22_FIRST + W65C22::ACR
+    LDA VIA_22_FIRST + W65C22::SR
+    JSR WAIT_FOR_SD_SHIFT
+    A16
+END-CODE
+
+: SEND_SD_CMD_AND_CHECK_RESULT ( b addr -- f ) 
+    6 WRITE_TO_SD WAIT_FOR_SD_R1 IF
+        =
+    ELSE
+        0
+    THEN
+;
+HIDE
+
+: CHECK_BUSY ( -- f )
+    PAD
+    DUP 1 READ_FROM_SD 
+    C@ $FF =
+;
+HIDE
+
+: WAIT_NOT_BUSY
+    LABEL_FORTH_WORD_CHECK_BUSY $10 RETRY NOT LABEL_MSG_SD_BUSY_FAIL ?ERROR
+;
+HIDE
+
+: SEND_SD_CMD_0 ( -- f )
+    WAIT_NOT_BUSY
+    1 LABEL_SD_CMD_0 SEND_SD_CMD_AND_CHECK_RESULT
+    DISABLE_SD
+;
+HIDE
+
+: SEND_SD_CMD_8 ( -- f )
+    WAIT_NOT_BUSY
+    1 LABEL_SD_CMD_8 SEND_SD_CMD_AND_CHECK_RESULT
+    DUP IF
+        PAD 4 READ_FROM_SD
+    THEN
+    DISABLE_SD
+;
+HIDE
+
+: SEND_SD_CMD_41 ( -- f )
+    WAIT_NOT_BUSY
+    1 LABEL_SD_CMD_55 SEND_SD_CMD_AND_CHECK_RESULT IF 
+        0 LABEL_SD_CMD_41 SEND_SD_CMD_AND_CHECK_RESULT
+    ELSE
+        0
+    THEN
+    DISABLE_SD
+;
+HIDE
+
+: WRITE_REVERSE ( n addr -- addr+2 )
+    >R
+    DUP 8 >> R C!
+    $FF AND R 1+ C!
+    R> 2+
+;
+HIDE
+
+: BLOCK ( d -- addr ) \ takes the number of block. Returns address of memory mapped block
+    WAIT_NOT_BUSY
+    2DUP SD_BUF @ 4 - 2! \ writes the number
+    $51 PAD C! PAD 1+ WRITE_REVERSE WRITE_REVERSE 1 SWAP C!
+    0 PAD SEND_SD_CMD_AND_CHECK_RESULT IF
+        WAIT_FOR_SD_R1 IF
+            $FE = IF
+                SD_BUF @ 512 READ_FROM_SD
+            ELSE
+                ." Wrong marker"
+            THEN
+        ELSE
+            ." NO start marker"
+        THEN
+    ELSE
+        ." READ cmd fail"
+    THEN
+    DISABLE_SD
+    SD_BUF @
+;
+
+: INIT_SD ( -- )
+
+    11 0 DO
+        DISABLE_SD
+    LOOP
+
+    LABEL_FORTH_WORD_SEND_SD_CMD_0 50 RETRY NOT LABEL_MSG_SD_CMD0_FAIL ?ERROR
+    LABEL_FORTH_WORD_SEND_SD_CMD_8 50 RETRY NOT LABEL_MSG_SD_CMD8_FAIL ?ERROR
+    LABEL_FORTH_WORD_SEND_SD_CMD_41 50 RETRY NOT LABEL_MSG_SD_CMD41_FAIL ?ERROR
+
+    0 $8018 C!
 ;

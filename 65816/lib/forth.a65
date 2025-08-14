@@ -67,7 +67,8 @@ R0_INIT_VALUE = $1FF ; for return stack
 ; in case of running from RAM nere will be the code
 .import D0_INIT_VALUE ; for Dictionary
 S0_INIT_VALUE = LINE_INPUT_BUFFER - 1 ; for Data stack
-LINE_INPUT_BUFFER = SD_CARD_BUFFER - 200
+LINE_INPUT_BUFFER = SD_CARD_BUFFER_BLOCK - 200
+SD_CARD_BUFFER_BLOCK = SD_CARD_BUFFER - 4
 SD_CARD_BUFFER = USER_VARIABLES - 512
 USER_VARIABLES = PC_2_BUFFER - (END_INITIAL_USER_VARIABLES - INITIAL_USER_VARIABLES)
 PC_2_BUFFER = USER_IO_BUFFER - $20
@@ -148,6 +149,14 @@ MSG_NOT_PAIRS:
     FString "code block do not closed"
 MSG_COMPILE_NOT_FOUND:
     FString "can't find word"
+MSG_SD_CMD0_FAIL:
+    FString "SD CMD0 fail"
+MSG_SD_CMD8_FAIL:
+    FString "SD CMD8 fail"
+MSG_SD_CMD41_FAIL:
+    FString "SD CMD41 fail"
+MSG_SD_BUSY_FAIL:
+    FString "SD busy before cmd"
 
 KEYMAP:
     .incbin "keymap.bin"
@@ -331,6 +340,26 @@ KEYMAP:
     JSR PUSH_DS
     JMP NEXT
 .endproc
+
+.proc WAIT_FOR_SD_SHIFT ; should be 8 bit for A
+    .A8
+    LDA #%00000100
+@loop:
+    BIT VIA_22_FIRST + W65C22::IFR
+    BEQ @loop
+    STA VIA_22_FIRST + W65C22::IFR
+    RTS
+    .A16
+.endproc
+
+SD_CMD_0:
+    .byte ( 0 | $40 ), 0, 0, 0, 0, $95
+SD_CMD_8:
+    .byte ( 8 | $40 ), 0, 0, 1, $AA, $87
+SD_CMD_55:
+    .byte ( 55 | $40 ), 0, 0, 0, 0, $65
+SD_CMD_41:
+    .byte ( 41 | $40 ), $40, 0, 0, 0, $77
 
 .feature string_escapes
 .include "../forth/core.a65"
