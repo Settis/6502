@@ -149,14 +149,12 @@ MSG_NOT_PAIRS:
     FString "code block do not closed"
 MSG_COMPILE_NOT_FOUND:
     FString "can't find word"
-MSG_SD_CMD0_FAIL:
-    FString "SD CMD0 fail"
-MSG_SD_CMD8_FAIL:
-    FString "SD CMD8 fail"
-MSG_SD_CMD41_FAIL:
-    FString "SD CMD41 fail"
-MSG_SD_BUSY_FAIL:
-    FString "SD busy before cmd"
+
+; Error codes:
+SD_ERROR_BUSY = 1
+SD_ERROR_CMD0 = 2
+SD_ERROR_CMD8 = 3
+SD_ERROR_CMD41 = 4
 
 KEYMAP:
     .incbin "keymap.bin"
