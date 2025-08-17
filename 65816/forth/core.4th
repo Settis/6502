@@ -33,7 +33,23 @@ USER_VARIABLES-INITIAL_USER_VARIABLES+UV_WIDTH CONSTANT WIDTH
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_DPL CONSTANT DPL
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_CSP CONSTANT CSP
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_DISP_LINE CONSTANT DISP_LINE
+HIDE
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_PC2_STATUS CONSTANT PC2_STATUS
+HIDE
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_FAT_SEC_IN_CLUS CONSTANT FAT_SEC_IN_CLUS
+HIDE
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_FAT_ROOT_CLUS CONSTANT FAT_ROOT_CLUS
+HIDE
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_FAT_SECTOR CONSTANT FAT_SECTOR
+HIDE
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_FAT_DATA_SEC CONSTANT FAT_DATA_SEC
+HIDE
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_FAT_CUR_CLUSTER CONSTANT FAT_CUR_CLUSTER
+HIDE
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_FAT_CUR_SEC_IN_CLUSTER CONSTANT FAT_CUR_SEC_IN_CLUSTER
+HIDE
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_FAT_CUR_FILE_SIZE CONSTANT FAT_CUR_FILE_SIZE
+HIDE
 
 $20 CONSTANT BL
 
@@ -2256,7 +2272,7 @@ HIDE
 HIDE
 
 : READ_SD_R1 ( -- b true / false )
-    PAD 
+    PAD 1-
     DUP 1 READ_FROM_SD
     DUP C@ $FF = IF
         DROP 0
@@ -2282,6 +2298,7 @@ CODE DISABLE_SD ( -- )
     JSR WAIT_FOR_SD_SHIFT
     A16
 END-CODE
+HIDE
 
 : SEND_SD_CMD_AND_CHECK_RESULT ( b addr -- f ) 
     6 WRITE_TO_SD WAIT_FOR_SD_R1 IF
@@ -2293,38 +2310,20 @@ END-CODE
 HIDE
 
 : CHECK_BUSY ( -- f )
-    PAD
+    PAD 1-
     DUP 1 READ_FROM_SD 
     C@ $FF =
 ;
 HIDE
 
-: WAIT_NOT_BUSY
-    LABEL_FORTH_WORD_CHECK_BUSY $10 RETRY LABEL_SD_ERROR_BUSY ?SD_ERROR
+: WAIT_NOT_BUSY ( -- f )
+    LABEL_FORTH_WORD_CHECK_BUSY $50 RETRY
 ;
 HIDE
 
 : SEND_SD_CMD_0 ( -- f )
-    WAIT_NOT_BUSY
-    1 LABEL_SD_CMD_0 SEND_SD_CMD_AND_CHECK_RESULT
-    DISABLE_SD
-;
-HIDE
-
-: SEND_SD_CMD_8 ( -- f )
-    WAIT_NOT_BUSY
-    1 LABEL_SD_CMD_8 SEND_SD_CMD_AND_CHECK_RESULT
-    DUP IF
-        PAD 4 READ_FROM_SD
-    THEN
-    DISABLE_SD
-;
-HIDE
-
-: SEND_SD_CMD_41 ( -- f )
-    WAIT_NOT_BUSY
-    1 LABEL_SD_CMD_55 SEND_SD_CMD_AND_CHECK_RESULT IF 
-        0 LABEL_SD_CMD_41 SEND_SD_CMD_AND_CHECK_RESULT
+    WAIT_NOT_BUSY IF
+        1 LABEL_SD_CMD_0 SEND_SD_CMD_AND_CHECK_RESULT
     ELSE
         0
     THEN
@@ -2332,34 +2331,85 @@ HIDE
 ;
 HIDE
 
-: WRITE_REVERSE ( n addr -- addr+2 )
-    >R
-    DUP 8 >> R C!
-    $FF AND R 1+ C!
-    R> 2+
+: SEND_SD_CMD_8 ( -- f )
+    WAIT_NOT_BUSY IF
+        1 LABEL_SD_CMD_8 SEND_SD_CMD_AND_CHECK_RESULT
+        DUP IF
+            PAD 4 READ_FROM_SD
+        THEN
+    ELSE
+        0
+    THEN
+    DISABLE_SD
+;
+HIDE
+
+: SEND_SD_CMD_41 ( -- f )
+    WAIT_NOT_BUSY IF
+        1 LABEL_SD_CMD_55 SEND_SD_CMD_AND_CHECK_RESULT IF 
+            0 LABEL_SD_CMD_41 SEND_SD_CMD_AND_CHECK_RESULT
+        ELSE
+            0
+        THEN
+    ELSE
+        0
+    THEN
+    DISABLE_SD
+;
+HIDE
+
+: WRITE_2_BE ( d addr -- ) \ writing double as BIG-endian
+    SWAP OVER WRITE_BE
+    2+ WRITE_BE
+;
+HIDE
+
+: WRITE_BE ( n addr -- ) \ writing BIG-endian
+    OVER 8 >> OVER C!
+    1+ C!
+;
+HIDE
+
+: READ_2_LE ( addr -- d ) \ reading double from Little-endian
+    DUP @
+    SWAP 2+ @
+;
+HIDE
+
+: READ_SD_BLOCK ( -- f ) \ command is in PAD followed by address
+    WAIT_NOT_BUSY IF
+        0 PAD SEND_SD_CMD_AND_CHECK_RESULT IF 
+            WAIT_FOR_SD_R1 IF
+                $FE = IF
+                    PAD 6 + @ 512 READ_FROM_SD
+                    PAD 2- 2 READ_FROM_SD
+                    -1
+                ELSE
+                    0
+                THEN
+            ELSE
+                0
+            THEN
+        ELSE
+            0
+        THEN
+    ELSE
+        0
+    THEN
+    DISABLE_SD
 ;
 HIDE
 
 : BLOCK ( d -- addr ) \ takes the number of block. Returns address of memory mapped block
-    WAIT_NOT_BUSY
     2DUP SD_BUF @ 4 - 2! \ writes the number
-    $51 PAD C! PAD 1+ WRITE_REVERSE WRITE_REVERSE 1 SWAP C!
-    0 PAD SEND_SD_CMD_AND_CHECK_RESULT IF
-        WAIT_FOR_SD_R1 IF
-            $FE = IF
-                SD_BUF @ 512 READ_FROM_SD
-            ELSE
-                ." Wrong marker"
-            THEN
-        ELSE
-            ." NO start marker"
-        THEN
-    ELSE
-        ." READ cmd fail"
-    THEN
-    DISABLE_SD
+    $51 PAD C! PAD 1+ WRITE_2_BE 1 PAD 5 + C!
+    SD_BUF @ PAD 6 + !
+
+    LABEL_FORTH_WORD_READ_SD_BLOCK 50 RETRY LABEL_SD_ERROR_CMD_READ ?SD_ERROR
+
     SD_BUF @
 ;
+HIDE
 
 : ?SD_ERROR ( f n -- )
     SWAP NOT IF
@@ -2372,7 +2422,8 @@ HIDE
 ;
 HIDE
 
-: INIT_SD ( -- )
+: TURN_ON_SD ( -- )
+    25 $8018 C!
 
     11 0 DO
         DISABLE_SD
@@ -2383,4 +2434,207 @@ HIDE
     LABEL_FORTH_WORD_SEND_SD_CMD_41 50 RETRY LABEL_SD_ERROR_CMD41 ?SD_ERROR
 
     0 $8018 C!
+;
+HIDE
+
+: DU* ( d u -- d )
+    \ dL dH u
+    SWAP OVER
+    \ dL u dH u
+    U* DROP
+    \ dL u dH*L
+    >R U* R> +
+;
+
+: INIT_SD ( -- )
+    TURN_ON_SD
+
+    0 0 BLOCK \ Read zero sector
+    \ check boot sector signature
+    DUP $1FE + @ $AA55 = LABEL_SD_ERROR_WRONG_BOOT_SECTOR_SIGNATURE ?SD_ERROR
+    $1BE + \ Partition offset
+    \ check partition type
+    DUP 4 + C@ $C = LABEL_SD_ERROR_WRONG_PARTITION_TYPE ?SD_ERROR
+    \ read partition start
+    8 + READ_2_LE
+
+    2DUP BLOCK \ Read partition first sector
+    \ check bytes per logical sector
+    DUP $B + @ $200 = LABEL_SD_ERROR_WRONG_FAT_BYTES_PER_LOGICAL_SECTOR ?SD_ERROR
+    \ check number of FATs
+    DUP $10 + C@ 2 = LABEL_SD_ERROR_WRONG_FATS_NUMBER ?SD_ERROR
+    \ check media descriptor
+    DUP $15 + C@ $F8 = LABEL_SD_ERROR_WRONG_FAT_MEDIA_DESCRIPTOR ?SD_ERROR
+    \ read sectors per cluster
+    DUP $D + C@ DUP 0= NOT LABEL_SD_ERROR_FAT_ZERO_SECTORS_PER_CLUSTER ?SD_ERROR
+        FAT_SEC_IN_CLUS !
+    \ read root directory cluster
+    DUP $2C + READ_2_LE FAT_ROOT_CLUS 2!
+    \ Calc FAT #1 region sector
+    \ Stack: doublePartitionStart, blockAddr
+    DUP >R $E + @ 0 D+ FAT_SECTOR 2! R>
+    \ Calc DATA region sector
+    $24 + READ_2_LE D2* FAT_SECTOR 2@ D+ FAT_SEC_IN_CLUS @ 2* 0 D-
+        FAT_DATA_SEC 2!
+;
+
+: OPEN/ ( -- addr )
+    FAT_ROOT_CLUS 2@ FAT_CUR_CLUSTER 2!
+    0 FAT_CUR_SEC_IN_CLUSTER !
+    GET_SECTOR
+;
+HIDE
+
+: NEXT_SECTOR ( -- addr true / false )
+    FAT_CUR_SEC_IN_CLUSTER @ 1+ DUP FAT_SEC_IN_CLUS @ < IF
+        FAT_CUR_SEC_IN_CLUSTER !
+        GET_SECTOR -1
+    ELSE
+        DROP
+        FAT_CUR_CLUSTER 2@ 128 M/MOD \ rem dQuot
+        FAT_SECTOR 2@ D+ BLOCK
+        + READ_2_LE \ next cluster
+        2DUP $FFF DUP ROT AND = \ check high bytes
+        SWAP $FFF8 DUP ROT AND = \ check low bytes
+        AND IF
+            \ end of a chain
+            2DROP 0
+        ELSE
+            FAT_CUR_CLUSTER 2!
+            0 FAT_CUR_SEC_IN_CLUSTER !
+            GET_SECTOR -1
+        THEN
+    THEN
+;
+HIDE
+
+: GET_SECTOR ( -- addr )
+    FAT_CUR_CLUSTER 2@ FAT_SEC_IN_CLUS @ DU*
+    FAT_DATA_SEC 2@ D+
+    FAT_CUR_SEC_IN_CLUSTER @ 0 D+
+    BLOCK
+;
+HIDE
+
+: UPPER ( addr u -- ) \ convert string to upper case
+    OVER + SWAP DO
+        I C@ 
+        DUP $60 >
+        OVER $7B < AND IF
+            $20 XOR I C!
+        ELSE
+            DROP
+        THEN
+    LOOP
+;
+
+: INDEX ( addr c -- n ) \ returns pos or -1
+    >R COUNT R> SWAP -1 SWAP 0 DO
+        \ addr c ind
+        DROP
+        OVER I + C@ OVER = IF
+            I
+            LEAVE
+        THEN
+        -1
+    LOOP
+    >R 2DROP R>
+;
+
+: TO_83 ( addr addr -- ) \ addr from and addr to
+    DUP 11 BLANKS \ fill with spaces
+    \ find point
+    OVER $2E INDEX 
+    \ sAddr addr pointInd
+    ROT COUNT 2SWAP
+    \ addrFrom fromLength addrTo pointInd
+
+    \ copy ext
+    DUP -1 = IF
+        DROP SWAP
+    ELSE
+        2OVER 2OVER
+        1+ >R 8 + \ addrFrom fromLength addrTo+8 | R: pointInd
+        ROT R + SWAP ROT \ addrFrom+pointInd+1 addrTo+8 fromLength | R: pointInd
+        R> - 3 MIN
+        \ addrFrom+pointInd+1 addrTo+8 min(3, fromLength-pointInd-1)
+        CMOVE
+
+        ROT DROP \ it was 1- ROT DROP "test.txt"
+    THEN
+    \ addrFrom addrTo nameLength
+    ROT DUP 2OVER
+    \ addrTo nameLength addrFrom addrFrom addrTo nameLength
+    8 MIN CMOVE
+    DROP
+
+    \ addrTo nameLength
+    \ check if name > 8
+    8 > IF
+        DUP 6 + $7E OVER C!
+        $31 SWAP 1+ C!
+    THEN
+    
+    \ addrTo
+    \ convert to upper after
+    11 UPPER
+;
+HIDE
+
+: CMP_ARRAY ( addr addr n -- f )
+    -1 SWAP
+    0 DO
+        DROP
+        OVER I + C@
+        OVER I + C@ = NOT IF
+            0 LEAVE
+        THEN
+        -1
+    LOOP
+    >R 2DROP R>
+;
+
+: OPEN ( <name> -- addr )
+    BL WORD 
+    PAD 10 + HERE OVER TO_83
+
+    0 0 \ stub
+    OPEN/
+
+    \ fineNameAddr 0 0 blockAddr
+    BEGIN
+        >R 2DROP 1 R> \ file is found
+        DUP $200 + SWAP DO
+            DROP
+
+            I C@ 0= IF
+                3
+                LEAVE
+            THEN
+
+            DUP I 11 CMP_ARRAY IF
+                DROP
+                I $1A + @
+                I $14 + @
+                FAT_CUR_CLUSTER 2!
+                0 FAT_CUR_SEC_IN_CLUSTER !
+                I $1C + READ_2_LE FAT_CUR_FILE_SIZE 2!
+                2
+                LEAVE
+            ELSE
+                1
+            THEN
+        $20 +LOOP
+        \ on stack:
+            \ 1 proceed
+            \ 2 found
+            \ 3 end of folder
+        DUP DUP 1 = IF
+            NEXT_SECTOR NOT
+        THEN
+    UNTIL
+
+    2 = NOT LABEL_MSG_FILE_NOT_FOUND ?ERROR
+
+    GET_SECTOR
 ;

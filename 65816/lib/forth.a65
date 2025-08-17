@@ -130,6 +130,20 @@ UV_DISP_LINE: ; delete when I can properly read from display
     .word 0
 UV_PC2_STATUS:
     .word 0
+UV_FAT_SEC_IN_CLUS:
+    .word 0
+UV_FAT_ROOT_CLUS:
+    .word 0, 0
+UV_FAT_SECTOR:
+    .word 0, 0
+UV_FAT_DATA_SEC:
+    .word 0, 0
+UV_FAT_CUR_CLUSTER:
+    .word 0, 0
+UV_FAT_CUR_SEC_IN_CLUSTER:
+    .word 0
+UV_FAT_CUR_FILE_SIZE:
+    .word 0, 0
 END_INITIAL_USER_VARIABLES:
 
 ; Error messages:
@@ -149,12 +163,23 @@ MSG_NOT_PAIRS:
     FString "code block do not closed"
 MSG_COMPILE_NOT_FOUND:
     FString "can't find word"
+MSG_FILE_NOT_FOUND:
+    FString "file not found"
 
 ; Error codes:
 SD_ERROR_BUSY = 1
 SD_ERROR_CMD0 = 2
 SD_ERROR_CMD8 = 3
 SD_ERROR_CMD41 = 4
+SD_ERROR_CMD_READ = 5
+SD_ERROR_READ_NO_START_MARKER = 6
+SD_ERROR_READ_WRONG_START_MARKER = 7
+SD_ERROR_WRONG_BOOT_SECTOR_SIGNATURE = 8
+SD_ERROR_WRONG_PARTITION_TYPE = 9
+SD_ERROR_WRONG_FAT_BYTES_PER_LOGICAL_SECTOR = 10
+SD_ERROR_WRONG_FATS_NUMBER = 11
+SD_ERROR_WRONG_FAT_MEDIA_DESCRIPTOR = 12
+SD_ERROR_FAT_ZERO_SECTORS_PER_CLUSTER = 13
 
 KEYMAP:
     .incbin "keymap.bin"
