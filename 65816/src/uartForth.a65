@@ -4,7 +4,7 @@
 ; Peripherals:
 ;   First VIA A - sound
 ;   First VIA B - SD card
-;   Second VIA A - PC/2
+;   Second VIA A - PS/2
 ;   Second VIA B - Display
 
 ; Libs: uart, delay, charDisplay, forth

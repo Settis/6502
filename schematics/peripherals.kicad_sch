@@ -8180,7 +8180,7 @@
 		)
 		(uuid "9fe7fcac-8114-40e1-8050-f2b4af06b8be")
 	)
-	(label "!PC2"
+	(label "!PS2"
 		(at 185.42 68.58 0)
 		(effects
 			(font
@@ -8220,7 +8220,7 @@
 		)
 		(uuid "b39445f4-b58e-4eac-add2-745b3e7c4a0a")
 	)
-	(label "!PC2"
+	(label "!PS2"
 		(at 48.26 58.42 0)
 		(effects
 			(font
@@ -8230,7 +8230,7 @@
 		)
 		(uuid "b5fa5de3-9adf-4ac1-8e84-f08a33d44ebc")
 	)
-	(label "PC2"
+	(label "PS2"
 		(at 185.42 66.04 0)
 		(effects
 			(font
@@ -8300,7 +8300,7 @@
 		)
 		(uuid "cd058c08-5333-4939-9f06-3971812f6a82")
 	)
-	(label "!PC2"
+	(label "!PS2"
 		(at 48.26 106.68 0)
 		(effects
 			(font
@@ -8320,7 +8320,7 @@
 		)
 		(uuid "ce6007bc-002a-4df0-8850-faa456dce3e8")
 	)
-	(label "PC2"
+	(label "PS2"
 		(at 82.55 166.37 0)
 		(effects
 			(font

@@ -34,7 +34,7 @@ USER_VARIABLES-INITIAL_USER_VARIABLES+UV_DPL CONSTANT DPL
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_CSP CONSTANT CSP
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_DISP_LINE CONSTANT DISP_LINE
 HIDE
-USER_VARIABLES-INITIAL_USER_VARIABLES+UV_PC2_STATUS CONSTANT PC2_STATUS
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_PS2_STATUS CONSTANT PS2_STATUS
 HIDE
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_FAT_SEC_IN_CLUS CONSTANT FAT_SEC_IN_CLUS
 HIDE
@@ -962,13 +962,14 @@ END-CODE
     LOW_LEVEL_COLD_INIT
     1 DISP_LINE C!
     0 DISP_LINE 1+ C!
-    0 PC2_STATUS !
+    0 PS2_STATUS !
     \ DISK BUFFER INIT
     ABORT
 ;
 
 : ABORT
     SP!
+    SETIO
     DECIMAL
     CR
     ." Marcus-Forth"
@@ -976,6 +977,23 @@ END-CODE
     DEFINITIONS
     QUIT    
 ;
+
+: SETIO
+    $8021 C@ \ read UART status register 
+    $20 AND
+    IF \ UART disconnected
+        LABEL_FORTH_WORD_PS2_KEY (KEY) !
+        LABEL_FORTH_WORD_DISPLAY_EMIT (EMIT) !
+        DISP_CLR
+    ELSE \ UART connected
+        LABEL_FORTH_WORD_UART_KEY (KEY) !
+        LABEL_FORTH_WORD_DISPLAY_EMIT (EMIT) !
+        DISP_CLR
+        ." UART connected"
+        LABEL_FORTH_WORD_UART_EMIT (EMIT) !
+    THEN
+;
+HIDE
 
 : FORTH
     FORTH-LINK
@@ -1372,7 +1390,7 @@ IMMEDIATE
         UART_KEY?
         DUP NOT IF
             DROP
-            PC2_KEY?
+            PS2_KEY?
         THEN
     UNTIL
 ;
@@ -1380,6 +1398,12 @@ IMMEDIATE
 : UART_KEY
     BEGIN
         UART_KEY?
+    UNTIL
+;
+
+: PS2_KEY
+    BEGIN
+        PS2_KEY?
     UNTIL
 ;
 
@@ -1406,51 +1430,51 @@ CODE UART_KEY?
     JSR PUSH_DS
 END-CODE
 
-: PC2_FLAG ( flag -- ) \ apply flag
-    PC2_STATUS @
+: PS2_FLAG ( flag -- ) \ apply flag
+    PS2_STATUS @
     DUP 1 AND IF \ releasing
         SWAP 1 OR NOT AND \ also reset releasing flag
     ELSE \ pressing
         OR
     THEN
-    PC2_STATUS !
-    DROP 0 \ for PC2_KEY? return status
+    PS2_STATUS !
+    DROP 0 \ for PS2_KEY? return status
 ;
 HIDE
 
-: PC2_KEY?
+: PS2_KEY?
     \ release key = 1
     \ shift flag = 2
     \ alt flag = 4
     \ ctrl flag = 8
     \ caps look flag = $10
-    PC2_SCAN? IF
+    PS2_SCAN? IF
         DUP $E0 = IF
             DROP 0 \ ignore this
         ELSE
             DUP $F0 = IF
-                PC2_STATUS @ 1 OR PC2_STATUS !
+                PS2_STATUS @ 1 OR PS2_STATUS !
                 DROP 0
             ELSE
                 \ handle shift, etc
                 DUP $12 = OVER $59 = OR IF \ check rigth or left shift
-                    2 PC2_FLAG
+                    2 PS2_FLAG
                 ELSE
                     DUP $11 = IF \ check alt
-                        4 PC2_FLAG
+                        4 PS2_FLAG
                     ELSE
                         DUP $14 = IF \ check ctrl
-                            8 PC2_FLAG
+                            8 PS2_FLAG
                         ELSE
-                            PC2_STATUS @ 1 AND IF
-                                PC2_STATUS @ 1 XOR PC2_STATUS !
+                            PS2_STATUS @ 1 AND IF
+                                PS2_STATUS @ 1 XOR PS2_STATUS !
                                 DROP 0
                             ELSE
                                 DUP $58 = IF \ Caps lock
-                                    PC2_STATUS @ $10 XOR PC2_STATUS !
+                                    PS2_STATUS @ $10 XOR PS2_STATUS !
                                     DROP 0
                                 ELSE
-                                    PC2_STATUS @ DUP 2 AND 0= SWAP $10 AND 0= XOR IF
+                                    PS2_STATUS @ DUP 2 AND 0= SWAP $10 AND 0= XOR IF
                                         $80 OR
                                     THEN
                                     LABEL_KEYMAP + C@ -DUP
@@ -1466,11 +1490,11 @@ HIDE
     THEN
 ;
 
-CODE PC2_SCAN?
+CODE PS2_SCAN?
     A8_IND8
     LDX PC_2_BUFFER_START
     CPX PC_2_BUFFER_END
-    BEQ @NOTHING_PC2
+    BEQ @NOTHING_PS2
     LDA PC_2_BUFFER,X
     TAY ; CHAR in Y
     INX
@@ -1483,7 +1507,7 @@ CODE PC2_SCAN?
     LDA #$FFFF
     JSR PUSH_DS
     JMP NEXT
-@NOTHING_PC2:
+@NOTHING_PS2:
     A16_IND16
     LDA #0
     JSR PUSH_DS

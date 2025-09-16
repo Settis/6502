@@ -128,7 +128,7 @@ UV_CSP:
     .word 0
 UV_DISP_LINE: ; delete when I can properly read from display
     .word 0
-UV_PC2_STATUS:
+UV_PS2_STATUS:
     .word 0
 UV_FAT_SEC_IN_CLUS:
     .word 0
@@ -223,7 +223,7 @@ KEYMAP:
 @KEYBOARD:
     LDA VIA_22_SECOND + W65C22::IFR
     AND #2
-    BEQ @UART
+    BEQ @CHECK_UART
     LDX PC_2_BUFFER_END
     LDA VIA_22_SECOND + W65C22::RA
     STA PC_2_BUFFER,X
@@ -233,10 +233,11 @@ KEYMAP:
     STA PC_2_BUFFER_END
     BRA @END
 
-@UART:
+@CHECK_UART:
     LDA UART_ADDR + W65C51::statusReg
+    BPL @END ; it's not from UART
     AND #8
-    BEQ @END
+    BEQ @UART_CHANGED_STATUS
     LDX USER_IO_BUFFER_END
     LDA UART_ADDR + W65C51::dataReg
     STA USER_IO_BUFFER,X
@@ -245,6 +246,14 @@ KEYMAP:
     TXA
     AND #USER_IO_BUFFER_MASK
     STA USER_IO_BUFFER_END
+    BRA @END
+
+@UART_CHANGED_STATUS:
+    A16_IND16
+    LDA #FORTH_WORD_ABORT+2
+    STA W
+    CLI
+    JMP (FORTH_WORD_ABORT)
 
 @END:
     PLP
