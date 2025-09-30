@@ -1,0 +1,124 @@
+.include "../include/std.inc"
+.include "../include/charDisplayCommands.inc"
+.include "../include/delayImport.inc"
+
+; Connected to VIA1
+; 8-bit should be enabled for A & Index
+.LINECONT + ; Enable line continuation
+
+PVIA=VIA_22_FIRST
+.export PVIA
+
+.code
+.export PERIPHERALS_INIT
+.proc PERIPHERALS_INIT
+    LDA #%11110001
+    STA PVIA+W65C22::DDRB
+    JSR DISABLE_ALL
+
+    JSR SOUND_OFF
+
+    ; setup interrupts for timer#1 and keyboard (C1 port A)
+    LDA #%11000010
+    STA PVIA + W65C22::IER
+
+    LDA #W65C22::PCR::CA1_interruptPositiveActiveEdge
+    STA PVIA + W65C22::PCR
+
+    ; T1 continuous interrupts
+    LDA #%01000000
+    STA PVIA + W65C22::ACR
+
+    JSR DISPLAY_INIT
+
+    RTS
+.endproc
+
+
+.proc DISPLAY_INIT
+    ; 4-bit mode command
+    ; 00100000 - command
+    ; 00010000 - 8-bit mode
+    ; 00001000 - 2 lines
+    ; 00000100 - font
+    LDA #%00111100
+    JSR DISPLAY_SEND_COMMAND
+
+    LDA #(CharDisplayCommands::displayControl \
+     | CharDisplayCommands::displayControl::displayOn \
+     | CharDisplayCommands::displayControl::cursorOn \
+     | CharDisplayCommands::displayControl::blinkOn )
+    JSR DISPLAY_SEND_COMMAND
+
+    LDA #CharDisplayCommands::clearDisplay
+    JSR DISPLAY_SEND_COMMAND
+
+    LDA #(CharDisplayCommands::shifting \
+     | CharDisplayCommands::shifting::right )
+    JSR DISPLAY_SEND_COMMAND
+    RTS
+.endproc
+
+.proc SOUND_OFF
+
+.endproc
+
+.export DISPLAY_PRINT_CHAR
+.proc DISPLAY_PRINT_CHAR ; a - char to send
+    JSR WAIT_DISPLAY_BUSY
+    JSR WRITE_TO_PORT_A
+    LDA #%10100001
+    STA PVIA+W65C22::RB
+    JMP DISABLE_ALL
+.endproc
+
+.export DISPLAY_SEND_COMMAND
+.proc DISPLAY_SEND_COMMAND ; a - command to send
+    JSR WAIT_DISPLAY_BUSY
+    JMP DISPLAY_SEND_COMMAND_NOW
+.endproc
+
+.proc WAIT_DISPLAY_BUSY ; preserve A
+    PHA
+@WAIT:
+    JSR READ_FROM_DISPLAY
+    BMI @WAIT
+    PLA
+    RTS
+.endproc
+
+.proc DISPLAY_SEND_COMMAND_NOW
+    JSR WRITE_TO_PORT_A
+    LDA #%10100000
+    STA PVIA+W65C22::RB
+    JMP DISABLE_ALL
+.endproc
+
+.export READ_FROM_DISPLAY
+.proc READ_FROM_DISPLAY ; result in A
+    LDA #%10110000
+    STA PVIA+W65C22::RB
+    LDA PVIA+W65C22::RA
+    JMP DISABLE_ALL
+.endproc
+
+.proc WRITE_TO_PORT_A ; data in A
+    LDY #$FF
+    STY PVIA+W65C22::DDRA
+    STA PVIA+W65C22::RA
+    RTS
+.endproc
+
+.export READ_KEYBOARD
+.proc READ_KEYBOARD ; result in A
+    LDA #%11010000
+    STA PVIA+W65C22::RB
+    LDA PVIA+W65C22::RA
+    JMP DISABLE_ALL
+.endproc
+
+.proc DISABLE_ALL
+    STZ PVIA+W65C22::RB
+    STZ PVIA+W65C22::DDRA
+    RTS
+.endproc

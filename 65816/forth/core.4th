@@ -818,20 +818,9 @@ CODE LOW_LEVEL_COLD_INIT
     STZ USER_IO_BUFFER_START
     STZ USER_IO_BUFFER_END
 
-    ; SD card init
-    ; Setup output pins
-    LDA #%11100000
-    STA VIA_22_FIRST + W65C22::DDRB
-    ; Disable SD
-    LDA #%11100000
-    STA VIA_22_FIRST + W65C22::RB
-    ; Set CLOCK divider
-    STZ VIA_22_FIRST + W65C22::T2C_H
-    LDA #25
-    STA VIA_22_FIRST + W65C22::T2C_L
+    JSR PERIPHERALS_INIT
 
-    ; setup port directions
-    STZ VIA_22_SECOND + W65C22::DDRA
+    ; Setup keyboard buffer
     STZ PC_2_BUFFER_START
     STZ PC_2_BUFFER_END
 
@@ -839,38 +828,16 @@ CODE LOW_LEVEL_COLD_INIT
     STZ DEBUG_INIT_STATUS
 .endif
 
-    LDA #%01111111 ; disapble interrupts
+    LDA #%01111111 ; disapble interrupts just in case
     STA VIA_22_SECOND + W65C22::IER
-
-    ; Enable CA1 interrupt
-    LDA #$82
-    STA VIA_22_SECOND + W65C22::IER
-
-    ;LDA #1
-    STZ VIA_22_SECOND + W65C22::ACR
-
-    ; Setup handshakes for CA1 Interrupt Control on positive edge
-    ; LDA #%11000001
-    ; STA VIA_22_SECOND + W65C22::PCR
-    ; Set before DISPLAY
 
     LDA VIA_22_SECOND + W65C22::IFR
     LDA VIA_22_SECOND + W65C22::RA
 
-    LDA #(W65C22::PCR::CB2_lowOutput | W65C22::PCR::CA1_interruptPositiveActiveEdge)
-    STA DISPLAY_PCR
-    JSR DISPLAY_INIT
-
-    LDA #%11000000
-    STA TIMER_MS_VIA + W65C22::IER
-
-    LDA #%01000000 ; with shift control
-    STA TIMER_MS_VIA + W65C22::ACR
-
     LDA #<TICKS_IN_MS-2
-    STA TIMER_MS_VIA + W65C22::T1C_L
+    STA PVIA + W65C22::T1C_L
     LDA #>TICKS_IN_MS-2
-    STA TIMER_MS_VIA + W65C22::T1C_H
+    STA PVIA + W65C22::T1C_H
     
     A16_IND16
     ; INIT USER VARIABLES
@@ -969,7 +936,7 @@ END-CODE
 
 : ABORT
     SP!
-    SETIO
+    \ SETIO \ I've soldered the pull-down resistor wrong
     DECIMAL
     CR
     ." Marcus-Forth"
@@ -1474,10 +1441,16 @@ HIDE
                                     PS2_STATUS @ $10 XOR PS2_STATUS !
                                     DROP 0
                                 ELSE
-                                    PS2_STATUS @ DUP 2 AND 0= SWAP $10 AND 0= XOR IF
+                                    PS2_STATUS @ 2 AND IF
                                         $80 OR
                                     THEN
-                                    LABEL_KEYMAP + C@ -DUP
+                                    LABEL_KEYMAP + C@ \ get an ASCII from the table
+                                    DUP 0= PS2_STATUS @ $10 AND 0= XOR IF \ if it's printable and CAPS-LOCK is enabled
+                                        DUP $61 $7B WITHIN IF \ if it's lower case character
+                                            $20 XOR
+                                        THEN
+                                    THEN
+                                    -DUP
                                 THEN
                             THEN
                         THEN
@@ -2543,13 +2516,16 @@ HIDE
 : UPPER ( addr u -- ) \ convert string to upper case
     OVER + SWAP DO
         I C@ 
-        DUP $60 >
-        OVER $7B < AND IF
+        DUP $61 $7B WITHIN IF
             $20 XOR I C!
         ELSE
             DROP
         THEN
     LOOP
+;
+
+: WITHIN ( n l h -- f ) \ l <= n < h
+    OVER - >R - R> U<
 ;
 
 : INDEX ( addr c -- n ) \ returns pos or -1

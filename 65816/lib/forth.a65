@@ -1,6 +1,6 @@
 .include "../include/std.inc"
 .include "../include/uartImport.inc"
-.include "../include/charDisplayImport.inc"
+.include "../include/peripheralsImport.inc"
 
 ; FORTH_TRACE = 1
 .ifdef FORTH_TRACE
@@ -22,8 +22,6 @@
 .A16
 .I16
 
-.import DISPLAY_PCR
-.import TIMER_MS_VIA
 .import TICKS_IN_MS
 
 .zeropage
@@ -209,10 +207,10 @@ KEYMAP:
 
     A8_IND8
 
-    LDA TIMER_MS_VIA + W65C22::IFR
+    LDA PVIA + W65C22::IFR
     AND #%01000000
     BEQ @KEYBOARD
-    LDA TIMER_MS_VIA + W65C22::T1C_L
+    LDA PVIA + W65C22::T1C_L
     A16
     INC TIMER_MS
     BNE @END
@@ -221,11 +219,11 @@ KEYMAP:
 
 .a8
 @KEYBOARD:
-    LDA VIA_22_SECOND + W65C22::IFR
+    LDA PVIA + W65C22::IFR
     AND #2
     BEQ @CHECK_UART
+    JSR READ_KEYBOARD
     LDX PC_2_BUFFER_END
-    LDA VIA_22_SECOND + W65C22::RA
     STA PC_2_BUFFER,X
     INX
     TXA
