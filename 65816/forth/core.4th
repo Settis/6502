@@ -2209,12 +2209,12 @@ CODE WRITE_TO_SD ( addr n -- )
     TAX
     A8
     LDA #%01010100 ; shift out with timer control
-    STA VIA_22_FIRST + W65C22::ACR
-    LDA #%01000000
-    STA VIA_22_FIRST + W65C22::RB
+    STA PVIA + W65C22::ACR
+    LDA #%10010000
+    STA PVIA + W65C22::RB
 @loop:
     LDA 0,X
-    STA VIA_22_FIRST + W65C22::SR
+    STA PVIA + W65C22::SR
     JSR WAIT_FOR_SD_SHIFT
     INX
     DEY
@@ -2230,15 +2230,15 @@ CODE READ_FROM_SD ( addr n -- )
     TAX
     A8
     LDA #%01000100 ; shift in with timer control
-    STA VIA_22_FIRST + W65C22::ACR
-    LDA #%00100000
-    STA VIA_22_FIRST + W65C22::RB
-    LDA VIA_22_FIRST + W65C22::SR ; for init clock in
+    STA PVIA + W65C22::ACR
+    LDA #%10000000
+    STA PVIA + W65C22::RB
+    LDA PVIA + W65C22::SR ; for init clock in
     DEY
     BEQ @end
 @loop:
     JSR WAIT_FOR_SD_SHIFT
-    LDA VIA_22_FIRST + W65C22::SR
+    LDA PVIA + W65C22::SR
     STA 0,X
     INX
     DEY
@@ -2246,8 +2246,8 @@ CODE READ_FROM_SD ( addr n -- )
 @end:
     JSR WAIT_FOR_SD_SHIFT
     LDA #%01000000 ; off shifting
-    STA VIA_22_FIRST + W65C22::ACR
-    LDA VIA_22_FIRST + W65C22::SR
+    STA PVIA + W65C22::ACR
+    LDA PVIA + W65C22::SR
     STA 0,X
     A16
 END-CODE
@@ -2287,12 +2287,15 @@ HIDE
 CODE DISABLE_SD ( -- )
     A8
     ; Disable SD
-    LDA #%11100000
-    STA VIA_22_FIRST + W65C22::RB
+    ; LDA #%11100000
+    ; STA VIA_22_FIRST + W65C22::RB
+    LDA #%00010000
+    STA PVIA + W65C22::RB
     LDA #%01000100 ; shift in with timer control
-    STA VIA_22_FIRST + W65C22::ACR
-    LDA VIA_22_FIRST + W65C22::SR
+    STA PVIA + W65C22::ACR
+    LDA PVIA + W65C22::SR
     JSR WAIT_FOR_SD_SHIFT
+    STZ PVIA + W65C22::RB
     A16
 END-CODE
 HIDE
@@ -2420,7 +2423,7 @@ HIDE
 HIDE
 
 : TURN_ON_SD ( -- )
-    25 $8018 C!
+    25 $8018 C! \ timer for SD shift register
 
     11 0 DO
         DISABLE_SD
@@ -2430,7 +2433,7 @@ HIDE
     LABEL_FORTH_WORD_SEND_SD_CMD_8 50 RETRY LABEL_SD_ERROR_CMD8 ?SD_ERROR
     LABEL_FORTH_WORD_SEND_SD_CMD_41 50 RETRY LABEL_SD_ERROR_CMD41 ?SD_ERROR
 
-    0 $8018 C!
+    0 $8018 C! \ timer for SD shift register
 ;
 HIDE
 

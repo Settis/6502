@@ -375,9 +375,9 @@ KEYMAP:
     .A8
     LDA #%00000100
 @loop:
-    BIT VIA_22_FIRST + W65C22::IFR
+    BIT PVIA + W65C22::IFR
     BEQ @loop
-    STA VIA_22_FIRST + W65C22::IFR
+    STA PVIA + W65C22::IFR
     RTS
     .A16
 .endproc

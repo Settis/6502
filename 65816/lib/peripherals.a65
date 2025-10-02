@@ -4,6 +4,9 @@
 
 ; Connected to VIA1
 ; 8-bit should be enabled for A & Index
+
+; RTC at 2Mhz
+
 .LINECONT + ; Enable line continuation
 
 PVIA=VIA_22_FIRST
