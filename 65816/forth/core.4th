@@ -2597,7 +2597,7 @@ HIDE
     >R 2DROP R>
 ;
 
-: OPEN ( <name> -- addr )
+: OPEN ( <name> -- addr page_size )
     BL WORD 
     PAD 10 + HERE OVER TO_83
 
@@ -2640,4 +2640,56 @@ HIDE
     2 = NOT LABEL_MSG_FILE_NOT_FOUND ?ERROR
 
     GET_SECTOR
+    GET_PAGE_SIZE
 ;
+
+: NEXT_PAGE ( -- addr page_size )
+    $200 0 FAT_CUR_FILE_SIZE 2@ D< IF
+        FAT_CUR_FILE_SIZE 2@ $200 0 D- FAT_CUR_FILE_SIZE 2!
+        NEXT_SECTOR DROP \ it should be the next sector
+        GET_PAGE_SIZE
+    ELSE
+        0 0
+    THEN
+;
+
+: GET_PAGE_SIZE ( -- page_size )
+    FAT_CUR_FILE_SIZE 2@ $200 0 DMIN DROP
+;
+HIDE
+
+: RUN ( <NAME> -- ) 
+    CR
+    OPEN
+    LIB @
+    BEGIN
+        READ_EXEC
+        NEXT_PAGE
+        DUP
+    WHILE
+        ROT
+    REPEAT
+    2DROP \ after NEXT_PAGE
+    \ exec the last line
+    LINE_INPUT_GUARD
+    LIB @ IN !
+    INTERPRET
+    QUIT
+;
+
+: READ_EXEC ( addr size buff -- buff ) 
+    ROT ROT \ buff addr size
+    OVER + SWAP DO
+        I C@ \ buf char
+        DUP $A = IF
+            DROP
+            LINE_INPUT_GUARD
+            LIB @ IN !
+            INTERPRET
+            LIB @
+        ELSE
+            OVER C! 1+
+        THEN
+    LOOP
+;
+HIDE
