@@ -20,12 +20,15 @@ class UsbDevice(Device):
     def __init__(self, dev) -> None:
         super().__init__()
         self.serial = serial.Serial(dev, baudrate=115200, parity=serial.PARITY_EVEN)
+        self.serial.timeout = 0.001
+        self.serial.read(1)
+        self.serial.timeout = 60*60
 
     def write(self, data: bytes):
         self.serial.write(data)
 
     def read(self, size: int) -> bytes:
-        return self.serial.read(size)    
+        return self.serial.read(size)
 
 class NetworkDevice(Device):
     def __init__(self, host) -> None:

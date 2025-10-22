@@ -46,8 +46,13 @@ UART_RUN_COMMAND = 4
 .proc read_uart_byte
 @WAIT:
     WAI ; wait for command
-    BIT UART_51 + W65C51::statusReg
-    BPL @WAIT
+    LDA UART_51 + W65C51::statusReg
+    AND #$88
+    BNE @BYTE_READY
+    AND #$20
+    BEQ @WAIT
+    JMP main ; Data carrirer disconnected: reset
+@BYTE_READY:
     LDA UART_51 + W65C51::dataReg
     RTS
 .endproc
