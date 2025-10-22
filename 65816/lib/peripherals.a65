@@ -63,7 +63,33 @@ PVIA=VIA_22_FIRST
 .endproc
 
 .proc SOUND_OFF
+    LDA #%10011111
+    JSR WRITE_TO_SOUND
+    LDA #%10111111
+    JSR WRITE_TO_SOUND
+    LDA #%11011111
+    JSR WRITE_TO_SOUND
+    LDA #%11111111
+    JSR WRITE_TO_SOUND
+    RTS
+.endproc
 
+.export WRITE_TO_SOUND
+.proc WRITE_TO_SOUND ; data in A
+    LDX #$FF
+    STX PVIA + W65C22::DDRA
+    STA PVIA + W65C22::RA
+
+    LDA #%00100000
+    STA PVIA + W65C22::RB
+
+    LDX #238   ; ~0.5ms, try 0.1 ms
+    LDY #3      
+    JSR DELAY_LOOP
+
+    STZ PVIA + W65C22::RB
+    STZ PVIA + W65C22::DDRA
+    RTS
 .endproc
 
 .export DISPLAY_PRINT_CHAR

@@ -2674,6 +2674,8 @@ HIDE
     LINE_INPUT_GUARD
     LIB @ IN !
     INTERPRET
+    CR
+    ." reading done"
     QUIT
 ;
 
@@ -2693,3 +2695,10 @@ HIDE
     LOOP
 ;
 HIDE
+
+CODE SND ( b -- ) \ send byte to sound device
+    JSR PULL_DS
+    A8_IND8
+    JSR WRITE_TO_SOUND
+    A16_IND16
+END-CODE

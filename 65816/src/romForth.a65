@@ -1,13 +1,7 @@
 .include "../include/std.inc"
 .include "../include/forth.inc"
 
-; Peripherals:
-;   First VIA A - sound
-;   First VIA B - SD card
-;   Second VIA A - PS/2
-;   Second VIA B - Display
-
-; Libs: uart, delay, charDisplay, forth
+; Libs: uart, delay, forth, peripherals
 
 .import FORTH_MAIN
 .import FORTH_INTERRUPT_HANDLER
