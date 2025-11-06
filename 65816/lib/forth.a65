@@ -142,6 +142,8 @@ UV_FAT_CUR_SEC_IN_CLUSTER:
     .word 0
 UV_FAT_CUR_FILE_SIZE:
     .word 0, 0
+UV_VOL:
+    .word $E
 END_INITIAL_USER_VARIABLES:
 
 ; Error messages:
