@@ -937,7 +937,7 @@ END-CODE
 
 : ABORT
     SP!
-    \ SETIO \ I've soldered the pull-down resistor wrong
+    SETIO
     DECIMAL
     CR
     ." Marcus-Forth"
@@ -1393,6 +1393,19 @@ CODE UART_KEY?
     JSR PUSH_DS
     JMP NEXT
 @NOTHING:
+    ; Enable receiving
+
+    LDA UART_ADDR+W65C51::commandReg
+    BIT #$08
+    BNE @EXIT_2
+    LDA #(W65C51::commandReg::parityModEnabled | W65C51::commandReg::receiverEvenParityChecked | W65C51::commandReg::transmitInterruptDisabled | W65C51::commandReg::dataTerminalReady )
+    STA UART_ADDR+W65C51::commandReg
+
+    ; NOP
+    ; NOP
+    ; INC $70
+    
+@EXIT_2:
     A16_IND16
     LDA #0
     JSR PUSH_DS

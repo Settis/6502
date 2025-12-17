@@ -8,6 +8,7 @@ from .libs.runCommand import register_run
 from .libs.testCommand import register_test
 from .libs.writeCommand import register_write
 from .libs.compileRunCommand import register_compile_and_run
+from .libs.typeCommand import register_type
 from serial import SerialException
 
 
@@ -29,12 +30,13 @@ def create_parser():
     register_run(subparsers)
     register_test(subparsers)
     register_compile_and_run(subparsers)
+    register_type(subparsers)
     return parser
 
 
 def run():
+    args = create_parser().parse_args()
     try:
-        args = create_parser().parse_args()
         args.func(args)
     except SerialException:
         if args.trace:

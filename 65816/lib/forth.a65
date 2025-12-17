@@ -246,9 +246,25 @@ KEYMAP:
     TXA
     AND #USER_IO_BUFFER_MASK
     STA USER_IO_BUFFER_END
+
+    ; check if the buffer is ended
+    INC ; the next would be start pointer
+    INC
+    INC
+    AND #USER_IO_BUFFER_MASK
+    CMP USER_IO_BUFFER_START
+    BNE @END
+
+    LDA #(W65C51::commandReg::parityModEnabled | W65C51::commandReg::receiverEvenParityChecked | W65C51::commandReg::dataTerminalReady )
+    STA UART_ADDR+W65C51::commandReg
+
+    ; INC $7002
+
     BRA @END
 
 @UART_CHANGED_STATUS:
+    LDA #(W65C51::commandReg::parityModEnabled | W65C51::commandReg::receiverEvenParityChecked | W65C51::commandReg::transmitInterruptDisabled | W65C51::commandReg::dataTerminalReady )
+    STA UART_ADDR+W65C51::commandReg
     A16_IND16
     LDA #FORTH_WORD_ABORT+2
     STA W
