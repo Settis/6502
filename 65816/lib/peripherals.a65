@@ -146,6 +146,55 @@ PVIA=VIA_22_FIRST
     JMP DISABLE_ALL
 .endproc
 
+.export RTC_READ
+.proc RTC_READ ; Command in A, result in A
+    PHA
+    ; make sure timers are good
+
+    LDA #%00010100
+    STA PVIA+W65C22::ACR
+
+    LDA #%01000000
+    STA PVIA+W65C22::RB
+    PLA
+    STA PVIA+W65C22::RS
+    JSR WAIT_FOR_SD_SHIFT
+    
+    LDA #%00000100
+    STA PVIA+W65C22::ACR
+    LDA PVIA+W65C22::RS
+    JSR WAIT_FOR_SD_SHIFT
+
+    JSR DISABLE_ALL
+
+    LDA PVIA+W65C22::RS
+    PHA
+    JSR WAIT_FOR_SD_SHIFT
+    PLA
+    RTS
+.endproc
+
+.export RTC_WRITE
+.proc RTC_WRITE ; Command in A, data in X
+    PHX
+    PHA
+    LDA #%00010100
+    STA PVIA+W65C22::ACR
+    LDA #%01000000
+    STA PVIA+W65C22::RB
+    ; make sure timers are good
+
+    PLA
+    STA PVIA+W65C22::RS
+    JSR WAIT_FOR_SD_SHIFT
+    PLA
+    STA PVIA+W65C22::RS
+    JSR WAIT_FOR_SD_SHIFT
+
+    JMP DISABLE_ALL
+.endproc
+
+; Don't touch any register
 .proc DISABLE_ALL
     STZ PVIA+W65C22::RB
     STZ PVIA+W65C22::DDRA

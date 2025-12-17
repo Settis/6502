@@ -5,3 +5,5 @@
 .import READ_FROM_DISPLAY
 .import READ_KEYBOARD
 .import WRITE_TO_SOUND
+.import RTC_READ
+.import RTC_WRITE

@@ -2447,7 +2447,7 @@ HIDE
     LABEL_FORTH_WORD_SEND_SD_CMD_8 50 RETRY LABEL_SD_ERROR_CMD8 ?SD_ERROR
     LABEL_FORTH_WORD_SEND_SD_CMD_41 50 RETRY LABEL_SD_ERROR_CMD41 ?SD_ERROR
 
-    0 $8018 C! \ timer for SD shift register
+    \ 0 $8018 C! \ timer for SD shift register
 ;
 HIDE
 
@@ -2733,3 +2733,21 @@ END-CODE
         I $F CHVOL
     LOOP
 ;
+
+CODE RTC_READ ( b -- b )
+    JSR PULL_DS
+    A8_IND8
+    JSR RTC_READ
+    A16_IND16
+    JSR PUSH_DS
+END-CODE
+
+CODE RTC_WRITE ( b b -- )
+    JSR PULL_DS
+    TAY
+    JSR PULL_DS
+    A8_IND8
+    TYX
+    JSR RTC_WRITE
+    A16_IND16
+END-CODE
