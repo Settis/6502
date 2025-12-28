@@ -14,7 +14,7 @@ The 6502 must return the number incremented by 1.
 ## Write data
 Command number: **2**
 
-PC sends to 6502 the command ID, starting address (2 bytes), length of data (1 byte), and the actual data.
+PC sends to 6502 the command ID, starting address (2 bytes, little endian), length of data (1 byte), and the actual data.
 The 6502 will return CRC8 (0x07) checksum of the data.
 
 *Example:*
@@ -26,7 +26,7 @@ The 6502 will return CRC8 (0x07) checksum of the data.
 ## Read data
 Command number: 3
 
-PC sends to 6502 the command ID, starting address (2 bytes), length of data (1 byte).
+PC sends to 6502 the command ID, starting address (2 bytes, little endian), length of data (1 byte).
 The 6502 will return the data and CRC8 sum.
 
 *Example:*
@@ -38,12 +38,12 @@ The 6502 will return the data and CRC8 sum.
 ## Run subroutine
 Command number: 4
 
-PC sends to 6502 the command ID and subroutine address (2 bytes).
+PC sends to 6502 the command ID and subroutine address (2 bytes, little endian).
 When 6502 is ended the subroutine it sends the command ID back.
 
 *Example:*
 
-> **PC -> 6502:** 0x4 0x03 0x00
+> **PC -> 6502:** 0x4 0x00 0x03
 > 
 > **6502 -> PC:** 0x4
 

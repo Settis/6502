@@ -27,7 +27,7 @@ void setup() {
 
   pinMode(RWB_PIN, INPUT);
   pinMode(RESB_PIN, OUTPUT);
-  digitalWrite(RESB_PIN, LOW);
+  digitalWrite(RESB_PIN, HIGH);
   pinMode(VPA_PIN, INPUT);
   pinMode(VDA_PIN, INPUT);
   pinMode(IRQ_PIN, INPUT);
@@ -38,15 +38,22 @@ void setup() {
   pinMode(CLOCK_PIN, OUTPUT);
   digitalWrite(CLOCK_PIN, LOW);
   pinMode(BE_PIN, OUTPUT);
-  digitalWrite(BE_PIN, HIGH);
+  digitalWrite(BE_PIN, LOW);
 
   pinMode(LED_BUILTIN, OUTPUT);
   lcd.begin(LCD_NB_COLUMNS, LCD_NB_ROWS);
   lcd.clear();
 
+  digitalWrite(RESB_PIN, LOW);
   Serial.begin(115200, SERIAL_8E1);
 
   lcd.print("Loaded");
+  digitalWrite(BE_PIN, HIGH);
+  digitalWrite(CLOCK_PIN, HIGH);
+  digitalWrite(CLOCK_PIN, LOW);
+  digitalWrite(CLOCK_PIN, HIGH);
+  digitalWrite(CLOCK_PIN, LOW);
+  digitalWrite(RESB_PIN, HIGH);
 }
 
 void handlePingCommand() {
@@ -56,17 +63,72 @@ void handlePingCommand() {
   Serial.write(body+1);
 }
 
-void handleReadCommand() {
+int crc_sum;
+int address;
 
+void updateCrc(byte data) {
+  crc_sum ^= data;
+  for (byte i=0; i<8; i++) {
+    crc_sum <<= 1;
+    if (crc_sum & 0x100) 
+      crc_sum ^= 0x107;
+  }
 }
 
-void handleRunWithBreakCommand() {
+void handleReadCommand() {
+  address = Serial.read() | (Serial.read() << 8 );
+  int length = Serial.read();
+  byte data;
 
+  digitalWrite(BE_PIN, LOW);
+  pinMode(RWB_PIN, OUTPUT);
+  digitalWrite(RWB_PIN, HIGH);
+  // write state for adress
+  DDRA = 0xFF;
+  DDRC = 0xFF;
+
+  crc_sum = 0;
+  for (; length > 0; length--) {
+    PORTA = address >> 8;
+    PORTC = address & 0xFF;
+    digitalWrite(CLOCK_PIN, HIGH);
+    data = PINL;
+    digitalWrite(CLOCK_PIN, LOW);
+    updateCrc(data);
+    Serial.write(data);
+    address += 1;
+  }
+
+  Serial.write(crc_sum);
+
+  pinMode(RWB_PIN, INPUT);
+  // read state for adress
+  DDRA = 0;
+  DDRC = 0;
+}
+
+byte addrHi, addrLo;
+
+void handleRunWithBreakCommand() {
+  addrLo = Serial.read();
+  addrHi = Serial.read();
+  digitalWrite(BE_PIN, HIGH);
+  while (true) {
+    PORTF = 0x80;
+    if (addrHi == PINA) {
+      if (addrLo == PINC) {
+        break;
+      }
+    }
+    PORTF = 0x00;
+  }
+  digitalWrite(CLOCK_PIN, LOW);
+  Serial.write(4);
 }
 
 #define PING_COMMAND 1
 #define READ_COMMAND 3
-#define RUN_WITH_BREAK_COMMAND 5
+#define RUN_WITH_BREAK_COMMAND 4
 
 void loop() {
   if (Serial.available()) {
