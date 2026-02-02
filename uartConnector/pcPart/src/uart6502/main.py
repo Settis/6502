@@ -9,6 +9,7 @@ from .libs.testCommand import register_test
 from .libs.writeCommand import register_write
 from .libs.compileRunCommand import register_compile_and_run
 from .libs.typeCommand import register_type
+from .libs.debugCommand import register_debug
 from serial import SerialException
 
 
@@ -31,6 +32,7 @@ def create_parser():
     register_test(subparsers)
     register_compile_and_run(subparsers)
     register_type(subparsers)
+    register_debug(subparsers)
     return parser
 
 

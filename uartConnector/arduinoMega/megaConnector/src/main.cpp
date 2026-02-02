@@ -76,6 +76,9 @@ void updateCrc(byte data) {
 }
 
 void handleReadCommand() {
+  lcd.clear();
+  lcd.print("Read memory");
+
   address = Serial.read() | (Serial.read() << 8 );
   int length = Serial.read();
   byte data;
@@ -108,27 +111,76 @@ void handleReadCommand() {
 }
 
 byte addrHi, addrLo;
+byte rwDirection, waitedData;
+boolean anyAction, checkRwDirection, checkDataByte;
+
+#define ANY_ACTION_MODE_MASK 0x01
+#define CHECK_RW_DIRECTION_MODE_MASK 0x02
+#define RW_MATCH_MODE_BYTE_NO 2
+#define CHECK_DATA_BYTE_MODE_MASK 0x08
+#define QUIET_MODE_MASK 0x10
+
+boolean isBreakCondition() {
+  if (anyAction) return true;
+  if (checkDataByte && waitedData != PINL) return false;
+  if (checkRwDirection && rwDirection != digitalRead(RWB_PIN)) return false;
+  return true;
+}
 
 void handleRunWithBreakCommand() {
+  lcd.clear();
+  lcd.print("Run clock");
+  byte mode = Serial.read();
   addrLo = Serial.read();
   addrHi = Serial.read();
+
+  anyAction = mode & ANY_ACTION_MODE_MASK;
+  checkRwDirection = mode & CHECK_RW_DIRECTION_MODE_MASK;
+  rwDirection = (mode >> RW_MATCH_MODE_BYTE_NO) & 1;
+  checkDataByte = mode & CHECK_DATA_BYTE_MODE_MASK;
+
+  if (checkDataByte) waitedData = Serial.read();
+
   digitalWrite(BE_PIN, HIGH);
-  while (true) {
-    PORTF = 0x80;
-    if (addrHi == PINA) {
-      if (addrLo == PINC) {
-        break;
+
+  if (mode & QUIET_MODE_MASK) {
+    while (true) {
+      PORTF = 0x80;
+      if (addrHi == PINA && addrLo == PINC && (PING & 0x03)) {
+        // PING & 0x03 means VPA or VDA is enabled
+        if (isBreakCondition()) break;
       }
+      PORTF = 0x00;
     }
-    PORTF = 0x00;
+  } else {
+    while (true) {
+      PORTF = 0x80;
+      if (PING & 0x03) {
+        // frite flags
+        Serial.write(0x80 | ((PING & 0x03) << 1) | digitalRead(RWB_PIN));
+        Serial.write(PINL); // data
+        Serial.write(PINC);
+        Serial.write(PINA);
+      }
+      if (addrHi == PINA && addrLo == PINC && (PING & 0x03)) {
+        // the same as above
+        if (isBreakCondition()) break;
+      }
+      PORTF = 0x00;
+    }
   }
   digitalWrite(CLOCK_PIN, LOW);
-  Serial.write(4);
+  Serial.write(0);
 }
 
 #define PING_COMMAND 1
 #define READ_COMMAND 3
-#define RUN_WITH_BREAK_COMMAND 4
+#define RUN_WITH_BREAK_COMMAND 5
+
+void printWaitMsg() {
+  lcd.clear();
+  lcd.print("Wait for command");
+}
 
 void loop() {
   if (Serial.available()) {
@@ -137,12 +189,15 @@ void loop() {
     switch(commandByte) {
       case PING_COMMAND:
         handlePingCommand();
+        printWaitMsg();
         break;
       case READ_COMMAND:
         handleReadCommand();
+        printWaitMsg();
         break;
       case RUN_WITH_BREAK_COMMAND:
         handleRunWithBreakCommand();
+        printWaitMsg();
         break;
     }
   }
