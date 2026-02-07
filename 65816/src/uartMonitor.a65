@@ -20,7 +20,8 @@ UART_RUN_COMMAND = 4
 .export main
 .proc main
     SEI ; it's not needed here, but in order to work with old uartMonitor
-    LDX $FF
+    DISABLE_NATIVE_MODE
+    LDX #$FF
     TXS
     ENABNE_NATIVE_MODE
     JSR UART_INIT
@@ -47,9 +48,11 @@ UART_RUN_COMMAND = 4
 @WAIT:
     WAI ; wait for command
     LDA UART_51 + W65C51::statusReg
-    AND #$88
+    BIT #$80
+    BEQ @WAIT ; other interrupt, keep waiting
+    BIT #$08
     BNE @BYTE_READY
-    AND #$20
+    BIT #$20
     BEQ @WAIT
     JMP main ; Data carrirer disconnected: reset
 @BYTE_READY:
