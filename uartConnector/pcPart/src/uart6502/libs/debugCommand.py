@@ -32,7 +32,7 @@ def run_debug_cmd(args):
     dev.write(bytes([COMMAND_DEBUG, mode]))
     dev.write(convert_word_number_to_bytes(addr))
     if args.data:
-        dev.write(bytes([args.data]))
+        dev.write(bytes([int(args.data, 16)]))
 
     bus_output = BusOutput()
     while True:
