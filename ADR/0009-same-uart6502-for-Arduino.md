@@ -23,3 +23,6 @@ Not all commands can be supported on both devices.
 So far, I’ll try to be careful.
 But in case of heavily using both devices I have to change the protocol to indicate that some commands are not supported.
 Or extend it with the command that reports the device type.
+
+The UART monitor and Arduino react to the UART connection differently.
+See ADR-0010.
