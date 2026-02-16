@@ -1394,17 +1394,15 @@ CODE UART_KEY?
     JMP NEXT
 @NOTHING:
     ; Enable receiving
-
+    .A8
+    .I8
+    ; check if data terminal is ready
     LDA UART_ADDR+W65C51::commandReg
     BIT #$08
     BNE @EXIT_2
+    ; set it to ready if it wasn't
     LDA #(W65C51::commandReg::parityModEnabled | W65C51::commandReg::receiverEvenParityChecked | W65C51::commandReg::transmitInterruptDisabled | W65C51::commandReg::dataTerminalReady )
     STA UART_ADDR+W65C51::commandReg
-
-    ; NOP
-    ; NOP
-    ; INC $70
-    
 @EXIT_2:
     A16_IND16
     LDA #0
