@@ -41,10 +41,11 @@ class TestWordCompilation(unittest.TestCase):
                 .word 0
             FORTH_WORD_LL_W:
                 .word FORTH_WORD_LL_W_CODE
-            FORTH_WORD_LL_W_CODE:
+            .proc FORTH_WORD_LL_W_CODE
                 JSR foo
                 LDA BAR
                 JMP NEXT
+            .endproc
             LAST_WORD = FORTH_WORD_LL_W_H
             '''))
     
@@ -61,9 +62,10 @@ class TestWordCompilation(unittest.TestCase):
                 .word 0
             FORTH_WORD_LL_W:
                 .word FORTH_WORD_LL_W_CODE
-            FORTH_WORD_LL_W_CODE:
+            .proc FORTH_WORD_LL_W_CODE
                 JSR foo
                 JMP BAR
+            .endproc
             LAST_WORD = FORTH_WORD_LL_W_H
             '''))
 

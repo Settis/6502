@@ -177,10 +177,11 @@ class AsmWord:
     def get_content(self) -> str:
         output_lines = [f"FORTH_WORD_{print_name(self.name)}:", 
                         f"    .word FORTH_WORD_{print_name(self.name)}_CODE",
-                        f"FORTH_WORD_{print_name(self.name)}_CODE:"]
+                        f".proc FORTH_WORD_{print_name(self.name)}_CODE"]
         output_lines.extend(self.lines)
         if not self.lines[-1].strip().startswith('JMP'):
             output_lines.append('    JMP NEXT')
+        output_lines.append('.endproc')
         return "\n".join(output_lines)
 
 class ConstantWord:
