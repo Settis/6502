@@ -744,7 +744,7 @@ INCREMENT_VAL = FORTH_TMP_1
     CLC
     ADC INCREMENT_VAL
     STA 1,S
-    JMP LOOP_TAIL
+    JMP FORTH_WORD_O_PARLOOPC_PAR_CODE::LOOP_TAIL
 END-CODE
 HIDE
 
@@ -947,17 +947,23 @@ END-CODE
 ;
 
 : SETIO
-    $8021 C@ \ read UART status register 
-    $20 AND
-    IF \ UART disconnected
-        LABEL_FORTH_WORD_PS2_KEY (KEY) !
-        LABEL_FORTH_WORD_DISPLAY_EMIT (EMIT) !
-        DISP_CLR
-    ELSE \ UART connected
+    LABEL_PERIPHERALS_STATUS C@ \ check if periperal board is connected
+    IF  \ if it is - we can expect PS2 input and try to output something on display
+        $8021 C@ \ read UART status register 
+        $20 AND
+        IF \ UART disconnected
+            LABEL_FORTH_WORD_PS2_KEY (KEY) !
+            LABEL_FORTH_WORD_DISPLAY_EMIT (EMIT) !
+            DISP_CLR
+        ELSE \ UART connected
+            LABEL_FORTH_WORD_UART_KEY (KEY) !
+            LABEL_FORTH_WORD_DISPLAY_EMIT (EMIT) !
+            DISP_CLR
+            ." UART connected"
+            LABEL_FORTH_WORD_UART_EMIT (EMIT) !
+        THEN
+    ELSE \ UART is only the option here
         LABEL_FORTH_WORD_UART_KEY (KEY) !
-        LABEL_FORTH_WORD_DISPLAY_EMIT (EMIT) !
-        DISP_CLR
-        ." UART connected"
         LABEL_FORTH_WORD_UART_EMIT (EMIT) !
     THEN
 ;

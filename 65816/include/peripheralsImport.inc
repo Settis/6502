@@ -1,3 +1,4 @@
+.importzp PERIPHERALS_STATUS
 .import PVIA
 .import PERIPHERALS_INIT
 .import DISPLAY_PRINT_CHAR
