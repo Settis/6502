@@ -1404,12 +1404,25 @@ CODE UART_KEY?
     .I8
     ; check if data terminal is ready
     LDA UART_ADDR+W65C51::commandReg
-    BIT #$08
-    BNE @EXIT_2
+    BIT #$01
+    BNE @EXIT
+    ; due to bug I should check byte in the receiver data register
+    LDA UART_ADDR+W65C51::statusReg
+    AND #$08
+    BEQ @ENABLING
+    ; this is from forh interrupt handler
+    LDX USER_IO_BUFFER_END
+    LDA UART_ADDR + W65C51::dataReg
+    STA USER_IO_BUFFER,X
+    INX
+    TXA
+    AND #USER_IO_BUFFER_MASK
+    STA USER_IO_BUFFER_END
+@ENABLING:
     ; set it to ready if it wasn't
     LDA #(W65C51::commandReg::parityModEnabled | W65C51::commandReg::receiverEvenParityChecked | W65C51::commandReg::transmitInterruptDisabled | W65C51::commandReg::dataTerminalReady )
     STA UART_ADDR+W65C51::commandReg
-@EXIT_2:
+@EXIT:
     A16_IND16
     LDA #0
     JSR PUSH_DS
