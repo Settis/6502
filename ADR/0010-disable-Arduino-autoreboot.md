@@ -4,7 +4,7 @@ Status: accepted
 
 ## Context
 By default the Arduino board reboots each time the laptop establishes a connection to it.
-It’s useful for access Arduino bootloader and updating the firmware.
+It's useful for access Arduino bootloader and updating the firmware.
 
 The UART monitor expects a connection per command.
 
