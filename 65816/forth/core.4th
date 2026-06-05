@@ -816,6 +816,8 @@ CODE LOW_LEVEL_COLD_INIT
     A8_IND8
     ; INIT UART
     JSR UART_INIT
+    LDA #(W65C51::commandReg::parityModEnabled | W65C51::commandReg::receiverEvenParityChecked | W65C51::commandReg::transmitInterruptDisabled )
+    STA UART_ADDR+W65C51::commandReg
     STZ USER_IO_BUFFER_START
     STZ USER_IO_BUFFER_END
 
@@ -1406,10 +1408,16 @@ CODE UART_KEY?
     LDA UART_ADDR+W65C51::commandReg
     BIT #$01
     BNE @EXIT
+
+    ; set it to ready if it wasn't
+    ; SEI
+    LDA #(W65C51::commandReg::parityModEnabled | W65C51::commandReg::receiverEvenParityChecked | W65C51::commandReg::transmitInterruptDisabled | W65C51::commandReg::dataTerminalReady )
+    STA UART_ADDR+W65C51::commandReg
+
     ; due to bug I should check byte in the receiver data register
     LDA UART_ADDR+W65C51::statusReg
     AND #$08
-    BEQ @ENABLING
+    BEQ @ENABLE_INTERRUPT
     ; this is from forh interrupt handler
     LDX USER_IO_BUFFER_END
     LDA UART_ADDR + W65C51::dataReg
@@ -1418,10 +1426,9 @@ CODE UART_KEY?
     TXA
     AND #USER_IO_BUFFER_MASK
     STA USER_IO_BUFFER_END
-@ENABLING:
-    ; set it to ready if it wasn't
-    LDA #(W65C51::commandReg::parityModEnabled | W65C51::commandReg::receiverEvenParityChecked | W65C51::commandReg::transmitInterruptDisabled | W65C51::commandReg::dataTerminalReady )
-    STA UART_ADDR+W65C51::commandReg
+@ENABLE_INTERRUPT:
+    ; CLI
+
 @EXIT:
     A16_IND16
     LDA #0
