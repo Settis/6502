@@ -385,6 +385,7 @@ KEYMAP:
     JMP NEXT
 .endproc
 
+.export WAIT_FOR_SD_SHIFT
 .proc WAIT_FOR_SD_SHIFT ; should be 8 bit for A
     .A8
     LDA #%00000100
