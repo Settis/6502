@@ -173,6 +173,19 @@ PERIPHERALS_STATUS: .res 1
 
 .import WAIT_FOR_SD_SHIFT
 
+.proc REVERSE ; input and result in A
+    LDX #8
+@loop:
+    ASL
+    XBA
+    ROR
+    XBA
+    DEX
+    BNE @loop
+    XBA
+    RTS
+.endproc
+
 .export RTC_READ
 .proc RTC_READ ; Command in A, result in A
     PHA
@@ -181,9 +194,11 @@ PERIPHERALS_STATUS: .res 1
     LDA #%00010100
     STA PVIA+W65C22::ACR
 
-    LDA #%01000000
+    ; Write should be enabled otherwise it would be mixed with SD card output
+    LDA #%01010000
     STA PVIA+W65C22::RB
     PLA
+    JSR REVERSE
     STA PVIA+W65C22::SR
     JSR WAIT_FOR_SD_SHIFT
     
@@ -195,6 +210,7 @@ PERIPHERALS_STATUS: .res 1
     JSR DISABLE_ALL
 
     LDA PVIA+W65C22::SR
+    JSR REVERSE
     PHA
     JSR WAIT_FOR_SD_SHIFT
     PLA
@@ -207,16 +223,19 @@ PERIPHERALS_STATUS: .res 1
     PHA
     LDA #%00010100
     STA PVIA+W65C22::ACR
-    LDA #%01000000
+    ; Write should be enabled otherwise it would be mixed with SD card output
+    LDA #%01010000
     STA PVIA+W65C22::RB
     ; make sure timers are good
 
     PLA
+    JSR REVERSE
     STA PVIA+W65C22::SR
-    ; JSR WAIT_FOR_SD_SHIFT
+    JSR WAIT_FOR_SD_SHIFT
     PLA
+    JSR REVERSE
     STA PVIA+W65C22::SR
-    ; JSR WAIT_FOR_SD_SHIFT
+    JSR WAIT_FOR_SD_SHIFT
 
     JMP DISABLE_ALL
 .endproc
