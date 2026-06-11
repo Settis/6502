@@ -895,6 +895,52 @@
 		)
 	)
 	(sheet
+		(at 189.23 111.76)
+		(size 63.5 11.43)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "58791a55-24bb-4467-8139-49862da9d22f")
+		(property "Sheetname" "reset board"
+			(at 189.23 111.0484 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "reset.kicad_sch"
+			(at 189.23 123.7746 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "marcus"
+				(path "/03a78ca6-eaff-4f05-be7b-36cd15f8b56d"
+					(page "15")
+				)
+			)
+		)
+	)
+	(sheet
 		(at 29.21 134.62)
 		(size 63.5 12.7)
 		(exclude_from_sim no)

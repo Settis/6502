@@ -651,7 +651,7 @@
         "uuid": "03a78ca6-eaff-4f05-be7b-36cd15f8b56d"
       }
     ],
-    "used_designators": "R16",
+    "used_designators": "SW4,U31,C6-8,Y1,#PWR133-136,J28,R16-18",
     "variants": []
   },
   "sheets": [
@@ -710,6 +710,10 @@
     [
       "f9647204-b3ae-4023-a777-ef2bb21d3f6b",
       "All peripherals"
+    ],
+    [
+      "58791a55-24bb-4467-8139-49862da9d22f",
+      "reset board"
     ]
   ],
   "text_variables": {},

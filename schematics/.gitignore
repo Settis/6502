@@ -2,3 +2,4 @@ marcus-backups
 *.bak
 ~marcus.kicad_sch.lck
 _autosave*
+.history
