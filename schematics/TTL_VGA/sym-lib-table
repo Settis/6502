@@ -1,0 +1,5 @@
+(sym_lib_table
+	(version 7)
+	(lib (name "TTL640x480-DIODE-eagle-import") (type "KiCad") (uri "${KIPRJMOD}/TTL640x480-DIODE-eagle-import.kicad_sym") (options "") (descr ""))
+	(lib (name "TTL640x480-eagle-import") (type "KiCad") (uri "${KIPRJMOD}/TTL640x480-eagle-import.kicad_sym") (options "") (descr ""))
+)
