@@ -2775,3 +2775,47 @@ CODE RTC_WRITE ( b b -- )
     JSR RTC_WRITE
     A16_IND16
 END-CODE
+
+: FROM_BCD ( b -- b )
+    $10 /MOD 10 * +
+;
+
+: TO_BCD ( b -- b )
+    10 /MOD $10 * +
+;
+
+: C_W_RTC_INC2 ( b b -- b )
+    DUP >R SWAP TO_BCD RTC_WRITE R> 2+
+;
+HIDE
+
+: SET_DATETIME ( YY MM DD HH MM SS -- )
+    \ remove write protection
+    $8E 0 RTC_WRITE
+    $80 
+    C_W_RTC_INC2
+    C_W_RTC_INC2
+    C_W_RTC_INC2
+    C_W_RTC_INC2
+    C_W_RTC_INC2
+    2+
+    C_W_RTC_INC2
+    DROP
+;
+
+: R_RTC_C_DEC2 ( b -- b b )
+    DUP >R RTC_READ FROM_BCD R> 2-
+;
+HIDE
+
+: GET_DATETIME ( -- YY MM DD HH MM SS ) 
+    $8D
+    R_RTC_C_DEC2
+    2-
+    R_RTC_C_DEC2
+    R_RTC_C_DEC2
+    R_RTC_C_DEC2
+    R_RTC_C_DEC2
+    R_RTC_C_DEC2
+    DROP
+;
