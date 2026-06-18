@@ -2808,7 +2808,7 @@ HIDE
 ;
 HIDE
 
-: GET_DATETIME ( -- YY MM DD HH MM SS ) 
+: GET_DATETIME_RAW ( -- YY MM DD HH MM SS ) 
     $8D
     R_RTC_C_DEC2
     2-
@@ -2818,4 +2818,38 @@ HIDE
     R_RTC_C_DEC2
     R_RTC_C_DEC2
     DROP
+;
+HIDE
+
+: GET_DATETIME ( -- YY MM DD HH MM SS )
+    GET_DATETIME_RAW
+    DUP 0= IF
+        2DROP 2DROP 2DROP
+        GET_DATETIME_RAW
+    THEN
+;
+
+: PRINT_IN_TWO_CHARS ( n -- )
+    0 2 D.R
+;
+HIDE
+
+: DATE 
+    BASE @ >R
+    DECIMAL
+    CR
+    GET_DATETIME \ YY MM DD HH MM SS
+    2ROT SWAP \ DD HH MM SS MM YY
+    PRINT_IN_TWO_CHARS  
+    ." -"
+    PRINT_IN_TWO_CHARS 
+    2SWAP SWAP \ MM SS HH DD
+    ." -"
+    PRINT_IN_TWO_CHARS SPACE PRINT_IN_TWO_CHARS 
+    SWAP \ SS MM
+    ." :"
+    PRINT_IN_TWO_CHARS 
+    ." :"
+    PRINT_IN_TWO_CHARS 
+    R> BASE !
 ;
