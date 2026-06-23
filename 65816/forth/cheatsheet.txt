@@ -19,3 +19,10 @@ c 7-bit ASCII character
 f boolean flag.
 
 Double integer stored in stack in a way: high on the top.
+
+123 CONSTANT FOO
+VARIABLE BAR
+CREATE ERROR-MSG S" Testing error"
+CREATE ACTUAL-RESULTS $20 2* ALLOT
+CREATE ARRAY 1 , 2 , 3 , 4 , 5 , \ array with 2 bytes each = [1, 2, 3, 4, 5]
+CREATE BYTES 4 C, 3 C, 2 C, 1 C, \ byte array = [4, 3, 2, 1]
