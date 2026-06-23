@@ -2840,16 +2840,27 @@ HIDE
     CR
     GET_DATETIME \ YY MM DD HH MM SS
     2ROT SWAP \ DD HH MM SS MM YY
+
+    2 SPACES
+
     PRINT_IN_TWO_CHARS  
     ." -"
     PRINT_IN_TWO_CHARS 
     2SWAP SWAP \ MM SS HH DD
     ." -"
-    PRINT_IN_TWO_CHARS SPACE PRINT_IN_TWO_CHARS 
+    PRINT_IN_TWO_CHARS 
+    
+    CR 
+
+    3 SPACES
+
+    PRINT_IN_TWO_CHARS 
     SWAP \ SS MM
     ." :"
     PRINT_IN_TWO_CHARS 
     ." :"
     PRINT_IN_TWO_CHARS 
     R> BASE !
+
+    KEY DROP
 ;
