@@ -61,9 +61,14 @@ def from_file(dev, files):
         with open(file, 'r') as text_file:
             file_content += text_file.read() + "\n"
 
-    byte = dev.read(1)
-    dev.write(file_content.encode('ascii'))
+    expected_sequence = []
+
     while True:
+        byte = dev.read(1)
+
+
+        if len(expected_sequence) > 0 and byte[0] == expected_sequence[0]:
+            expected_sequence = expected_sequence[1:]
         if byte[0] == 4:
             if last_byte != 0xA and has_logs:  # Newline
                 print()
@@ -71,7 +76,12 @@ def from_file(dev, files):
         has_logs = True
         print(byte_to_string(byte), end='', flush=True)
         last_byte = byte[0]
-        byte = dev.read(1)
+        
+        if len(expected_sequence) == 0 and len(file_content) > 0:
+            chunk = file_content[:20]
+            file_content = file_content[20:]
+            expected_sequence = chunk.encode('ascii')
+            dev.write(expected_sequence)
 
 def byte_to_string(byte):
     if byte[0] < 127:
