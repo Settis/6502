@@ -144,6 +144,8 @@ UV_FAT_CUR_FILE_SIZE:
     .word 0, 0
 UV_VOL:
     .word $E
+UV_FENCE:
+    .word D0_INIT_VALUE
 END_INITIAL_USER_VARIABLES:
 
 ; Error messages:
@@ -165,6 +167,8 @@ MSG_COMPILE_NOT_FOUND:
     FString "can't find word"
 MSG_FILE_NOT_FOUND:
     FString "file not found"
+MSG_HIT_FENCE:
+    FString "Hit FENCE"
 
 ; Error codes:
 SD_ERROR_BUSY = 1
