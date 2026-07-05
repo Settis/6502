@@ -2862,8 +2862,12 @@ HIDE
     R> BASE !
 ;
 
-: NFA ( CFA -- NFA )
+: LFA ( CFA -- LFA )
     2-
+;
+
+: NFA ( CFA -- NFA )
+    FLA
     BEGIN
         1-
         DUP C@
@@ -2871,11 +2875,7 @@ HIDE
     UNTIL
 ;
 
-: LFA ( CFA -- LFA )
-    2-
-;
-
-: FORGET (  -- )
+: FORGET ( -- )
     [COMPILE] ' DUP FENCE @ < LABEL_MSG_HIT_FENCE ?ERROR
     DUP NFA DP ! LFA @ CURRENT @ !
 ; 
