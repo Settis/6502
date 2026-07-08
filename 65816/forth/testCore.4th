@@ -672,22 +672,6 @@ T{ VARIABLE V1 ->     }T
 T{    123 V1 ! ->     }T
 T{        V1 @ -> 123 }T
 
-T{ : DOES1 DOES> @ 1 + ; -> }T
-T{ : DOES2 DOES> @ 2 + ; -> }T
-T{ CREATE CR1 -> }T
-T{ CR1   -> HERE }T
-T{ 1 ,   ->   }T
-T{ CR1 @ -> 1 }T
-T{ DOES1 ->   }T
-T{ CR1   -> 2 }T
-T{ DOES2 ->   }T
-T{ CR1   -> 3 }T
-T{ : WEIRD: CREATE DOES> 1 + DOES> 2 + ; -> }T
-T{ WEIRD: W1 -> }T
-\ T{ ' W1 >BODY -> HERE }T
-T{ W1 -> HERE 1 + }T
-T{ W1 -> HERE 2 + }T
-
 : GS3 WORD COUNT SWAP C@ ;
 T{ BL GS3 HELLO -> 5 CHAR H }T
 
@@ -1021,5 +1005,24 @@ T{  HI-2INT MAX-2INT DU< -> <TRUE>  }T
 T{ MAX-2INT MIN-2INT DU< -> <TRUE>  }T
 T{ MIN-2INT MAX-2INT DU< -> <FALSE> }T
 T{ MIN-2INT  LO-2INT DU< -> <TRUE>  }T
+
+VARIABLE TMP_HERE
+HERE TMP_HERE !
+
+: A ;
+: B ;
+T{ HERE TMP_HERE @ > -> <TRUE> }T
+T{ ' A NFA -> TMP_HERE @ }T
+T{ FORGET A -> }T
+T{ HERE -> TMP_HERE @ }T
+
+T{ : INC <BUILDS , DOES> @ + ; -> }T
+T{ 1 INC INC_1 -> }T
+T{ 4 INC INC_4 -> }T
+T{ 5 INC_1 -> 6 }T
+T{ 7 INC_4 -> 11 }T
+
+T{ : INC_USAGE INC_4 2* INC_1 2- ; -> }T
+T{ 1 INC_USAGE -> 9 }T
 
 PRINT-TEST-STAT

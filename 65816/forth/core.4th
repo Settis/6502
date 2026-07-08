@@ -2867,7 +2867,7 @@ HIDE
 ;
 
 : NFA ( CFA -- NFA )
-    FLA
+    LFA
     BEGIN
         1-
         DUP C@
@@ -2878,4 +2878,23 @@ HIDE
 : FORGET ( -- )
     [COMPILE] ' DUP FENCE @ < LABEL_MSG_HIT_FENCE ?ERROR
     DUP NFA DP ! LFA @ CURRENT @ !
-; 
+;
+
+: CFA ( NFA -- CFA)
+    DUP C@ $1F AND \ extract name length
+    1+ \ count for length byte
+    + \ to LFA
+    2+ \ to CFA
+;
+
+: <BUILDS 
+    0 CONSTANT
+;
+
+: DOES> 
+    LABEL_DOES_SUB \ for CFA
+    LATEST CFA
+    R> \ for PFA
+    OVER 2+ ! \ updating PFA
+    ! \ updating CFA
+;

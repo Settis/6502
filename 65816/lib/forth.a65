@@ -389,6 +389,18 @@ KEYMAP:
     JMP NEXT
 .endproc
 
+.proc DOES_SUB
+    LDA IP
+    PHA
+    LDA (W)
+    STA IP
+    LDA W
+    INC A
+    INC A
+    JSR PUSH_DS
+    JMP NEXT
+.endproc
+
 .export WAIT_FOR_SD_SHIFT
 .proc WAIT_FOR_SD_SHIFT ; should be 8 bit for A
     .A8
