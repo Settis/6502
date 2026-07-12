@@ -24,6 +24,21 @@ VARIABLE SEED
     RND SWAP /MOD DROP ABS
 ;
 
+( elemSize number -- ) \ compiling
+( n -- addr ) \ executing
+: ARRAY <BUILDS OVER , * ALLOT
+    DOES> DUP @ ROT * + 2+ ;
+
+( size x y --  ) \ compiling 
+( x y -- addr ) \ executing
+: 2DARRAY 
+    <BUILDS ROT DUP , * OVER , * ALLOT \ save: size maxX
+    DOES> \ stack: x y addr
+        >R R 2+ @ \ stack: x y maxX | r: addr
+        * + \ stack: cellOffset | r: addr
+        R @ * R> + 4 +
+;
+
 CREATE SCREEN_1_LINE 
 CHAR T C, CHAR E C, CHAR T C, CHAR R C, CHAR I C, CHAR S C,
 BL C, BL C, BL C, BL C, 
@@ -34,8 +49,8 @@ BL C, BL C, BL C, BL C, BL C, BL C,
 BL C, BL C, BL C, BL C, 
 $FF C, 4 C, 5 C, 6 C, 7 C, $FF C,
 
-CREATE BITMAP 8 8 * ALLOT
-BITMAP 8 8 * ERASE
+1 8 8 2DARRAY BITMAP
+0 0 BITMAP 8 8 * ERASE
 
 : INIT_SCREEN
     DISP_CLR
@@ -63,20 +78,22 @@ VARIABLE END
 
 \ X,Y coord of block center + relative X,Y for other bricks
 2 4 * 2* CONSTANT BLOCK_STRUCT_SIZE
+: _X ;
+: _Y 2+ ;
 
-CREATE FLYING_BLOCK BLOCK_STRUCT_SIZE ALLOT
+4 4 ARRAY FLYING_BLOCK
 \ for plan the turns and moves
-CREATE MOVED_BLOCK BLOCK_STRUCT_SIZE ALLOT
+4 4 ARRAY MOVED_BLOCK
 
 4 5 * CONSTANT FIELD_WIDTH
 2 8 * CONSTANT FIELD_HEIGHT
 FIELD_HEIGHT FIELD_WIDTH * 2* CONSTANT FIELD_SIZE
 
 \ For static blocks on flor
-CREATE FIELD_WITH_STATIC FIELD_SIZE ALLOT
-FIELD_WITH_STATIC FIELD_SIZE ERASE
+2 FIELD_WIDTH FIELD_HEIGHT 2DARRAY FIELD_WITH_STATIC
+0 0 FIELD_WITH_STATIC FIELD_SIZE ERASE
 \ For compose static blocks and flying block
-CREATE FIELD_BUFFER FIELD_SIZE ALLOT
+2 FIELD_WIDTH FIELD_HEIGHT 2DARRAY FIELD_BUFFER
 
 7 CONSTANT BLOCKS_COUNT
 CREATE BLOCKS_SHAPES \ relative X,Y for bricks
@@ -101,13 +118,13 @@ CREATE BLOCKS_SHAPES \ relative X,Y for bricks
     \ bricks addr
     BLOCKS_SHAPES + 
     \ flying block bricks addr
-    FLYING_BLOCK 4 +
+    1 FLYING_BLOCK
     12 CMOVE
 ;
 
 : PUT_FLYING_BLOCK 
-    2 FLYING_BLOCK !
-    1 FLYING_BLOCK 2+ !
+    2 0 FLYING_BLOCK _X !
+    1 0 FLYING_BLOCK _Y !
     \ set block number
     1
     COPY_SHAPE
@@ -122,20 +139,23 @@ VARIABLE NEXT_MOVE_DOWN 0 ,
 ;
 
 : PREPARE_BUFFER 
-    FIELD_WITH_STATIC FIELD_BUFFER FIELD_SIZE CMOVE
+    0 0 FIELD_WITH_STATIC 
+        0 0 FIELD_BUFFER 
+        FIELD_SIZE 
+        CMOVE
 
     -1
-    FLYING_BLOCK @ FLYING_BLOCK 2+ @ XY_TO_OFFSET
-    FIELD_BUFFER + !
+    0 FLYING_BLOCK _X @ 
+    0 FLYING_BLOCK _Y @ 
+    FIELD_BUFFER !
 
     4 1 DO
         -1
-        FLYING_BLOCK I 4 * + @
-        FLYING_BLOCK @ +
-        FLYING_BLOCK I 4 * + 2+ @
-        FLYING_BLOCK 2+ @ +
-        XY_TO_OFFSET
-        FIELD_BUFFER + !
+        I FLYING_BLOCK _X @
+        0 FLYING_BLOCK _X @ +
+        I FLYING_BLOCK _Y @
+        0 FLYING_BLOCK _Y @ +
+        FIELD_BUFFER !
     LOOP
 ;
 
@@ -161,8 +181,8 @@ VARIABLE NEXT_MOVE_DOWN 0 ,
 : UPDATE_BITMAP
     2 0 DO \ lines
         4 0 DO \ iterate for characters row
-            FIELD_BUFFER I 5 * 2* + 320 J * +
-            BITMAP I 8 * + 4 8 * J * +
+            I 5 * 8 J * FIELD_BUFFER
+            0 I J 4 * + BITMAP
             CHARACTER_BITMAP
         LOOP
     LOOP
@@ -170,7 +190,7 @@ VARIABLE NEXT_MOVE_DOWN 0 ,
 
 : UPDATE_FIELD
     8 0 DO
-        BITMAP 8 I * + I DISP_SET_CHAR
+        0 I BITMAP I DISP_SET_CHAR
     LOOP
 ;
 
@@ -196,18 +216,18 @@ VARIABLE NEXT_UPDATE 0 ,
 : UPDATE_POS ( x y r -- )
     IF
         4 1 DO
-            FLYING_BLOCK I 4 * + @ \ Y[n+1] = X[n]
-            MOVED_BLOCK I 4 * + 2+ !
+            I FLYING_BLOCK _X @ \ Y[n+1] = X[n]
+            I MOVED_BLOCK _Y !
 
-            FLYING_BLOCK I 4 * + 2+ @ \ X[n+1] = -Y[n]
+            I FLYING_BLOCK _Y @ \ X[n+1] = -Y[n]
             -1 *
-            MOVED_BLOCK I 4 * + !
+            I MOVED_BLOCK _X !
         LOOP
     ELSE
-        FLYING_BLOCK 4 + MOVED_BLOCK 4 + BLOCK_STRUCT_SIZE 4 - CMOVE
+        1 FLYING_BLOCK 1 MOVED_BLOCK BLOCK_STRUCT_SIZE 4 - CMOVE
     THEN
-    FLYING_BLOCK 2+ @ + MOVED_BLOCK 2+ !
-    FLYING_BLOCK @ + MOVED_BLOCK !
+    0 FLYING_BLOCK _Y @ + 0 MOVED_BLOCK _Y !
+    0 FLYING_BLOCK _X @ + 0 MOVED_BLOCK _X !
 ;
 
 : UPDATE_POS_REDRAW ( x y r -- )
@@ -215,7 +235,7 @@ VARIABLE NEXT_UPDATE 0 ,
 
     \ I need to check it, but I ignore
 
-    MOVED_BLOCK FLYING_BLOCK BLOCK_STRUCT_SIZE CMOVE
+    0 MOVED_BLOCK 0 FLYING_BLOCK BLOCK_STRUCT_SIZE CMOVE
 
     REDRAW_FIELD
 ;
@@ -294,4 +314,4 @@ VARIABLE NEXT_UPDATE 0 ,
     EXIT
 ;
 
-MAIN
+\ MAIN

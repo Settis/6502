@@ -2898,3 +2898,7 @@ HIDE
     OVER 2+ ! \ updating PFA
     ! \ updating CFA
 ;
+
+: FREE ( --- n1 ) \ Return the amount of free memory
+    SP@ HERE - 
+;
