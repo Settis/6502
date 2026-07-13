@@ -123,19 +123,30 @@ CREATE BLOCKS_SHAPES \ relative X,Y for bricks
 ;
 
 : PUT_FLYING_BLOCK 
-    2 0 FLYING_BLOCK _X !
+    10 0 FLYING_BLOCK _X !
     1 0 FLYING_BLOCK _Y !
     \ set block number
-    1
+    BLOCKS_COUNT RND_I
     COPY_SHAPE
 ;
 
 VARIABLE NEXT_MOVE_DOWN 0 ,
-: THROTTLED_MOVE_DOWN
+: SCHEDULE_MOVE_DOWN
+    1.000 UPTIMEMS D+
+    NEXT_MOVE_DOWN 2!
 ;
 
-: XY_TO_OFFSET ( x y -- offset )
-    20 * + 2*
+: GET_FLYING_BLOCK_XY ( n -- x y )
+    DUP 0= IF
+        DROP
+        0 FLYING_BLOCK _X @
+        0 FLYING_BLOCK _Y @
+    ELSE
+        DUP FLYING_BLOCK _X @
+        0 FLYING_BLOCK _X @ +
+        SWAP FLYING_BLOCK _Y @
+        0 FLYING_BLOCK _Y @ +
+    THEN
 ;
 
 : PREPARE_BUFFER 
@@ -144,18 +155,10 @@ VARIABLE NEXT_MOVE_DOWN 0 ,
         FIELD_SIZE 
         CMOVE
 
-    -1
-    0 FLYING_BLOCK _X @ 
-    0 FLYING_BLOCK _Y @ 
-    FIELD_BUFFER !
-
-    4 1 DO
+    4 0 DO
         -1
-        I FLYING_BLOCK _X @
-        0 FLYING_BLOCK _X @ +
-        I FLYING_BLOCK _Y @
-        0 FLYING_BLOCK _Y @ +
-        FIELD_BUFFER !
+            I GET_FLYING_BLOCK_XY
+            FIELD_BUFFER !
     LOOP
 ;
 
@@ -230,14 +233,103 @@ VARIABLE NEXT_UPDATE 0 ,
     0 FLYING_BLOCK _X @ + 0 MOVED_BLOCK _X !
 ;
 
-: UPDATE_POS_REDRAW ( x y r -- )
+0 CONSTANT OK
+1 CONSTANT OUT
+2 CONSTANT STOP
+
+: CHECK_POS ( x y -- status )
+    OVER 0< IF
+        OUT
+    ELSE
+        OK
+    THEN
+    >R
+    
+    OVER FIELD_WIDTH < IF
+        OK
+    ELSE
+        OUT
+    THEN
+    R> MAX >R
+
+    DUP 0< IF
+        OUT
+    ELSE
+        OK
+    THEN
+    R> MAX >R
+
+    DUP FIELD_HEIGHT < IF
+        OK
+    ELSE
+        STOP
+    THEN
+    R> MAX
+
+    \ checked X Y boundaries
+    DUP 0= IF
+        >R
+        FIELD_WITH_STATIC @ IF 
+            STOP
+        ELSE
+            OK
+        THEN
+        R> MAX
+    ELSE
+        \ delete x y
+        >R 2DROP R>
+    THEN
+;
+
+: GET_MOVED_BLOCK_XY ( n -- x y )
+    DUP 0= IF
+        DROP
+        0 MOVED_BLOCK _X @
+        0 MOVED_BLOCK _Y @
+    ELSE
+        DUP MOVED_BLOCK _X @
+        0 MOVED_BLOCK _X @ +
+        SWAP MOVED_BLOCK _Y @
+        0 MOVED_BLOCK _Y @ +
+    THEN
+;
+
+: UPDATE_POS_CHECK ( x y r -- status ) 
     UPDATE_POS
 
-    \ I need to check it, but I ignore
+    4 0 DO
+        I GET_MOVED_BLOCK_XY
+            CHECK_POS
+    LOOP
 
-    0 MOVED_BLOCK 0 FLYING_BLOCK BLOCK_STRUCT_SIZE CMOVE
+    MAX MAX MAX
+;
 
-    REDRAW_FIELD
+: UPDATE_POS_REDRAW ( x y r -- )
+    UPDATE_POS_CHECK
+    DUP 0= IF
+        0 MOVED_BLOCK 0 FLYING_BLOCK BLOCK_STRUCT_SIZE CMOVE
+        REDRAW_FIELD
+    ELSE
+        DUP STOP = IF
+            4 0 DO        
+                -1
+                    I GET_FLYING_BLOCK_XY
+                    FIELD_WITH_STATIC !
+            LOOP
+            PUT_FLYING_BLOCK
+            REDRAW_FIELD
+            SCHEDULE_MOVE_DOWN
+        THEN
+    THEN
+    DROP
+;
+
+: THROTTLED_MOVE_DOWN
+    NEXT_MOVE_DOWN 2@ UPTIMEMS D< IF
+        SCHEDULE_MOVE_DOWN
+        0 1 0 UPDATE_POS_REDRAW
+    THEN
 ;
 
 : CHECK_KEY
@@ -303,6 +395,7 @@ VARIABLE NEXT_UPDATE 0 ,
 : MAIN
     0 END !
     INIT_SCREEN
+    RND_INIT
     PUT_FLYING_BLOCK
     REDRAW_FIELD
     BEGIN
@@ -311,7 +404,8 @@ VARIABLE NEXT_UPDATE 0 ,
         END @
     UNTIL
     DISP_CLR
-    EXIT
 ;
 
 \ MAIN
+\ FORGET SEED
+\ EXIT
