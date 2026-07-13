@@ -21,6 +21,20 @@ VARIABLE T-PASSED
     THEN
 ;
 
+: PRINT_ACTUAL 
+    START-SP @ ACTUAL-SP @ -
+    DUP 0< IF
+        ." Underflow! "
+    ELSE
+        DUP
+        2/ 0 DO
+            ACTUAL-RESULTS OVER 2- I 2* - + @ .
+            SPACE
+        LOOP
+    THEN
+    DROP
+;
+
 : }T \ ( ... -- ) comapre stack (expected) contents with saved
     \ (actual) contents.
     SP@ ACTUAL-SP @ = IF          \ if depths match
@@ -29,13 +43,13 @@ VARIABLE T-PASSED
                 ACTUAL-RESULTS I + @    \ compare actual with expected
                 <> IF 
                     1 T-ERROR +!
-                    ." INCORRECT RESULT: " ERROR-MSG ERROR LEAVE 
+                    ." INCORRECT RESULT: " PRINT_ACTUAL ERROR-MSG ERROR LEAVE 
                 THEN
             R> 1+ >R LOOP
         THEN
     ELSE                                    \ depth mismatch
         1 T-ERROR +!
-        ." WRONG NUMBER OF RESULTS: " ERROR-MSG ERROR
+        ." WRONG NUMBER OF RESULTS: " PRINT_ACTUAL ERROR-MSG ERROR
     THEN
 
     1 T-PASSED +!
