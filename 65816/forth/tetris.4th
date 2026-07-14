@@ -104,6 +104,14 @@ VARIABLE SCORE
         0 4 D.R
 ;
 
+: END_GAME ( -- )
+    0 7 DISP_CUR ." END"
+    0 10 DISP_CUR $23 EMIT
+    0 15 DISP_CUR $23 EMIT
+    1 10 DISP_CUR $23 EMIT
+    1 15 DISP_CUR $23 EMIT
+;
+
 7 CONSTANT BLOCKS_COUNT
 CREATE BLOCKS_SHAPES \ relative X,Y for bricks
 \ J
@@ -380,10 +388,15 @@ VARIABLE COMPLETED_LINES_SIZE
                     FIELD_WITH_STATIC !
             LOOP
             PUT_FLYING_BLOCK
-            1 UPDATE_SCORE
-            REDRAW_FIELD
-            REMOVE_COMPLETED_LINES
-            SCHEDULE_MOVE_DOWN
+            0 0 0 UPDATE_POS_CHECK
+            0= IF
+                1 UPDATE_SCORE
+                REDRAW_FIELD
+                REMOVE_COMPLETED_LINES
+                SCHEDULE_MOVE_DOWN
+            ELSE
+                -1 END !
+            THEN
         THEN
     THEN
     DROP
@@ -473,7 +486,11 @@ VARIABLE COMPLETED_LINES_SIZE
         THROTTLED_MOVE_DOWN
         END @
     UNTIL
+    END_GAME
+
+    PS2_KEY DROP \ wait for user input
+
     DISP_CLR
 ;
 
-MAIN
+\ MAIN
