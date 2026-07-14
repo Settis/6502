@@ -197,19 +197,6 @@ VARIABLE NEXT_MOVE_DOWN 0 ,
     LOOP
 ;
 
-VARIABLE NEXT_UPDATE 0 ,
-: THROTTLED_UPDATE_FIELD
-    NEXT_UPDATE 2@
-    UPTIMEMS
-    D< IF 
-        UPTIMEMS 500 0 D+
-        NEXT_UPDATE 2!
-        PREPARE_BUFFER
-        UPDATE_BITMAP
-        UPDATE_FIELD
-    THEN
-;
-
 : REDRAW_FIELD
     PREPARE_BUFFER
     UPDATE_BITMAP
@@ -305,6 +292,70 @@ VARIABLE NEXT_UPDATE 0 ,
     MAX MAX MAX
 ;
 
+\ first byte - size, then byte per line number
+VARIABLE COMPLETED_LINES_SIZE
+1 6 ARRAY COMPLETED_LINES
+
+: SET_COMPLETED_LINES ( -- )
+    0 COMPLETED_LINES_SIZE !
+    FIELD_HEIGHT 0 DO
+        -1
+        FIELD_WIDTH 0 DO
+            I J FIELD_WITH_STATIC @ 0= IF
+                DROP 0
+                LEAVE
+            THEN
+        LOOP
+        IF  
+            I COMPLETED_LINES_SIZE @
+                COMPLETED_LINES C!
+            1 COMPLETED_LINES_SIZE +!
+        THEN
+    LOOP
+;
+
+: CLEAN_LINES ( -- )
+    COMPLETED_LINES_SIZE @ 0 DO
+        I COMPLETED_LINES C@
+        0 SWAP FIELD_WITH_STATIC FIELD_WIDTH 2* ERASE
+    LOOP
+;
+
+: MOVE_LINE ( to from -- )
+    0 SWAP FIELD_WITH_STATIC
+        SWAP 0 SWAP FIELD_WITH_STATIC
+        FIELD_WIDTH 2* CMOVE
+;
+
+: COMPRESS_LINES ( -- )
+    COMPLETED_LINES_SIZE @ 0 DO
+        I COMPLETED_LINES C@ \ line to fill
+        BEGIN
+            DUP \ to preserve fill line
+            DUP 1- \ calc from
+            MOVE_LINE
+            DUP 0= NOT
+        WHILE
+            1-
+        REPEAT
+        DROP
+    LOOP
+
+    0 0 FIELD_WITH_STATIC FIELD_WIDTH 2* COMPLETED_LINES_SIZE @ * ERASE
+;
+
+: REMOVE_COMPLETED_LINES ( -- )
+    SET_COMPLETED_LINES
+    COMPLETED_LINES_SIZE @ 0= NOT IF
+        CLEAN_LINES
+        REDRAW_FIELD
+        500 WAIT
+        COMPRESS_LINES
+        REDRAW_FIELD
+        SCHEDULE_MOVE_DOWN
+    THEN
+;
+
 : UPDATE_POS_REDRAW ( x y r -- )
     UPDATE_POS_CHECK
     DUP 0= IF
@@ -319,6 +370,7 @@ VARIABLE NEXT_UPDATE 0 ,
             LOOP
             PUT_FLYING_BLOCK
             REDRAW_FIELD
+            REMOVE_COMPLETED_LINES
             SCHEDULE_MOVE_DOWN
         THEN
     THEN
