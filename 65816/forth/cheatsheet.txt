@@ -8,6 +8,7 @@ BEGIN ... AGAIN
 
 DO . . . LOOP
     DO ( end+1 start - ) Set up loop, given index range.
+    LEAVE to exit the loop immediately
 
 Operand Keys for word description
 n 16-bit integer
