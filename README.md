@@ -8,3 +8,6 @@ I've started with a 6502 compatible CPU in Logisim [avaialbe here](/logisim/READ
 Currently, I'm trying to build the real one around 65c816 CPU. 
 As an example of how it looks you can see it working with three character displays running Wozmon:
 ![photo of 6502 computer running Wozmon](/marcus&wozmon.jpg)
+
+Finally I'm able to connect all peripherals at once:
+![photo of 6502 computer running Tetris](/marcus&tetris.jpg)
