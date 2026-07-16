@@ -817,8 +817,6 @@ CODE LOW_LEVEL_COLD_INIT
     A8_IND8
     ; INIT UART
     JSR UART_INIT
-    LDA #(W65C51::commandReg::parityModEnabled | W65C51::commandReg::receiverEvenParityChecked | W65C51::commandReg::transmitInterruptDisabled )
-    STA UART_ADDR+W65C51::commandReg
     STZ USER_IO_BUFFER_START
     STZ USER_IO_BUFFER_END
 
