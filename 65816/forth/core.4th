@@ -52,6 +52,7 @@ USER_VARIABLES-INITIAL_USER_VARIABLES+UV_FAT_CUR_FILE_SIZE CONSTANT FAT_CUR_FILE
 HIDE
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_VOL CONSTANT VOL
 USER_VARIABLES-INITIAL_USER_VARIABLES+UV_FENCE CONSTANT FENCE
+USER_VARIABLES-INITIAL_USER_VARIABLES+UV_SD_STAT CONSTANT SD_STAT
 
 $20 CONSTANT BL
 
@@ -2319,8 +2320,19 @@ HIDE
 ;
 HIDE
 
+: UPDATE_SD_FAIL_STAT ( f offset -- f )
+    OVER IF
+        DROP
+    ELSE
+        SD_STAT +
+        1 SWAP +!
+    THEN
+;
+HIDE
+
 : WAIT_FOR_SD_R1 ( -- b true / false )
     LABEL_FORTH_WORD_READ_SD_R1 $f0 RETRY
+    8 UPDATE_SD_FAIL_STAT
 ;
 HIDE
 
@@ -2341,11 +2353,15 @@ END-CODE
 HIDE
 
 : SEND_SD_CMD_AND_CHECK_RESULT ( b addr -- f ) 
+    \\ update ll commands counter
+    1 SD_STAT 2+ +!
+
     6 WRITE_TO_SD WAIT_FOR_SD_R1 IF
         =
     ELSE
         0
     THEN
+    6 UPDATE_SD_FAIL_STAT
 ;
 HIDE
 
@@ -2358,6 +2374,7 @@ HIDE
 
 : WAIT_NOT_BUSY ( -- f )
     LABEL_FORTH_WORD_CHECK_BUSY $50 RETRY
+    4 UPDATE_SD_FAIL_STAT
 ;
 HIDE
 
@@ -2410,9 +2427,39 @@ HIDE
 ;
 HIDE
 
+: READ_BE ( addr -- n )
+    DUP C@ 8 <<
+    SWAP 1+ C@ +
+;
+HIDE
+
 : READ_2_LE ( addr -- d ) \ reading double from Little-endian
     DUP @
     SWAP 2+ @
+;
+HIDE
+
+CODE CRC_SD ( sum b -- sum )
+    JSR PULL_DS
+    EOR (SP)
+    LDX #16
+@loop:
+    ASL
+    BCC @next
+    EOR #$1021
+@next:
+    DEX
+    BNE @loop
+    STA (SP)
+END-CODE
+HIDE
+
+: CHECK_CRC ( crc addr -- f ) 
+    0 SWAP
+    DUP 512 + SWAP DO
+        I READ_BE CRC_SD
+    2 +LOOP
+    =
 ;
 HIDE
 
@@ -2423,9 +2470,14 @@ HIDE
                 $FE = IF
                     PAD 6 + @ 512 READ_FROM_SD
                     PAD 2- 2 READ_FROM_SD
-                    -1
+                    \\ now check crc
+                    PAD 2- READ_BE
+                    PAD 6 + @
+                    CHECK_CRC
+                    12 UPDATE_SD_FAIL_STAT
                 ELSE
                     0
+                    10 UPDATE_SD_FAIL_STAT
                 THEN
             ELSE
                 0
@@ -2445,6 +2497,8 @@ HIDE
     $51 PAD C! PAD 1+ WRITE_2_BE 1 PAD 5 + C!
     SD_BUF @ PAD 6 + !
 
+    \\ update sd requests
+    1 SD_STAT +!
     LABEL_FORTH_WORD_READ_SD_BLOCK 50 RETRY LABEL_SD_ERROR_CMD_READ ?SD_ERROR
 
     SD_BUF @
@@ -2469,11 +2523,15 @@ HIDE
         DISABLE_SD
     LOOP
 
+    \\ update sd requests
+    1 SD_STAT +!
     LABEL_FORTH_WORD_SEND_SD_CMD_0 50 RETRY LABEL_SD_ERROR_CMD0 ?SD_ERROR
+    1 SD_STAT +!
     LABEL_FORTH_WORD_SEND_SD_CMD_8 50 RETRY LABEL_SD_ERROR_CMD8 ?SD_ERROR
+    1 SD_STAT +!
     LABEL_FORTH_WORD_SEND_SD_CMD_41 50 RETRY LABEL_SD_ERROR_CMD41 ?SD_ERROR
 
-    \ 0 $8018 C! \ timer for SD shift register
+    0 $8018 C! \ timer for SD shift register
 ;
 HIDE
 
@@ -2897,6 +2955,6 @@ HIDE
     ! \ updating CFA
 ;
 
-: FREE ( --- n1 ) \ Return the amount of free memory
+: FREE ( -- n1 ) \ Return the amount of free memory
     SP@ HERE - 
 ;

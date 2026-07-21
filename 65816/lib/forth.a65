@@ -146,6 +146,14 @@ UV_VOL:
     .word $E
 UV_FENCE:
     .word D0_INIT_VALUE
+UV_SD_STAT:
+    .word 0 ;  0+ requests
+    .word 0 ;  2+ ll commads
+    .word 0 ;  4+ busy fail
+    .word 0 ;  6+ cmd send fail
+    .word 0 ;  8+ r1 wait fail
+    .word 0 ; 10+ block read fail
+    .word 0 ; 12+ block crc fail
 END_INITIAL_USER_VARIABLES:
 
 ; Error messages:
