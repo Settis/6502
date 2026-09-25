@@ -837,6 +837,15 @@ CODE LOW_LEVEL_COLD_INIT
     LDA VIA_22_SECOND + W65C22::IFR
     LDA VIA_22_SECOND + W65C22::RA
 
+
+    ; VGA INIT
+    LDA #$FF
+    STA VIA_22_SECOND + W65C22::DDRA
+    LDA #%1010
+    STA VIA_22_SECOND + W65C22::PCR
+    LDA #%11000
+    STA VIA_22_SECOND + W65C22::ACR
+
     LDA #<TICKS_IN_MS-2
     STA PVIA + W65C22::T1C_L
     LDA #>TICKS_IN_MS-2
@@ -2957,4 +2966,55 @@ HIDE
 
 : FREE ( -- n1 ) \ Return the amount of free memory
     SP@ HERE - 
+;
+
+CODE VGA_WRITE ( b ADDR -- )
+ADDR = FORTH_TMP_1
+DATA = FORTH_TMP_2
+
+    JSR PULL_DS
+    STA ADDR
+    JSR PULL_DS
+    STA DATA
+    A8_IND8
+
+    LDA ADDR+1
+    STA VIA_22_SECOND + W65C22::SR
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    LDA ADDR
+    STA VIA_22_SECOND + W65C22::SR
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+
+    LDA DATA
+    STA VIA_22_SECOND + W65C22::RA
+
+    A16_IND16
+END-CODE
+
+: XY_VGA_WRITE ( b X Y -- )
+    6 << + VGA_WRITE
+;
+
+: VGA_FILL ( C -- )
+   240 0 DO
+      40 0 DO
+         DUP I J XY_VGA_WRITE
+      LOOP
+   LOOP
+
+   DROP
 ;
